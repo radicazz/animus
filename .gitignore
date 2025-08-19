@@ -31,6 +31,9 @@
 # VS Code settings
 .vscode/
 
+# VS settings
+.vs/
+
 # Mac OS files
 .DS_Store
 
