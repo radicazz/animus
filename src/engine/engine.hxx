@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include "camera/camera.hxx"
+#include "input/input_manager.hxx"
 #include "renderer/renderer.hxx"
 #include "window/window.hxx"
 #include "utils/resource_manager.hxx"
@@ -13,7 +14,6 @@ namespace engine {
     struct game_callbacks {
         using game_create = void (*)(game_engine*);
         using game_destroy = void (*)(game_engine*);
-        using game_process_events = void (*)(game_engine*, SDL_Event*);
         using game_update = void (*)(game_engine*, float);
         using game_render = void (*)(game_engine*);
 
@@ -32,15 +32,6 @@ namespace engine {
          *
          */
         game_destroy destroy = nullptr;
-
-        /**
-         * @brief Called during window event polling.
-         *
-         * This is where you can handle user input and other events. It is distinct from
-         * the update function, which is called every frame to update the game state. Poll events
-         * here, and update state in the Update callback.
-         */
-        game_process_events process_events = nullptr;
 
         /**
          * @brief Called every frame before rendering.
@@ -71,6 +62,7 @@ namespace engine {
         [[nodiscard]] renderer& get_renderer();
         [[nodiscard]] camera& get_camera();
         [[nodiscard]] resource_manager& get_resource_manager();
+        [[nodiscard]] input_manager& get_input_manager();
 
         /**
          * @brief Get a pointer to your game's data.
@@ -92,6 +84,7 @@ namespace engine {
         renderer m_renderer;
         camera m_camera;
         resource_manager m_resource_manager;
+        input_manager m_input_manager;
 
         game_callbacks m_callbacks;
         void* m_state;
@@ -111,6 +104,10 @@ namespace engine {
 
     inline resource_manager& game_engine::get_resource_manager() {
         return m_resource_manager;
+    }
+
+    inline input_manager& game_engine::get_input_manager() {
+        return m_input_manager;
     }
 
     template <class T>

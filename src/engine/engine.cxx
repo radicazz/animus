@@ -7,6 +7,7 @@ namespace engine {
           m_renderer(m_window.get_sdl_window()),
           m_camera({0.f, 0.f}, 1.f),
           m_resource_manager(m_renderer.get_sdl_renderer()),
+          m_input_manager(),
           m_state(state),
           m_callbacks(callbacks) {
     }
@@ -22,6 +23,8 @@ namespace engine {
         const Uint64 frequency = SDL_GetPerformanceFrequency();
 
         while (m_window.is_running() == true) {
+            m_input_manager.update();
+
             Uint64 current_time = SDL_GetPerformanceCounter();
             const float delta_time = (current_time - last_time) / static_cast<float>(frequency);
             last_time = current_time;
@@ -32,8 +35,7 @@ namespace engine {
                     m_window.set_is_running(false);
                 }
 
-                // Pass events to game callback.
-                m_callbacks.process_events(this, &event);
+                m_input_manager.process_event(event);
             }
 
             m_callbacks.update(this, delta_time);

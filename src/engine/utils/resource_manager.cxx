@@ -40,6 +40,9 @@ namespace engine {
         }
 
         m_textures[file_path.data()] = texture;
+
+        SDL_Log("Loaded texture: %s", file_path.data());
+
         return texture;
     }
 
@@ -66,6 +69,9 @@ namespace engine {
         }
 
         m_fonts[file_path.data()] = font;
+
+        SDL_Log("Loaded font: %s", file_path.data());
+
         return font;
     }
 
