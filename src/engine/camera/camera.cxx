@@ -1,7 +1,7 @@
 #include "camera.hxx"
 
 namespace engine {
-    camera::camera(glm::vec2 position, float zoom_level) : m_position(position) {
+    camera::camera(glm::vec2 world_position, float zoom_level) : m_world_position(world_position) {
         m_zoom_level = glm::clamp(zoom_level, min_zoom, max_zoom);
     }
 

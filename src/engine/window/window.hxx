@@ -1,11 +1,7 @@
 #pragma once
 
 #include <string>
-
 #include <SDL3/SDL.h>
-#include <SDL3_ttf/SDL_ttf.h>
-#include <SDL3_image/SDL_image.h>
-
 #include <glm/glm.hpp>
 
 namespace engine {
@@ -19,7 +15,8 @@ namespace engine {
         std::string get_title() const;
         void set_title(std::string_view new_title);
 
-        glm::vec2 get_size() const;
+        glm::vec2 get_logical_size() const;
+        glm::vec2 get_pixel_size() const;
 
         bool is_running() const;
 

@@ -13,12 +13,18 @@ namespace engine {
         SDL_DestroyRenderer(m_sdl_renderer);
     }
 
-    void renderer::begin_frame() {
+    void renderer::frame_begin() {
         SDL_SetRenderDrawColor(m_sdl_renderer, 0, 0, 0, 255);
         SDL_RenderClear(m_sdl_renderer);
     }
 
-    void renderer::end_frame() {
+    void renderer::frame_end() {
         SDL_RenderPresent(m_sdl_renderer);
+    }
+
+    glm::vec2 renderer::get_output_size() const {
+        int width, height;
+        SDL_GetCurrentRenderOutputSize(m_sdl_renderer, &width, &height);
+        return {static_cast<float>(width), static_cast<float>(height)};
     }
 }  // namespace engine

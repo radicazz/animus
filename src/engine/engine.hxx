@@ -1,8 +1,11 @@
 #pragma once
 
+#include <type_traits>
+
 #include "camera/camera.hxx"
 #include "renderer/renderer.hxx"
 #include "window/window.hxx"
+#include "utils/resource_manager.hxx"
 
 namespace engine {
     class game_engine;
@@ -11,11 +14,44 @@ namespace engine {
         using game_create = void (*)(game_engine*);
         using game_destroy = void (*)(game_engine*);
         using game_process_events = void (*)(game_engine*, SDL_Event*);
+        using game_update = void (*)(game_engine*, float);
         using game_render = void (*)(game_engine*);
 
+        /**
+         * @brief Called before the game loop starts.
+         *
+         * Use this as an opportunity to initialize your game state outside of it's own constructor.
+         * Think of it like Unity's Start method, as opposed to the contructor being the Awake
+         * method.
+         *
+         */
         game_create create = nullptr;
+
+        /**
+         * @brief Called after the game loop, before the engine shuts down.
+         *
+         */
         game_destroy destroy = nullptr;
+
+        /**
+         * @brief Called during window event polling.
+         *
+         * This is where you can handle user input and other events. It is distinct from
+         * the update function, which is called every frame to update the game state. Poll events
+         * here, and update state in the Update callback.
+         */
         game_process_events process_events = nullptr;
+
+        /**
+         * @brief Called every frame before rendering.
+         *
+         */
+        game_update update = nullptr;
+
+        /**
+         * @brief Called every frame during rendering.
+         *
+         */
         game_render render = nullptr;
     };
 
@@ -31,9 +67,10 @@ namespace engine {
 
         void run();
 
-        window& get_window();
-        renderer& get_renderer();
-        camera& get_camera();
+        [[nodiscard]] window& get_window();
+        [[nodiscard]] renderer& get_renderer();
+        [[nodiscard]] camera& get_camera();
+        [[nodiscard]] resource_manager& get_resource_manager();
 
         /**
          * @brief Get a pointer to your game's data.
@@ -47,15 +84,16 @@ namespace engine {
          * @return A pointer to your game's data, casted to your game's type.
          */
         template <class T>
+            requires std::is_class_v<T>
         T* get_state();
 
     private:
         window m_window;
         renderer m_renderer;
         camera m_camera;
+        resource_manager m_resource_manager;
 
         game_callbacks m_callbacks;
-
         void* m_state;
     };
 
@@ -71,7 +109,12 @@ namespace engine {
         return m_camera;
     }
 
+    inline resource_manager& game_engine::get_resource_manager() {
+        return m_resource_manager;
+    }
+
     template <class T>
+        requires std::is_class_v<T>
     inline T* game_engine::get_state() {
         return static_cast<T*>(m_state);
     }

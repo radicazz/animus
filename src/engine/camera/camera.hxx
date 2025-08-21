@@ -1,20 +1,22 @@
+#pragma once
+
 #include <glm/glm.hpp>
 
 namespace engine {
     class camera {
     public:
-        camera(glm::vec2 position, float zoom_level);
+        camera(glm::vec2 world_position, float zoom_level);
 
         void set_position(const glm::vec2& position);
-        glm::vec2 get_position() const;
+        [[nodiscard]] glm::vec2 get_position() const;
         void move_position(const glm::vec2& offset);
 
         void set_zoom(float zoom_level);
-        float get_zoom() const;
+        [[nodiscard]] float get_zoom() const;
         void zoom_by(float factor);
 
     private:
-        glm::vec2 m_position;
+        glm::vec2 m_world_position;
         float m_zoom_level;
 
         static constexpr float min_zoom = 0.1f;
@@ -22,15 +24,15 @@ namespace engine {
     };
 
     inline void camera::set_position(const glm::vec2& position) {
-        m_position = position;
+        m_world_position = position;
     }
 
     inline glm::vec2 camera::get_position() const {
-        return m_position;
+        return m_world_position;
     }
 
     inline void camera::move_position(const glm::vec2& offset) {
-        m_position += offset;
+        m_world_position += offset;
     }
 
     inline void camera::set_zoom(float zoom_level) {

@@ -12,14 +12,9 @@ namespace engine {
         if (m_window = SDL_CreateWindow(title.data(), width, height, 0); m_window == nullptr) {
             throw std::runtime_error("Failed to create window.");
         }
-
-        if (TTF_Init() == false) {
-            throw std::runtime_error("Failed to initialize SDL_ttf.");
-        }
     }
 
     window::~window() {
-        TTF_Quit();
         SDL_DestroyWindow(m_window);
         SDL_Quit();
     }
@@ -32,9 +27,15 @@ namespace engine {
         SDL_SetWindowTitle(m_window, new_title.data());
     }
 
-    glm::vec2 window::get_size() const {
+    glm::vec2 window::get_logical_size() const {
         int width, height;
         SDL_GetWindowSize(m_window, &width, &height);
+        return {static_cast<float>(width), static_cast<float>(height)};
+    }
+
+    glm::vec2 window::get_pixel_size() const {
+        int width, height;
+        SDL_GetWindowSizeInPixels(m_window, &width, &height);
         return {static_cast<float>(width), static_cast<float>(height)};
     }
 }  // namespace engine

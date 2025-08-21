@@ -9,65 +9,49 @@ struct game_state {
 
 void game_create(engine::game_engine* engine) {
     game_state* state = engine->get_state<game_state>();
-
     state->player_position = {100, 100};
 
-    state->player_texture = IMG_LoadTexture(engine->get_renderer().get_sdl_renderer(),
-                                            "assets/player/player_default.png");
+    engine::resource_manager& resource_manager = engine->get_resource_manager();
+    state->player_texture = resource_manager.load_texture("assets/player/player_default.png");
 }
 
 void game_destroy(engine::game_engine* engine) {
     game_state* state = engine->get_state<game_state>();
 
-    if (state->player_texture) {
-        SDL_DestroyTexture(state->player_texture);
-    }
+    // Unnesecary because resource_manager will unload all textures and fonts when destroyed.
+    engine::resource_manager& resource_manager = engine->get_resource_manager();
+    resource_manager.unload_texture("assets/player/player_default.png");
 }
 
 void game_process_events(engine::game_engine* engine, SDL_Event* event) {
     game_state* state = engine->get_state<game_state>();
+}
 
-    // Track key states for smooth diagonal movement
-    static bool keys[4] = {false};  // W, A, S, D
+void game_update(engine::game_engine* engine, float delta_time) {
+    game_state* state = engine->get_state<game_state>();
 
-    if (event->type == SDL_EVENT_KEY_DOWN || event->type == SDL_EVENT_KEY_UP) {
-        bool is_down = (event->type == SDL_EVENT_KEY_DOWN);
+    const bool* keys = SDL_GetKeyboardState(nullptr);
 
-        switch (event->key.key) {
-            case SDLK_W:
-                keys[0] = is_down;
-                break;
-            case SDLK_A:
-                keys[1] = is_down;
-                break;
-            case SDLK_S:
-                keys[2] = is_down;
-                break;
-            case SDLK_D:
-                keys[3] = is_down;
-                break;
-        }
+    glm::vec2 movement(0.0f);
 
-        // Calculate movement vector
-        glm::vec2 movement(0.0f);
+    if (keys[SDL_SCANCODE_W]) {
+        movement.y -= 1.0f;
+    }
+    if (keys[SDL_SCANCODE_A]) {
+        movement.x -= 1.0f;
+    }
+    if (keys[SDL_SCANCODE_S]) {
+        movement.y += 1.0f;
+    }
+    if (keys[SDL_SCANCODE_D]) {
+        movement.x += 1.0f;
+    }
 
-        if (keys[0])
-            movement.y -= 1.0f;  // W
-        if (keys[1])
-            movement.x -= 1.0f;  // A
-        if (keys[2])
-            movement.y += 1.0f;  // S
-        if (keys[3])
-            movement.x += 1.0f;  // D
+    constexpr float player_speed = 200.f;
 
-        // Normalize diagonal movement to prevent faster diagonal speed
-        if (movement.x != 0.0f && movement.y != 0.0f) {
-            movement = glm::normalize(movement);
-        }
-
-        // Apply movement with consistent speed
-        const float speed = 5.0f;
-        state->player_position += movement * speed;
+    if (glm::length(movement) > 0.0f) {
+        movement = glm::normalize(movement);
+        state->player_position += movement * player_speed * delta_time;
     }
 }
 
@@ -87,9 +71,10 @@ int main(int argc, char* argv[]) {
         callbacks.create = game_create;
         callbacks.destroy = game_destroy;
         callbacks.process_events = game_process_events;
+        callbacks.update = game_update;
         callbacks.render = game_render;
 
-        game_state state;
+        game_state state = {};
         engine::game_details details = {.title = "My Epic Game", .size = {800, 600}};
 
         engine::game_engine game_engine(details, &state, callbacks);
