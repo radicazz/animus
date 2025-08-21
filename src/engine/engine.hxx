@@ -1,5 +1,7 @@
 #pragma once
 
+#include "camera/camera.hxx"
+#include "renderer/renderer.hxx"
 #include "window/window.hxx"
 
 namespace engine {
@@ -17,16 +19,21 @@ namespace engine {
         game_render render = nullptr;
     };
 
+    struct game_details {
+        std::string_view title;
+        glm::vec2 size;
+    };
+
     class game_engine {
     public:
-        game_engine(std::string_view title, glm::vec2 size, void* game_instance,
-                    const game_callbacks& callbacks);
+        game_engine(const game_details& details, void* state, const game_callbacks& callbacks);
         ~game_engine();
 
         void run();
 
         window& get_window();
         renderer& get_renderer();
+        camera& get_camera();
 
         /**
          * @brief Get a pointer to your game's data.
@@ -40,13 +47,16 @@ namespace engine {
          * @return A pointer to your game's data, casted to your game's type.
          */
         template <class T>
-        T* get_game_instance();
+        T* get_state();
 
     private:
         window m_window;
         renderer m_renderer;
+        camera m_camera;
+
         game_callbacks m_callbacks;
-        void* m_game;
+
+        void* m_state;
     };
 
     inline window& game_engine::get_window() {
@@ -57,8 +67,12 @@ namespace engine {
         return m_renderer;
     }
 
+    inline camera& game_engine::get_camera() {
+        return m_camera;
+    }
+
     template <class T>
-    inline T* game_engine::get_game_instance() {
-        return static_cast<T*>(m_game);
+    inline T* game_engine::get_state() {
+        return static_cast<T*>(m_state);
     }
 }  // namespace engine

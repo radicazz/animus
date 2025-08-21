@@ -1,41 +1,25 @@
 #pragma once
 
-#include <string_view>
+#include <string>
+
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
+#include <SDL3_image/SDL_image.h>
+
 #include <glm/glm.hpp>
 
 namespace engine {
-    struct renderer_color {
-        Uint8 r;
-        Uint8 g;
-        Uint8 b;
-        Uint8 a;
-    };
-
-    class renderer {
-    public:
-        renderer(SDL_Window* window);
-        ~renderer();
-
-        void render_pre();
-        void render_post();
-
-        void set_draw_color(const renderer_color& color);
-
-        void draw_rect(const glm::vec2& position, const glm::vec2& size);
-        void draw_rect(const glm::vec2& position, const glm::vec2& size,
-                       const renderer_color& color);
-
-    private:
-        SDL_Renderer* m_renderer;
-    };
-
     class window {
     public:
         window(std::string_view title, int width, int height);
         ~window();
 
-        SDL_Window* get_window() const;
+        SDL_Window* get_sdl_window() const;
+
+        std::string get_title() const;
+        void set_title(std::string_view new_title);
+
+        glm::vec2 get_size() const;
 
         bool is_running() const;
 
@@ -53,7 +37,7 @@ namespace engine {
         bool m_is_running;
     };
 
-    inline SDL_Window* window::get_window() const {
+    inline SDL_Window* window::get_sdl_window() const {
         return m_window;
     }
 
