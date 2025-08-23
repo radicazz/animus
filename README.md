@@ -10,9 +10,9 @@ A cross-platform game that I'm not sure about yet, made with <3
 
 ## Requirements
 
-- C++23 compatable compiler.
-- Git for version control.
-- CMake for compiling.
+- C++20 compatable compiler.
+- [Git](https://git-scm.com/downloads) - Version control.
+- [CMake 3.21+](https://cmake.org/) for compiling.
 
 ## Dependencies
 

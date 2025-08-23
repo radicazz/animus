@@ -22,6 +22,16 @@ namespace engine {
         SDL_RenderPresent(m_sdl_renderer);
     }
 
+    void renderer::sprite_draw(const sprite_texture& sprite, const glm::vec2& position) {
+        if (sprite.is_valid() == false) {
+            return;
+        }
+
+        SDL_FRect dst_rect = {position.x, position.y, sprite.get_size().x, sprite.get_size().y};
+
+        SDL_RenderTexture(m_sdl_renderer, sprite.get_sdl_texture(), nullptr, &dst_rect);
+    }
+
     glm::vec2 renderer::get_output_size() const {
         int width, height;
         SDL_GetCurrentRenderOutputSize(m_sdl_renderer, &width, &height);

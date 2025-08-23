@@ -9,9 +9,9 @@ namespace engine {
 
     enum class input_state { pressed, held, released };
 
-    class input_manager {
+    class input_system {
     public:
-        input_manager();
+        input_system();
 
         void update();
         void process_event(const SDL_Event& event);
@@ -33,7 +33,7 @@ namespace engine {
          *
          * @return A glm::vec2 representing the movement input.
          */
-        [[nodiscard]] glm::vec2 get_movement_input() const;
+        [[nodiscard]] glm::vec2 get_movement() const;
 
     private:
         input_key sdl_key_to_key(SDL_Scancode sdl_key) const;
@@ -49,23 +49,23 @@ namespace engine {
         glm::vec2 m_previous_mouse_pos;
     };
 
-    inline bool input_manager::is_key_pressed(input_key k) const {
+    inline bool input_system::is_key_pressed(input_key k) const {
         return m_pressed_this_frame.find(k) != m_pressed_this_frame.end();
     }
 
-    inline bool input_manager::is_key_held(input_key k) const {
+    inline bool input_system::is_key_held(input_key k) const {
         return m_current_keys.find(k) != m_current_keys.end();
     }
 
-    inline bool input_manager::is_key_released(input_key k) const {
+    inline bool input_system::is_key_released(input_key k) const {
         return m_released_this_frame.find(k) != m_released_this_frame.end();
     }
 
-    inline glm::vec2 input_manager::get_mouse_pos() const {
+    inline glm::vec2 input_system::get_mouse_pos() const {
         return m_mouse_pos;
     }
 
-    inline glm::vec2 input_manager::get_mouse_delta() const {
+    inline glm::vec2 input_system::get_mouse_delta() const {
         return m_mouse_delta;
     }
 }  // namespace engine

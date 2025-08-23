@@ -55,6 +55,17 @@ namespace engine {
         }
     }
 
+    sprite_texture resource_manager::create_sprite(std::string_view file_path) {
+        SDL_Texture* texture = load_texture(file_path);
+        return sprite_texture(texture);
+    }
+
+    sprite_texture resource_manager::create_sprite(std::string_view file_path,
+                                                   const glm::vec2& size) {
+        SDL_Texture* texture = load_texture(file_path);
+        return sprite_texture(texture, size);
+    }
+
     [[maybe_unused]] TTF_Font* resource_manager::load_font(std::string_view file_path, float size) {
         // Check if already loaded.
         auto it = m_fonts.find(file_path.data());

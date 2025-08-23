@@ -1,11 +1,12 @@
 #pragma once
 
-#include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3_image/SDL_image.h>
 
 #include <unordered_map>
 #include <string>
+
+#include "../renderer/sprite.hxx"
 
 namespace engine {
     /**
@@ -24,6 +25,9 @@ namespace engine {
 
         [[maybe_unused]] SDL_Texture* load_texture(std::string_view file_path);
         void unload_texture(std::string_view file_path);
+
+        sprite_texture create_sprite(std::string_view file_path);
+        sprite_texture create_sprite(std::string_view file_path, const glm::vec2& size);
 
         [[maybe_unused]] TTF_Font* load_font(std::string_view file_path, float size);
         void unload_font(std::string_view file_path);

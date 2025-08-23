@@ -3,7 +3,7 @@
 #include <type_traits>
 
 #include "camera/camera.hxx"
-#include "input/input_manager.hxx"
+#include "input/input_system.hxx"
 #include "renderer/renderer.hxx"
 #include "window/window.hxx"
 #include "utils/resource_manager.hxx"
@@ -12,11 +12,6 @@ namespace engine {
     class game_engine;
 
     struct game_callbacks {
-        using game_create = void (*)(game_engine*);
-        using game_destroy = void (*)(game_engine*);
-        using game_update = void (*)(game_engine*, float);
-        using game_render = void (*)(game_engine*);
-
         /**
          * @brief Called before the game loop starts.
          *
@@ -25,25 +20,25 @@ namespace engine {
          * method.
          *
          */
-        game_create create = nullptr;
+        void (*create)(game_engine*) = nullptr;
 
         /**
          * @brief Called after the game loop, before the engine shuts down.
          *
          */
-        game_destroy destroy = nullptr;
+        void (*destroy)(game_engine*) = nullptr;
 
         /**
          * @brief Called every frame before rendering.
          *
          */
-        game_update update = nullptr;
+        void (*update)(game_engine*, float delta_time) = nullptr;
 
         /**
          * @brief Called every frame during rendering.
          *
          */
-        game_render render = nullptr;
+        void (*render)(game_engine*) = nullptr;
     };
 
     struct game_details {
@@ -62,7 +57,7 @@ namespace engine {
         [[nodiscard]] renderer& get_renderer();
         [[nodiscard]] camera& get_camera();
         [[nodiscard]] resource_manager& get_resource_manager();
-        [[nodiscard]] input_manager& get_input_manager();
+        [[nodiscard]] input_system& get_input_system();
 
         /**
          * @brief Get a pointer to your game's data.
@@ -77,14 +72,14 @@ namespace engine {
          */
         template <class T>
             requires std::is_class_v<T>
-        T* get_state();
+        T& get_state();
 
     private:
         window m_window;
         renderer m_renderer;
         camera m_camera;
         resource_manager m_resource_manager;
-        input_manager m_input_manager;
+        input_system m_input;
 
         game_callbacks m_callbacks;
         void* m_state;
@@ -106,13 +101,13 @@ namespace engine {
         return m_resource_manager;
     }
 
-    inline input_manager& game_engine::get_input_manager() {
-        return m_input_manager;
+    inline input_system& game_engine::get_input_system() {
+        return m_input;
     }
 
     template <class T>
         requires std::is_class_v<T>
-    inline T* game_engine::get_state() {
-        return static_cast<T*>(m_state);
+    inline T& game_engine::get_state() {
+        return *static_cast<T*>(m_state);
     }
 }  // namespace engine

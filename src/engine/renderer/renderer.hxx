@@ -1,7 +1,6 @@
 #pragma once
 
-#include <SDL3/SDL.h>
-#include <glm/glm.hpp>
+#include "sprite.hxx"
 
 namespace engine {
     class renderer {
@@ -21,6 +20,8 @@ namespace engine {
 
         void frame_begin();
         void frame_end();
+
+        void sprite_draw(const sprite_texture& sprite, const glm::vec2& position);
 
         /**
          * @brief Get the output size of the renderer.
