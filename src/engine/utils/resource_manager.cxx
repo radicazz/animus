@@ -55,13 +55,13 @@ namespace engine {
         }
     }
 
-    sprite_texture resource_manager::create_sprite(std::string_view file_path) {
+    sprite_texture resource_manager::sprite_load(std::string_view file_path) {
         SDL_Texture* texture = load_texture(file_path);
         return sprite_texture(texture);
     }
 
-    sprite_texture resource_manager::create_sprite(std::string_view file_path,
-                                                   const glm::vec2& size) {
+    sprite_texture resource_manager::sprite_load(std::string_view file_path,
+                                                 const glm::vec2& size) {
         SDL_Texture* texture = load_texture(file_path);
         return sprite_texture(texture, size);
     }

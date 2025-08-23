@@ -66,24 +66,34 @@ namespace engine {
     glm::vec2 input_system::get_movement() const {
         glm::vec2 movement(0.0f);
 
-        // TODO: Add arrow keys.
-        if (is_key_held(input_key::w))
+        if (is_key_held(input_key::w) || is_key_held(input_key::arrow_up)) {
             movement.y -= 1.0f;
-        if (is_key_held(input_key::s))
+        }
+        if (is_key_held(input_key::s) || is_key_held(input_key::arrow_down)) {
             movement.y += 1.0f;
-        if (is_key_held(input_key::a))
+        }
+        if (is_key_held(input_key::a) || is_key_held(input_key::arrow_left)) {
             movement.x -= 1.0f;
-        if (is_key_held(input_key::d))
+        }
+        if (is_key_held(input_key::d) || is_key_held(input_key::arrow_right)) {
             movement.x += 1.0f;
+        }
 
         return movement;
     }
 
     input_key input_system::sdl_key_to_key(SDL_Scancode scancode) const {
         static const std::unordered_map<SDL_Scancode, input_key> key_map = {
-            {SDL_SCANCODE_W, input_key::w},         {SDL_SCANCODE_A, input_key::a},
-            {SDL_SCANCODE_S, input_key::s},         {SDL_SCANCODE_D, input_key::d},
-            {SDL_SCANCODE_SPACE, input_key::space}, {SDL_SCANCODE_ESCAPE, input_key::escape}};
+            {SDL_SCANCODE_W, input_key::w},
+            {SDL_SCANCODE_A, input_key::a},
+            {SDL_SCANCODE_S, input_key::s},
+            {SDL_SCANCODE_D, input_key::d},
+            {SDL_SCANCODE_UP, input_key::arrow_up},
+            {SDL_SCANCODE_DOWN, input_key::arrow_down},
+            {SDL_SCANCODE_LEFT, input_key::arrow_left},
+            {SDL_SCANCODE_RIGHT, input_key::arrow_right},
+            {SDL_SCANCODE_SPACE, input_key::space},
+            {SDL_SCANCODE_ESCAPE, input_key::escape}};
 
         auto it = key_map.find(scancode);
         return (it != key_map.end()) ? it->second : input_key::none;

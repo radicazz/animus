@@ -5,7 +5,23 @@
 #include <unordered_set>
 
 namespace engine {
-    enum class input_key { none, w, a, s, d, space, escape, mouse_left, mouse_right, mouse_middle };
+    enum class input_key {
+        none,
+        w,
+        a,
+        s,
+        d,
+        arrow_up,
+        arrow_down,
+        arrow_left,
+        arrow_right,
+        space,
+        escape,
+        enter,
+        mouse_left,
+        mouse_right,
+        mouse_middle
+    };
 
     enum class input_state { pressed, held, released };
 

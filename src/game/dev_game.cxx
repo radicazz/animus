@@ -6,7 +6,7 @@ void game_create(engine::game_engine* engine) {
     state.player_speed = 200.f;
 
     engine::resource_manager& resource_manager = engine->get_resource_manager();
-    state.sprite_player = resource_manager.create_sprite("assets/player/default.png");
+    state.sprite_player = resource_manager.sprite_load("assets/sprites/player/default.png");
 }
 
 void game_destroy(engine::game_engine*) {
@@ -29,5 +29,5 @@ void game_render(engine::game_engine* engine) {
     auto& state = engine->get_state<dev_game_state>();
     engine::renderer& renderer = engine->get_renderer();
 
-    renderer.sprite_draw(state.sprite_player, state.player_position);
+    renderer.sprite_texture_draw(state.sprite_player, state.player_position);
 }

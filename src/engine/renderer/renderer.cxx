@@ -22,7 +22,7 @@ namespace engine {
         SDL_RenderPresent(m_sdl_renderer);
     }
 
-    void renderer::sprite_draw(const sprite_texture& sprite, const glm::vec2& position) {
+    void renderer::sprite_texture_draw(const sprite_texture& sprite, const glm::vec2& position) {
         if (sprite.is_valid() == false) {
             return;
         }

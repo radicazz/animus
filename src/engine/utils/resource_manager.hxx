@@ -26,8 +26,8 @@ namespace engine {
         [[maybe_unused]] SDL_Texture* load_texture(std::string_view file_path);
         void unload_texture(std::string_view file_path);
 
-        sprite_texture create_sprite(std::string_view file_path);
-        sprite_texture create_sprite(std::string_view file_path, const glm::vec2& size);
+        sprite_texture sprite_load(std::string_view file_path);
+        sprite_texture sprite_load(std::string_view file_path, const glm::vec2& size);
 
         [[maybe_unused]] TTF_Font* load_font(std::string_view file_path, float size);
         void unload_font(std::string_view file_path);

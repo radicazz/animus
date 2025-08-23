@@ -12,6 +12,8 @@ namespace engine {
         sprite_texture(SDL_Texture* texture, const glm::vec2& size);
 
         [[nodiscard]] SDL_Texture* get_sdl_texture() const;
+        void set_sdl_texture(SDL_Texture* texture);
+
         [[nodiscard]] glm::vec2 get_size() const;
         [[nodiscard]] SDL_FRect get_source_rect() const;
         [[nodiscard]] glm::vec2 get_origin() const;
@@ -37,6 +39,10 @@ namespace engine {
 
     inline SDL_Texture* sprite_texture::get_sdl_texture() const {
         return m_sdl_texture;
+    }
+
+    inline void sprite_texture::set_sdl_texture(SDL_Texture* texture) {
+        m_sdl_texture = texture;
     }
 
     inline glm::vec2 sprite_texture::get_size() const {
@@ -78,4 +84,6 @@ namespace engine {
     inline bool sprite_texture::is_valid() const {
         return m_sdl_texture != nullptr;
     }
+
+    class sprite_texture_animated {};
 }  // namespace engine
