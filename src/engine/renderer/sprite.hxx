@@ -10,31 +10,30 @@ namespace engine {
         sprite_texture();
         sprite_texture(SDL_Texture* texture);
         sprite_texture(SDL_Texture* texture, const glm::vec2& size);
+        sprite_texture(SDL_Texture* texture, const glm::vec2& size, const glm::vec2& origin,
+                       float rotation);
 
         [[nodiscard]] SDL_Texture* get_sdl_texture() const;
         void set_sdl_texture(SDL_Texture* texture);
 
         [[nodiscard]] glm::vec2 get_size() const;
-        [[nodiscard]] SDL_FRect get_source_rect() const;
         [[nodiscard]] glm::vec2 get_origin() const;
         [[nodiscard]] float get_rotation() const;
 
-        void set_texture(SDL_Texture* texture);
         void set_size(const glm::vec2& size);
-        void set_source_rect(const SDL_FRect& rect);
         void set_origin(const glm::vec2& origin);
         void set_rotation(float rotation);
 
         [[nodiscard]] bool is_valid() const;
 
     private:
-        void auto_size();
+        void auto_size_and_origin();
 
-        SDL_Texture* m_sdl_texture;
-        SDL_FRect m_source_rect;
-        glm::vec2 m_size;
-        glm::vec2 m_origin;
-        float m_rotation;
+    private:
+        SDL_Texture* m_sdl_texture;  // Underlying SDL_Texture.
+        glm::vec2 m_size;            // Size of the image that makes the sprite.
+        glm::vec2 m_origin;          // Origin point of the sprite (automatically centered).
+        float m_rotation;            // Rotation angle of the sprite.
     };
 
     inline SDL_Texture* sprite_texture::get_sdl_texture() const {
@@ -49,10 +48,6 @@ namespace engine {
         return m_size;
     }
 
-    inline SDL_FRect sprite_texture::get_source_rect() const {
-        return m_source_rect;
-    }
-
     inline glm::vec2 sprite_texture::get_origin() const {
         return m_origin;
     }
@@ -61,16 +56,8 @@ namespace engine {
         return m_rotation;
     }
 
-    inline void sprite_texture::set_texture(SDL_Texture* texture) {
-        m_sdl_texture = texture;
-    }
-
     inline void sprite_texture::set_size(const glm::vec2& size) {
         m_size = size;
-    }
-
-    inline void sprite_texture::set_source_rect(const SDL_FRect& rect) {
-        m_source_rect = rect;
     }
 
     inline void sprite_texture::set_origin(const glm::vec2& origin) {

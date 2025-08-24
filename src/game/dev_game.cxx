@@ -19,6 +19,8 @@ void game_update(engine::game_engine* engine, float delta_time) {
     glm::vec2 movement = input.get_movement();
     state.player_position += movement * state.player_speed * delta_time;
 
+    state.sprite_player.set_rotation(state.sprite_player.get_rotation() + 36.f * delta_time);
+
     if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
         glm::vec2 mouse_pos = input.get_mouse_pos();
         SDL_Log("Mouse Left Click at: (%f, %f)", mouse_pos.x, mouse_pos.y);
