@@ -46,17 +46,18 @@ namespace engine {
      */
     struct game_callbacks {
         /**
-         * @brief Called before the game loop starts.
+         * @brief Called last in the engine's constructor.
          *
          * Use this as an opportunity to initialize your game state outside of it's own constructor.
-         * Think of it like Unity's Start method, as opposed to the contructor being the Awake
-         * method.
+         * For example, load sprites, fonts and other resources here.
          *
          */
         void (*on_create)(game_engine*) = nullptr;
 
         /**
-         * @brief Called after the game loop, before the engine shuts down.
+         * @brief Called in the engine's constructor.
+         *
+         * RAII handles most of the cleanup, so you typically don't need to do anything here.
          *
          */
         void (*on_destroy)(game_engine*) = nullptr;
@@ -64,6 +65,8 @@ namespace engine {
         /**
          * @brief Called every frame before rendering.
          *
+         * @note This callback has an extra parameter, `float delta_time`, which represents the time
+         *       elapsed since the last frame.
          */
         void (*on_update)(game_engine*, float delta_time) = nullptr;
 
@@ -74,9 +77,15 @@ namespace engine {
         void (*on_render)(game_engine*) = nullptr;
     };
 
+    /**
+     * @brief Details for initializing the game engine.
+     *
+     * This structure contains parameters used to configure the game engine during its construction.
+     * It includes settings for the initial window title and size.
+     */
     struct game_details {
-        std::string_view title;
-        glm::vec2 size;
+        std::string_view window_title;
+        glm::vec2 window_size;
     };
 
     class game_engine {
@@ -92,7 +101,8 @@ namespace engine {
         void run();
 
         //
-        // The following are engine component accessors.
+        // The following are engine component accessors. Use these to access the engine's components
+        // in callbacks.
         //
 
         [[nodiscard]] window& get_window();
@@ -105,8 +115,10 @@ namespace engine {
          * @brief Get a pointer to your game's data.
          *
          * The game communicates with the engine through callbacks. The engine
-         * callbacks provide access to the engine's data. Provide a pointer to your game's data in
-         * the constructor to access it through the engine in your callbacks.
+         * callbacks provide access to the engine's data.
+         *
+         * Provide a pointer to your game's data in the constructor to access it through the engine
+         * in your callbacks.
          *
          * @example
          * struct my_game_state {
@@ -132,7 +144,7 @@ namespace engine {
         renderer m_renderer;
         camera m_camera;
         resource_manager m_resource_manager;
-        input_system m_input_systen;
+        input_system m_input_system;
 
         game_callbacks m_callbacks;
         void* m_state;
@@ -155,7 +167,7 @@ namespace engine {
     }
 
     inline input_system& game_engine::get_input_system() {
-        return m_input_systen;
+        return m_input_system;
     }
 
     template <class T>

@@ -15,6 +15,9 @@ namespace engine {
     }
 
     resource_manager::~resource_manager() {
+        // Destroy all sprites.
+        m_sprites.clear();
+
         // Unload all textures.
         for (auto& [key, texture] : m_textures) {
             SDL_DestroyTexture(texture);

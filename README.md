@@ -4,7 +4,6 @@ A cross-platform game that I'm not sure about yet, made with <3
 
 ## Todo
 
-- Create a `Sprite` class to represent sprites in the game.
 - Add a `BaseEntity` class to represent world-space entities. (Maybe ECS?)
 - Complete and implement the `Camera` into the engine.
 

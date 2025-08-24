@@ -15,7 +15,8 @@ int main(int argc, char* argv[]) {
                                             .on_render = game_render};
 
         // Initial game engine window parameters such as title and size.
-        engine::game_details details = {.title = "My Epic Game", .size = glm::vec2{800, 600}};
+        engine::game_details details = {.window_title = "Incarnate Window",
+                                        .window_size = glm::vec2{800, 600}};
 
         // Create the game and its resources.
         engine::game_engine game_engine(details, &state, callbacks);

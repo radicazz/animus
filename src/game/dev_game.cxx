@@ -13,6 +13,8 @@ void game_create(engine::game_engine* engine) {
 }
 
 void game_destroy(engine::game_engine*) {
+    // RAII currently handles resource cleanup.
+    // Nothing to do here.
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
