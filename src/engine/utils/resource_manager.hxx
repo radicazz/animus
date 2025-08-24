@@ -16,6 +16,11 @@ namespace engine {
      *
      * @note Unloads all textures and fonts when the resource_manager is destroyed.
      *
+     * @todo
+     * - Add map of textures.
+     * - Use textures to create sprites.
+     * - Add font managing.
+     *
      */
     class resource_manager {
     public:
@@ -30,14 +35,16 @@ namespace engine {
         void sprite_unload(std::string_view file_path);
         void sprite_unload(game_sprite& sprite);
 
-        game_sprite* sprite_get(std::string_view file_path);
-
         bool is_sprite_loaded(std::string_view file_path) const;
-        bool is_font_loaded(std::string_view file_path) const;
+
+    private:
+        SDL_Texture* texture_get_or_load(std::string_view file_path);
+        void texture_unload(std::string_view file_path);
+        bool is_texture_loaded(std::string_view file_path) const;
 
     private:
         std::unordered_map<std::string, std::unique_ptr<game_sprite>> m_sprites;
-        std::unordered_map<std::string, game_font> m_fonts;
+        std::unordered_map<std::string, SDL_Texture*> m_textures;
 
         // Reference to the renderer for handling textures.
         SDL_Renderer* m_sdl_renderer;

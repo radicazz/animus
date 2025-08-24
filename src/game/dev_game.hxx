@@ -11,6 +11,9 @@
 struct dev_game_state {
     glm::vec2 player_position;
     float player_speed;
+
+    engine::game_sprite* player_sprite;
+    engine::game_sprite* asteroid_sprite;
 };
 
 void game_create(engine::game_engine* engine);

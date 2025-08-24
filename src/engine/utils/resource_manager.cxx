@@ -15,81 +15,83 @@ namespace engine {
     }
 
     resource_manager::~resource_manager() {
-        for (auto& [key, sprite] : m_sprites) {
-            SDL_DestroyTexture(sprite->get_sdl_texture());
-        }
-
-        for (auto& [key, font] : m_fonts) {
-            TTF_CloseFont(font.get_sdl_font());
+        // Unload all textures.
+        for (auto& [key, texture] : m_textures) {
+            SDL_DestroyTexture(texture);
+            SDL_Log("Unloaded texture: %s", key.c_str());
         }
 
         TTF_Quit();
     }
 
     game_sprite* resource_manager::sprite_load(std::string_view file_path) {
-        if (is_sprite_loaded(file_path)) {
-            SDL_Log("Sprite already loaded: %s", file_path.data());
-            return m_sprites[file_path.data()].get();
-        }
+        // Create or access the texture.
+        SDL_Texture* texture = texture_get_or_load(file_path);
 
-        auto sprite = std::make_unique<game_sprite>(file_path, m_sdl_renderer);
-        m_sprites[file_path.data()] = std::move(sprite);
+        const std::string unique_key = std::format("{}_{}", file_path, m_sprites.size());
 
-        SDL_Log("Loaded texture: %s", file_path.data());
+        auto sprite = std::make_unique<game_sprite>(file_path, texture);
+        m_sprites[unique_key] = std::move(sprite);
 
-        return sprite.get();
+        return m_sprites.at(unique_key).get();
     }
 
     game_sprite* resource_manager::sprite_load(std::string_view file_path, const glm::vec2& size) {
-        if (is_sprite_loaded(file_path)) {
-            SDL_Log("Sprite already loaded: %s", file_path.data());
-            return m_sprites.at(file_path.data()).get();
-        }
+        SDL_Texture* texture = texture_get_or_load(file_path);
 
-        auto sprite = std::make_unique<game_sprite>(file_path, m_sdl_renderer, size);
-        m_sprites[file_path.data()] = std::move(sprite);
+        const std::string unique_key = std::format("{}_{}", file_path, m_sprites.size());
 
-        SDL_Log("Loaded texture: %s", file_path.data());
+        auto sprite = std::make_unique<game_sprite>(file_path, texture, size);
+        m_sprites[unique_key] = std::move(sprite);
 
-        return sprite.get();
+        return m_sprites.at(unique_key).get();
     }
 
     void resource_manager::sprite_unload(std::string_view file_path) {
         auto it = m_sprites.find(file_path.data());
         if (it != m_sprites.end()) {
-            it->second->unload();
-            it->second.reset();
             m_sprites.erase(it);
-
-            SDL_Log("Unloaded texture: %s", file_path.data());
         }
     }
 
     void resource_manager::sprite_unload(game_sprite& sprite) {
         auto it = m_sprites.find(sprite.get_file_path().data());
         if (it != m_sprites.end()) {
-            it->second->unload();
-            it->second.reset();
             m_sprites.erase(it);
-
-            SDL_Log("Unloaded texture: %s", sprite.get_file_path().data());
         }
-    }
-
-    game_sprite* resource_manager::sprite_get(std::string_view file_path) {
-        auto it = m_sprites.find(file_path.data());
-        if (it != m_sprites.end()) {
-            return it->second.get();
-        }
-
-        throw std::runtime_error(std::format("Sprite not found: {}", file_path));
     }
 
     bool resource_manager::is_sprite_loaded(std::string_view file_path) const {
         return m_sprites.find(file_path.data()) != m_sprites.end();
     }
 
-    bool resource_manager::is_font_loaded(std::string_view file_path) const {
-        return m_fonts.find(file_path.data()) != m_fonts.end();
+    SDL_Texture* resource_manager::texture_get_or_load(std::string_view file_path) {
+        if (is_texture_loaded(file_path) == true) {
+            return m_textures.at(file_path.data());
+        }
+
+        SDL_Texture* texture = IMG_LoadTexture(m_sdl_renderer, file_path.data());
+        if (texture == nullptr) {
+            throw std::runtime_error(std::format("Failed to load the texture at: {}", file_path));
+        }
+
+        m_textures[file_path.data()] = texture;
+
+        SDL_Log("Loaded texture: %s", file_path.data());
+
+        return texture;
+    }
+
+    void resource_manager::texture_unload(std::string_view file_path) {
+        auto it = m_textures.find(file_path.data());
+        if (it != m_textures.end()) {
+            SDL_DestroyTexture(it->second);
+            m_textures.erase(it);
+            SDL_Log("Unloaded texture: %s", file_path.data());
+        }
+    }
+
+    bool resource_manager::is_texture_loaded(std::string_view file_path) const {
+        return m_textures.find(file_path.data()) != m_textures.end();
     }
 }  // namespace engine

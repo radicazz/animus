@@ -6,7 +6,10 @@ void game_create(engine::game_engine* engine) {
     state.player_speed = 200.f;
 
     engine::resource_manager& resource_manager = engine->get_resource_manager();
-    resource_manager.sprite_load("assets/sprites/player/default.png");
+
+    state.player_sprite = resource_manager.sprite_load("assets/sprites/player/default.png");
+    state.asteroid_sprite =
+        resource_manager.sprite_load("assets/sprites/asteroids/ice_1.png", {64, 64});
 }
 
 void game_destroy(engine::game_engine*) {
@@ -15,25 +18,17 @@ void game_destroy(engine::game_engine*) {
 void game_update(engine::game_engine* engine, float delta_time) {
     auto& state = engine->get_state<dev_game_state>();
     engine::input_system& input = engine->get_input_system();
-    engine::resource_manager& resource_manager = engine->get_resource_manager();
 
-    glm::vec2 movement = input.get_movement();
+    const glm::vec2 movement = input.get_movement();
     state.player_position += movement * state.player_speed * delta_time;
 
-    engine::game_sprite* sprite = resource_manager.sprite_get("assets/sprites/player/default.png");
-    sprite->set_rotation(sprite->get_rotation() + 36.f * delta_time);
-
-    if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
-        glm::vec2 mouse_pos = input.get_mouse_pos();
-        SDL_Log("Mouse Left Click at: (%f, %f)", mouse_pos.x, mouse_pos.y);
-    }
+    state.asteroid_sprite->set_rotation(state.asteroid_sprite->get_rotation() + 36.f * delta_time);
 }
 
 void game_render(engine::game_engine* engine) {
     auto& state = engine->get_state<dev_game_state>();
     engine::renderer& renderer = engine->get_renderer();
-    engine::resource_manager& resource_manager = engine->get_resource_manager();
 
-    engine::game_sprite* sprite = resource_manager.sprite_get("assets/sprites/player/default.png");
-    renderer.sprite_draw(sprite, state.player_position);
+    renderer.sprite_draw(state.player_sprite, state.player_position);
+    renderer.sprite_draw(state.asteroid_sprite, {600, 400});
 }

@@ -8,16 +8,12 @@ namespace engine {
     class game_sprite {
     public:
         game_sprite() = delete;
-        game_sprite(std::string_view file_path, SDL_Renderer* renderer);
-        game_sprite(std::string_view file_path, SDL_Renderer* renderer, const glm::vec2& size);
-        game_sprite(std::string_view file_path, SDL_Renderer* renderer, const glm::vec2& size,
-                    const glm::vec2& origin, float rotation);
-        ~game_sprite();
+        game_sprite(std::string_view file_path, SDL_Texture* texture);
+        game_sprite(std::string_view file_path, SDL_Texture* texture, const glm::vec2& size);
 
         [[nodiscard]] SDL_Texture* get_sdl_texture() const;
-        void set_sdl_texture(SDL_Texture* texture);
-
         [[nodiscard]] std::string_view get_file_path() const;
+
         [[nodiscard]] glm::vec2 get_size() const;
         [[nodiscard]] glm::vec2 get_origin() const;
         [[nodiscard]] float get_rotation() const;
@@ -27,8 +23,6 @@ namespace engine {
         void set_rotation(float rotation);
 
         [[nodiscard]] bool is_valid() const;
-
-        void unload();
 
     private:
         void auto_size_and_origin();
@@ -43,10 +37,6 @@ namespace engine {
 
     inline SDL_Texture* game_sprite::get_sdl_texture() const {
         return m_sdl_texture;
-    }
-
-    inline void game_sprite::set_sdl_texture(SDL_Texture* texture) {
-        m_sdl_texture = texture;
     }
 
     inline std::string_view game_sprite::get_file_path() const {
