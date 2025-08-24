@@ -6,7 +6,7 @@ void game_create(engine::game_engine* engine) {
     state.player_speed = 200.f;
 
     engine::resource_manager& resource_manager = engine->get_resource_manager();
-    state.sprite_player = resource_manager.sprite_load("assets/sprites/player/default.png");
+    resource_manager.sprite_load("assets/sprites/player/default.png");
 }
 
 void game_destroy(engine::game_engine*) {
@@ -15,11 +15,13 @@ void game_destroy(engine::game_engine*) {
 void game_update(engine::game_engine* engine, float delta_time) {
     auto& state = engine->get_state<dev_game_state>();
     engine::input_system& input = engine->get_input_system();
+    engine::resource_manager& resource_manager = engine->get_resource_manager();
 
     glm::vec2 movement = input.get_movement();
     state.player_position += movement * state.player_speed * delta_time;
 
-    state.sprite_player.set_rotation(state.sprite_player.get_rotation() + 36.f * delta_time);
+    engine::game_sprite* sprite = resource_manager.sprite_get("assets/sprites/player/default.png");
+    sprite->set_rotation(sprite->get_rotation() + 36.f * delta_time);
 
     if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
         glm::vec2 mouse_pos = input.get_mouse_pos();
@@ -30,6 +32,8 @@ void game_update(engine::game_engine* engine, float delta_time) {
 void game_render(engine::game_engine* engine) {
     auto& state = engine->get_state<dev_game_state>();
     engine::renderer& renderer = engine->get_renderer();
+    engine::resource_manager& resource_manager = engine->get_resource_manager();
 
-    renderer.sprite_texture_draw(state.sprite_player, state.player_position);
+    engine::game_sprite* sprite = resource_manager.sprite_get("assets/sprites/player/default.png");
+    renderer.sprite_draw(sprite, state.player_position);
 }

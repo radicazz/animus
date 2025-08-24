@@ -9,8 +9,41 @@
 #include "utils/resource_manager.hxx"
 
 namespace engine {
+    /**
+     * @brief Check if the current build is a debug build.
+     *
+     * @example
+     * if constexpr (is_debug_build() == true) {
+     *     // Debug-specific code here
+     * }
+     *
+     * @return consteval bool True if this is a debug build, false otherwise.
+     */
+    consteval bool is_debug_build() {
+#ifdef NDEBUG
+        return false;
+#else
+        return true;
+#endif
+    }
+
     class game_engine;
 
+    /**
+     * @brief Callback functions for the game engine.
+     *
+     * These functions are called at various points in the game loop. Your game must implement these
+     * functions to hook into the engine's lifecycle. Each function provides an
+     * `engine::game_engine` pointer as its first argument, allowing access to the engine's
+     * functionality.
+     *
+     * These functions are called in the following order:
+     * 1. `create`
+     * 2. `update`
+     * 3. `render`
+     * 4. `destroy`
+     *
+     */
     struct game_callbacks {
         /**
          * @brief Called before the game loop starts.
@@ -20,25 +53,25 @@ namespace engine {
          * method.
          *
          */
-        void (*create)(game_engine*) = nullptr;
+        void (*on_create)(game_engine*) = nullptr;
 
         /**
          * @brief Called after the game loop, before the engine shuts down.
          *
          */
-        void (*destroy)(game_engine*) = nullptr;
+        void (*on_destroy)(game_engine*) = nullptr;
 
         /**
          * @brief Called every frame before rendering.
          *
          */
-        void (*update)(game_engine*, float delta_time) = nullptr;
+        void (*on_update)(game_engine*, float delta_time) = nullptr;
 
         /**
          * @brief Called every frame during rendering.
          *
          */
-        void (*render)(game_engine*) = nullptr;
+        void (*on_render)(game_engine*) = nullptr;
     };
 
     struct game_details {
@@ -51,7 +84,16 @@ namespace engine {
         game_engine(const game_details& details, void* state, const game_callbacks& callbacks);
         ~game_engine();
 
+        /**
+         * @brief Start running the game loop.
+         *
+         * @note This function will block until the game is quit as it runs a while loop.
+         */
         void run();
+
+        //
+        // The following are engine component accessors.
+        //
 
         [[nodiscard]] window& get_window();
         [[nodiscard]] renderer& get_renderer();
@@ -63,9 +105,20 @@ namespace engine {
          * @brief Get a pointer to your game's data.
          *
          * The game communicates with the engine through callbacks. The engine
-         * callbacks provide access to the engine's data. In order to avoid
-         * a lot of messiness, right now we store a pointer to your game's data
-         * in the engine, to access your game's state in callbacks.
+         * callbacks provide access to the engine's data. Provide a pointer to your game's data in
+         * the constructor to access it through the engine in your callbacks.
+         *
+         * @example
+         * struct my_game_state {
+         *     int score;
+         *     glm::vec2 player_position;
+         * };
+         *
+         * void on_create(engine::game_engine* engine) {
+         *     auto& state = engine->get_state<my_game_state>();
+         *     state.score = 0;
+         *     state.player_position = { 0.0f, 0.0f };
+         * }
          *
          * @tparam T The class that represents your game's state.
          * @return A pointer to your game's data, casted to your game's type.
@@ -79,7 +132,7 @@ namespace engine {
         renderer m_renderer;
         camera m_camera;
         resource_manager m_resource_manager;
-        input_system m_input;
+        input_system m_input_systen;
 
         game_callbacks m_callbacks;
         void* m_state;
@@ -102,7 +155,7 @@ namespace engine {
     }
 
     inline input_system& game_engine::get_input_system() {
-        return m_input;
+        return m_input_systen;
     }
 
     template <class T>

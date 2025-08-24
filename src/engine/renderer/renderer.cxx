@@ -22,21 +22,21 @@ namespace engine {
         SDL_RenderPresent(m_sdl_renderer);
     }
 
-    void renderer::sprite_texture_draw(const sprite_texture& sprite, const glm::vec2& position) {
-        if (sprite.is_valid() == false) {
+    void renderer::sprite_draw(const game_sprite* sprite, const glm::vec2& position) {
+        if (sprite == nullptr || sprite->is_valid() == false) {
             return;
         }
 
-        const glm::vec2 size = sprite.get_size();
-        const glm::vec2 origin = sprite.get_origin();
+        const glm::vec2 size = sprite->get_size();
+        const glm::vec2 origin = sprite->get_origin();
 
         const SDL_FRect dst_rect = {position.x - origin.x, position.y - origin.y, size.x, size.y};
         const SDL_FPoint center = {origin.x, origin.y};
 
         // TODO: Add options for flipping with SDL_FLIP_NONE.
 
-        SDL_RenderTextureRotated(m_sdl_renderer, sprite.get_sdl_texture(), nullptr, &dst_rect,
-                                 sprite.get_rotation(), &center, SDL_FLIP_NONE);
+        SDL_RenderTextureRotated(m_sdl_renderer, sprite->get_sdl_texture(), nullptr, &dst_rect,
+                                 sprite->get_rotation(), &center, SDL_FLIP_NONE);
     }
 
     glm::vec2 renderer::get_output_size() const {

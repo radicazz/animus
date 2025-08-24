@@ -5,17 +5,17 @@
 
 int main(int argc, char* argv[]) {
     try {
+        // Game state object.
+        dev_game_state state = {};
+
         // Callbacks that the engine exposes to the game developer.
-        engine::game_callbacks callbacks = {.create = game_create,
-                                            .destroy = game_destroy,
-                                            .update = game_update,
-                                            .render = game_render};
+        engine::game_callbacks callbacks = {.on_create = game_create,
+                                            .on_destroy = game_destroy,
+                                            .on_update = game_update,
+                                            .on_render = game_render};
 
         // Initial game engine window parameters such as title and size.
         engine::game_details details = {.title = "My Epic Game", .size = glm::vec2{800, 600}};
-
-        // Game state object.
-        dev_game_state state = {};
 
         // Create the game and its resources.
         engine::game_engine game_engine(details, &state, callbacks);

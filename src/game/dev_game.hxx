@@ -11,7 +11,6 @@
 struct dev_game_state {
     glm::vec2 player_position;
     float player_speed;
-    engine::sprite_texture sprite_player;
 };
 
 void game_create(engine::game_engine* engine);

@@ -5,8 +5,10 @@
 
 #include <unordered_map>
 #include <string>
+#include <memory>
 
 #include "../renderer/sprite.hxx"
+#include "../renderer/font.hxx"
 
 namespace engine {
     /**
@@ -23,21 +25,19 @@ namespace engine {
         resource_manager(const resource_manager&) = delete;
         resource_manager& operator=(const resource_manager&) = delete;
 
-        [[maybe_unused]] SDL_Texture* load_texture(std::string_view file_path);
-        void unload_texture(std::string_view file_path);
+        game_sprite* sprite_load(std::string_view file_path);
+        game_sprite* sprite_load(std::string_view file_path, const glm::vec2& size);
+        void sprite_unload(std::string_view file_path);
+        void sprite_unload(game_sprite& sprite);
 
-        sprite_texture sprite_load(std::string_view file_path);
-        sprite_texture sprite_load(std::string_view file_path, const glm::vec2& size);
+        game_sprite* sprite_get(std::string_view file_path);
 
-        [[maybe_unused]] TTF_Font* load_font(std::string_view file_path, float size);
-        void unload_font(std::string_view file_path);
-
-        bool is_texture_loaded(std::string_view file_path) const;
+        bool is_sprite_loaded(std::string_view file_path) const;
         bool is_font_loaded(std::string_view file_path) const;
 
     private:
-        std::unordered_map<std::string, SDL_Texture*> m_textures;
-        std::unordered_map<std::string, TTF_Font*> m_fonts;
+        std::unordered_map<std::string, std::unique_ptr<game_sprite>> m_sprites;
+        std::unordered_map<std::string, game_font> m_fonts;
 
         // Reference to the renderer for handling textures.
         SDL_Renderer* m_sdl_renderer;
