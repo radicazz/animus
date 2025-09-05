@@ -2,6 +2,7 @@
 
 #include <type_traits>
 
+#include "engine/version.hxx"
 #include "camera/camera.hxx"
 #include "input/input_system.hxx"
 #include "renderer/renderer.hxx"

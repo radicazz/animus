@@ -1,0 +1,17 @@
+#pragma once
+
+namespace engine {
+    namespace version {
+        constexpr const char* version_string = "@PROJECT_VERSION@";
+        constexpr const char* version_major = "@PROJECT_VERSION_MAJOR@";
+        constexpr const char* version_minor = "@PROJECT_VERSION_MINOR@";
+        constexpr const char* version_patch = "@PROJECT_VERSION_PATCH@";
+        
+        constexpr int major = @PROJECT_VERSION_MAJOR@;
+        constexpr int minor = @PROJECT_VERSION_MINOR@;
+        constexpr int patch = @PROJECT_VERSION_PATCH@;
+        
+        constexpr const char* project_name = "@PROJECT_NAME@";
+        constexpr const char* project_description = "@PROJECT_DESCRIPTION@";
+    }
+}
