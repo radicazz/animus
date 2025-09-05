@@ -1,4 +1,5 @@
 #include "input_system.hxx"
+#include <unordered_map>
 
 namespace engine {
     input_system::input_system()
@@ -63,31 +64,15 @@ namespace engine {
         }
     }
 
-    glm::vec2 input_system::get_movement() const {
-        glm::vec2 movement(0.0f);
-
-        if (is_key_held(input_key::w) || is_key_held(input_key::arrow_up)) {
-            movement.y -= 1.0f;
-        }
-        if (is_key_held(input_key::s) || is_key_held(input_key::arrow_down)) {
-            movement.y += 1.0f;
-        }
-        if (is_key_held(input_key::a) || is_key_held(input_key::arrow_left)) {
-            movement.x -= 1.0f;
-        }
-        if (is_key_held(input_key::d) || is_key_held(input_key::arrow_right)) {
-            movement.x += 1.0f;
-        }
-
-        return movement;
-    }
-
     input_key input_system::sdl_key_to_key(SDL_Scancode scancode) const {
         static const std::unordered_map<SDL_Scancode, input_key> key_map = {
             {SDL_SCANCODE_W, input_key::w},
             {SDL_SCANCODE_A, input_key::a},
             {SDL_SCANCODE_S, input_key::s},
             {SDL_SCANCODE_D, input_key::d},
+            {SDL_SCANCODE_C, input_key::c},
+            {SDL_SCANCODE_O, input_key::o},
+            {SDL_SCANCODE_P, input_key::p},
             {SDL_SCANCODE_UP, input_key::arrow_up},
             {SDL_SCANCODE_DOWN, input_key::arrow_down},
             {SDL_SCANCODE_LEFT, input_key::arrow_left},

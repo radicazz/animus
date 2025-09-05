@@ -1,11 +1,6 @@
 # Incarnate
 
-A cross-platform game that I'm not sure about yet, made with <3
-
-## Todo
-
-- Add a `BaseEntity` class to represent world-space entities. (Maybe ECS?)
-- Complete and implement the `Camera` into the engine.
+Cross-platform C++ game/engine made with SDL & <3.
 
 ## Requirements
 

@@ -11,6 +11,9 @@ namespace engine {
         a,
         s,
         d,
+        c,
+        o,
+        p,
         arrow_up,
         arrow_down,
         arrow_left,
@@ -38,18 +41,6 @@ namespace engine {
 
         [[nodiscard]] glm::vec2 get_mouse_pos() const;
         [[nodiscard]] glm::vec2 get_mouse_delta() const;
-
-        /**
-         * @brief Get the current movement input vector.
-         *
-         * This function checks the current state of the WASD keys and returns a
-         * normalized vector representing the direction of movement.
-         *
-         * @note Currently doesn't support arrow keys.
-         *
-         * @return A glm::vec2 representing the movement input.
-         */
-        [[nodiscard]] glm::vec2 get_movement() const;
 
     private:
         input_key sdl_key_to_key(SDL_Scancode sdl_key) const;

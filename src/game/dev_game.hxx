@@ -14,6 +14,13 @@ struct dev_game_state {
 
     engine::game_sprite* player_sprite;
     engine::game_sprite* asteroid_sprite;
+
+    // Camera control variables (game-specific behavior, not bounds)
+    float camera_follow_speed;
+    
+    // Free camera mode toggle
+    bool is_camera_free_mode;
+    float camera_move_speed;
 };
 
 void game_create(engine::game_engine* engine);

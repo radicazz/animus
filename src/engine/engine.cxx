@@ -17,6 +17,16 @@ namespace engine {
             throw std::invalid_argument("Game state is a required engine parameter.");
         }
 
+        // Set up camera with proper viewport size
+        m_camera.set_viewport_size(details.window_size);
+        
+        // Set default world bounds for the camera
+        // These can be overridden by calling engine.get_camera().set_bounds() if needed
+        m_camera.set_bounds({-500.0f, -500.0f}, {1500.0f, 1500.0f});
+        
+        // Connect camera to renderer
+        m_renderer.set_camera(&m_camera);
+
         if (m_callbacks.on_create != nullptr) {
             m_callbacks.on_create(this);
         }
