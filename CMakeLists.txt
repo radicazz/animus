@@ -250,13 +250,43 @@ endif()
 
 # Documentation support
 if(INCARNATE_ENABLE_DOCS)
-    find_package(Doxygen)
+    find_package(Doxygen REQUIRED)
     if(DOXYGEN_FOUND)
-        set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/docs")
-        doxygen_add_docs(incarnate_docs
-            "${CMAKE_SOURCE_DIR}/src"
-            COMMENT "Generate documentation"
+        # Configure Doxyfile with project variables
+        configure_file(
+            "${CMAKE_SOURCE_DIR}/Doxyfile"
+            "${CMAKE_BINARY_DIR}/Doxyfile"
+            @ONLY
         )
+        
+        # Create docs directory
+        file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/docs")
+        
+        # Copy CSS and layout files to build directory for Doxygen
+        configure_file(
+            "${CMAKE_SOURCE_DIR}/docs/style/simple-dark.css"
+            "${CMAKE_BINARY_DIR}/simple-dark.css"
+            COPYONLY
+        )
+        
+        configure_file(
+            "${CMAKE_SOURCE_DIR}/docs/layout.xml"
+            "${CMAKE_BINARY_DIR}/layout.xml"
+            COPYONLY
+        )
+        
+        # Add custom target for generating documentation automatically
+        add_custom_target(docs ALL
+            COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Generating simple dark documentation with Doxygen"
+            VERBATIM
+            DEPENDS "${CMAKE_BINARY_DIR}/simple-dark.css" "${CMAKE_BINARY_DIR}/layout.xml"
+        )
+        
+        message(STATUS "Documentation generation enabled and will build automatically.")
+    else()
+        message(WARNING "Doxygen not found! Documentation generation disabled.")
     endif()
 endif()
 

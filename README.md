@@ -9,13 +9,11 @@ A cross-platform 2D game engine built with modern C++, SDL, and love ❤️
 
 ## ✨ Features
 
-- **🎯 2D Game Engine**: Complete camera system with following, bounds, and zoom
 - **🎮 Input System**: Keyboard and mouse input handling with customizable key mappings
 - **🖼️ Sprite Rendering**: Hardware-accelerated sprite rendering with rotation and scaling
 - **🎨 Resource Management**: Automatic texture loading and memory management
 - **📐 Mathematics**: GLM integration for 2D transformations and calculations
 - **🏗️ Modular Architecture**: Clean separation between game logic and engine systems
-- **⚡ Cross-Platform**: Windows, macOS, and Linux support
 
 ## 🎮 Demo Controls
 

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doxygenlayout version="1.0">
+  <!-- Navigation index tabs for HTML output -->
+  <navindex>
+    <tab type="mainpage" visible="yes" title="🚀 Incarnate Engine"/>
+    <tab type="pages" visible="yes" title="📖 Guides" intro=""/>
+    <tab type="modules" visible="yes" title="📦 Modules" intro=""/>
+    <tab type="namespaces" visible="yes" title="🏷️ Namespaces">
+      <tab type="namespacelist" visible="yes" title="" intro=""/>
+      <tab type="namespacemembers" visible="yes" title="" intro=""/>
+    </tab>
+    <tab type="classes" visible="yes" title="⚡ Classes">
+      <tab type="classlist" visible="yes" title="" intro=""/>
+      <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/> 
+      <tab type="hierarchy" visible="yes" title="" intro=""/>
+      <tab type="classmembers" visible="yes" title="" intro=""/>
+    </tab>
+    <tab type="files" visible="yes" title="📁 Files">
+      <tab type="filelist" visible="yes" title="" intro=""/>
+      <tab type="globals" visible="yes" title="" intro=""/>
+    </tab>
+    <tab type="examples" visible="yes" title="💡 Examples" intro=""/>
+  </navindex>
+
+  <!-- Layout definition for a class page -->
+  <class>
+    <briefdescription visible="yes"/>
+    <includes visible="$SHOW_INCLUDE_FILES"/>
+    <inheritancegraph visible="$CLASS_GRAPH"/>
+    <collaborationgraph visible="$COLLABORATION_GRAPH"/>
+    <memberdecl>
+      <nestedclasses visible="yes" title=""/>
+      <publictypes title="Public Types"/>
+      <services title="Services"/>
+      <interfaces title="Interfaces"/>
+      <publicslots title="Public Slots"/>
+      <signals title="Signals"/>
+      <publicmethods title="Public Methods"/>
+      <publicstaticmethods title="Static Public Methods"/>
+      <publicattributes title="Public Attributes"/>
+      <publicstaticattributes title="Static Public Attributes"/>
+      <protectedtypes title="Protected Types"/>
+      <protectedslots title="Protected Slots"/>
+      <protectedmethods title="Protected Methods"/>
+      <protectedstaticmethods title="Static Protected Methods"/>
+      <protectedattributes title="Protected Attributes"/>
+      <protectedstaticattributes title="Static Protected Attributes"/>
+      <packagetypes title="Package Types"/>
+      <packagemethods title="Package Methods"/>
+      <packagestaticmethods title="Static Package Methods"/>
+      <packageattributes title="Package Attributes"/>
+      <packagestaticattributes title="Static Package Attributes"/>
+      <properties title="Properties"/>
+      <events title="Events"/>
+      <privatetypes title="Private Types"/>
+      <privateslots title="Private Slots"/>
+      <privatemethods title="Private Methods"/>
+      <privatestaticmethods title="Static Private Methods"/>
+      <privateattributes title="Private Attributes"/>
+      <privatestaticattributes title="Static Private Attributes"/>
+      <friends title="Friends"/>
+      <related title="Related Functions" subtitle="(Note that these are not member functions.)"/>
+    </memberdecl>
+    <detaileddescription title="Detailed Description"/>
+    <memberdef>
+      <inlineclasses title="Classes"/>
+      <typedefs title="Member Typedef Documentation"/>
+      <enums title="Member Enumeration Documentation"/>
+      <services title="Services"/>
+      <interfaces title="Interfaces"/>
+      <constructors title="Constructor &amp; Destructor Documentation"/>
+      <functions title="Member Function Documentation"/>
+      <related title="Friends And Related Function Documentation"/>
+      <variables title="Member Data Documentation"/>
+      <properties title="Property Documentation"/>
+      <events title="Event Documentation"/>
+    </memberdef>
+    <allmemberslink visible="yes"/>
+    <usedfiles visible="$SHOW_USED_FILES"/>
+    <authorsection visible="yes"/>
+  </class>
+
+  <!-- Layout definition for a namespace page -->
+  <namespace>
+    <briefdescription visible="yes"/>
+    <memberdecl>
+      <nestednamespaces visible="yes" title=""/>
+      <constantgroups visible="yes" title=""/>
+      <classes visible="yes" title=""/>
+      <typedefs title="Typedefs"/>
+      <sequences title="Sequences"/>
+      <dictionaries title="Dictionaries"/>
+      <enums title="Enumerations"/>
+      <functions title="Functions"/>
+      <variables title="Variables"/>
+    </memberdecl>
+    <detaileddescription title="Detailed Description"/>
+    <memberdef>
+      <inlineclasses title="Classes"/>
+      <typedefs title="Typedef Documentation"/>
+      <sequences title="Sequence Documentation"/>
+      <dictionaries title="Dictionary Documentation"/>
+      <enums title="Enumeration Documentation"/>
+      <functions title="Function Documentation"/>
+      <variables title="Variable Documentation"/>
+    </memberdef>
+    <authorsection visible="yes"/>
+  </namespace>
+
+  <!-- Layout definition for a file page -->
+  <file>
+    <briefdescription visible="yes"/>
+    <includes visible="$SHOW_INCLUDE_FILES"/>
+    <includegraph visible="$INCLUDE_GRAPH"/>
+    <includedbygraph visible="$INCLUDED_BY_GRAPH"/>
+    <sourcelink visible="yes"/>
+    <memberdecl>
+      <classes visible="yes" title=""/>
+      <namespaces visible="yes" title=""/>
+      <constantgroups visible="yes" title=""/>
+      <defines title="Macros"/>
+      <typedefs title="Typedefs"/>
+      <sequences title="Sequences"/>
+      <dictionaries title="Dictionaries"/>
+      <enums title="Enumerations"/>
+      <functions title="Functions"/>
+      <variables title="Variables"/>
+    </memberdecl>
+    <detaileddescription title="Detailed Description"/>
+    <memberdef>
+      <inlineclasses title="Classes"/>
+      <defines title="Macro Documentation"/>
+      <typedefs title="Typedef Documentation"/>
+      <sequences title="Sequence Documentation"/>
+      <dictionaries title="Dictionary Documentation"/>
+      <enums title="Enumeration Documentation"/>
+      <functions title="Function Documentation"/>
+      <variables title="Variable Documentation"/>
+    </memberdef>
+    <authorsection visible="yes"/>
+  </file>
+
+  <!-- Layout definition for a group page -->
+  <group>
+    <briefdescription visible="yes"/>
+    <groupgraph visible="$GROUP_GRAPHS"/>
+    <memberdecl>
+      <nestedgroups visible="yes" title=""/>
+      <dirs visible="yes" title=""/>
+      <files visible="yes" title=""/>
+      <namespaces visible="yes" title=""/>
+      <classes visible="yes" title=""/>
+      <defines title="Macros"/>
+      <typedefs title="Typedefs"/>
+      <sequences title="Sequences"/>
+      <dictionaries title="Dictionaries"/>
+      <enums title="Enumerations"/>
+      <enumvalues title="Enumerator"/>
+      <functions title="Functions"/>
+      <variables title="Variables"/>
+      <signals title="Signals"/>
+      <publicslots title="Public Slots"/>
+      <protectedslots title="Protected Slots"/>
+      <privateslots title="Private Slots"/>
+      <events title="Events"/>
+      <properties title="Properties"/>
+      <friends title="Friends"/>
+    </memberdecl>
+    <detaileddescription title="Detailed Description"/>
+    <memberdef>
+      <pagedocs/>
+      <inlineclasses title="Classes"/>
+      <defines title="Macro Documentation"/>
+      <typedefs title="Type Documentation"/>
+      <sequences title="Sequence Documentation"/>
+      <dictionaries title="Dictionary Documentation"/>
+      <enums title="Enumeration Documentation"/>
+      <enumvalues title="Enumerator Documentation"/>
+      <functions title="Function Documentation"/>
+      <variables title="Variable Documentation"/>
+      <signals title="Signals Documentation"/>
+      <publicslots title="Public Slots Documentation"/>
+      <protectedslots title="Protected Slots Documentation"/>
+      <privateslots title="Private Slots Documentation"/>
+      <events title="Event Documentation"/>
+      <properties title="Property Documentation"/>
+      <friends title="Friends Documentation"/>
+    </memberdef>
+    <authorsection visible="yes"/>
+  </group>
+
+  <!-- Layout definition for a directory page -->
+  <directory>
+    <briefdescription visible="yes"/>
+    <directorygraph visible="$DIRECTORY_GRAPH"/>
+    <memberdecl>
+      <dirs visible="yes"/>
+      <files visible="yes"/>
+    </memberdecl>
+    <detaileddescription title="Detailed Description"/>
+  </directory>
+</doxygenlayout>
