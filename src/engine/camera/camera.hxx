@@ -38,14 +38,14 @@ namespace engine {
 
         // Viewport culling
         [[nodiscard]] bool is_in_view(const glm::vec2& position, const glm::vec2& size) const;
-        [[nodiscard]] glm::vec4 get_view_bounds() const; // Returns min_x, min_y, max_x, max_y
+        [[nodiscard]] std::tuple<glm::vec2, glm::vec2> get_visible_area() const;
 
     private:
         void clamp_to_bounds();
 
         glm::vec2 m_world_position;
         float m_zoom_level;
-        glm::vec2 m_viewport_size{800.0f, 600.0f}; // Default viewport size
+        glm::vec2 m_viewport_size{800.0f, 600.0f};  // Default viewport size
 
         // Camera bounds (optional)
         bool m_has_bounds{false};
