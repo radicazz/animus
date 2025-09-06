@@ -5,27 +5,25 @@
 #include <glm/glm.hpp>
 
 namespace engine {
-    class window {
+    class game_window {
     public:
-        window(std::string_view title, int width, int height);
-        ~window();
+        game_window(std::string_view title, int width, int height);
+        ~game_window();
 
-        SDL_Window* get_sdl_window() const;
+        [[nodiscard]] SDL_Window* get_sdl_window() const;
 
-        std::string get_title() const;
+        [[nodiscard]] std::string get_title() const;
         void set_title(std::string_view new_title);
 
-        glm::vec2 get_logical_size() const;
-        glm::vec2 get_pixel_size() const;
+        [[nodiscard]] glm::vec2 get_logical_size() const;
+        [[nodiscard]] glm::vec2 get_pixel_size() const;
 
-        bool is_running() const;
+        [[nodiscard]] bool get_is_running() const;
 
         /**
          * @brief Set the running state of the window.
-         *
-         * @note Setting this to false will close the window.
-         *
          * @param is_running The new running state.
+         * @note Setting this to false will close the window.
          */
         void set_is_running(bool is_running);
 
@@ -34,15 +32,15 @@ namespace engine {
         bool m_is_running;
     };
 
-    inline SDL_Window* window::get_sdl_window() const {
+    inline SDL_Window* game_window::get_sdl_window() const {
         return m_window;
     }
 
-    inline bool window::is_running() const {
+    inline bool game_window::get_is_running() const {
         return m_is_running;
     }
 
-    inline void window::set_is_running(bool is_running) {
+    inline void game_window::set_is_running(bool is_running) {
         m_is_running = is_running;
     }
 

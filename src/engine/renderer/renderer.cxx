@@ -58,21 +58,9 @@ namespace engine {
             screen_position = world_position;
         }
 
-        sprite_draw_screen(sprite, screen_position);
-    }
-
-    void game_renderer::sprite_draw_screen(const render_sprite* sprite,
-                                           const glm::vec2& screen_position) {
-        if (sprite == nullptr || sprite->is_valid() == false) {
-            return;
-        }
-
-        const glm::vec2 size = sprite->get_size();
-        const glm::vec2 origin = sprite->get_origin();
-
         // Apply camera zoom to sprite size and origin to make sprites scale with zoom
-        glm::vec2 final_size = size;
-        glm::vec2 final_origin = origin;
+        glm::vec2 final_size = sprite->get_size();
+        glm::vec2 final_origin = sprite->get_origin();
 
         if (m_camera != nullptr) {
             float zoom = m_camera->get_zoom();
@@ -90,8 +78,8 @@ namespace engine {
                                  sprite->get_rotation(), &center, SDL_FLIP_NONE);
     }
 
-    void game_renderer::sprite_draw_raw(const render_sprite* sprite,
-                                        const glm::vec2& screen_position) {
+    void game_renderer::sprite_draw_screen(const render_sprite* sprite,
+                                           const glm::vec2& screen_position) {
         if (sprite == nullptr || sprite->is_valid() == false) {
             return;
         }
@@ -108,7 +96,8 @@ namespace engine {
                                  sprite->get_rotation(), &center, SDL_FLIP_NONE);
     }
 
-    void game_renderer::text_draw_world(const render_text* text, const glm::vec2& world_position) {
+    void game_renderer::text_draw_world(const render_text_dynamic* text,
+                                        const glm::vec2& world_position) {
         if (text == nullptr || text->is_valid() == false) {
             return;
         }
@@ -122,8 +111,10 @@ namespace engine {
             // Frustum culling: skip drawing if text is outside view
             // Account for text scale and origin when calculating bounds
             const glm::vec2 text_size = text->get_size();
-            // const glm::vec2 text_scale = text->get_scale();
-            const glm::vec2 scaled_size = text_size * 1.f /*text_scale*/;
+            const glm::vec2 text_scale = text->get_scale();
+            const float camera_zoom = m_camera->get_zoom();
+            const glm::vec2 total_scale = text_scale * camera_zoom;
+            const glm::vec2 scaled_size = text_size * total_scale;
 
             if (m_camera->is_in_view(world_position, scaled_size) == false) {
                 return;
@@ -132,37 +123,64 @@ namespace engine {
             screen_position = world_position;
         }
 
+        // Delegate to screen drawing with camera zoom applied
         text_draw_screen(text, screen_position);
     }
 
-    void game_renderer::text_draw_screen(const render_text* text,
+    void game_renderer::text_draw_screen(const render_text_dynamic* text,
                                          const glm::vec2& screen_position) {
-        // TODO: These checks run twice as text_draw_world also calls this function. Figure out a
-        // fix.
         if (text == nullptr || text->is_valid() == false) {
             return;
         }
 
+        SDL_Texture* texture = text->get_sdl_texture();
+        if (!texture) {
+            return;
+        }
+
+        // Get text properties
         const glm::vec2 text_size = text->get_size();
         const glm::vec2 text_origin = text->get_origin();
+        const glm::vec2 text_scale = text->get_scale();
+        const float text_rotation = text->get_rotation();
 
-        // TODO: Figure out scaling with SDL3 TTF_Text.
-        // glm::vec2 text_scale = text->get_scale();
+        // Apply camera zoom to scale if camera is present
+        glm::vec2 final_scale = text_scale;
+        if (m_camera != nullptr) {
+            final_scale *= m_camera->get_zoom();
+        }
 
-        // Apply camera zoom to text scale
-        // if (m_camera != nullptr) {
-        // float zoom = m_camera->get_zoom();
-        // text_scale *= zoom;
-        // }
+        // Calculate final size and position
+        const glm::vec2 final_size = text_size * final_scale;
+        const glm::vec2 scaled_origin = text_origin * final_scale;
+        const glm::vec2 final_position = screen_position - scaled_origin;
 
-        const glm::vec2 final_size = text_size * 1.0f /*scale*/;
-        const glm::vec2 final_origin = text_origin * 1.0f /*scale*/;
+        // Set up destination rectangle
+        SDL_FRect dest_rect = {final_position.x, final_position.y, final_size.x, final_size.y};
 
-        // Calculate final position accounting for origin
-        const glm::vec2 final_position = screen_position - final_origin;
+        // Set up rotation center point (relative to destination rectangle)
+        SDL_FPoint center = {scaled_origin.x, scaled_origin.y};
 
-        TTF_Text* sdl_text = text->get_sdl_text();
+        // Render with transformations
+        if (text_rotation != 0.0f) {
+            // Render with rotation
+            SDL_RenderTextureRotated(m_sdl_renderer, texture, nullptr, &dest_rect, text_rotation,
+                                     &center, SDL_FLIP_NONE);
+        } else {
+            // Simple render without rotation (slightly more efficient)
+            SDL_RenderTexture(m_sdl_renderer, texture, nullptr, &dest_rect);
+        }
+    }
 
-        TTF_DrawRendererText(sdl_text, final_position.x, final_position.y);
+    void game_renderer::text_draw_screen(const render_text_static* text,
+                                         const glm::vec2& screen_position) {
+        if (text == nullptr || text->is_valid() == false) {
+            return;
+        }
+
+        const glm::vec2 text_origin = text->get_origin();
+
+        TTF_DrawRendererText(text->get_sdl_text(), screen_position.x - text_origin.x,
+                             screen_position.y - text_origin.y);
     }
 }  // namespace engine

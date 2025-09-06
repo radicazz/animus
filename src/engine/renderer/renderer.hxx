@@ -13,6 +13,7 @@ namespace engine {
      */
     class game_renderer {
     public:
+        game_renderer() = delete;
         explicit game_renderer(SDL_Window* window);
         ~game_renderer();
 
@@ -27,17 +28,15 @@ namespace engine {
         void frame_begin();
         void frame_end();
 
-        // TODO: Rename camera to game_camera.
-        void set_camera(const game_camera* cam);
+        void set_camera(const game_camera* camera);
         [[nodiscard]] const game_camera* get_camera() const;
 
-        // Sprite rendering methods
         void sprite_draw_world(const render_sprite* sprite, const glm::vec2& world_position);
         void sprite_draw_screen(const render_sprite* sprite, const glm::vec2& screen_position);
-        void sprite_draw_raw(const render_sprite* sprite, const glm::vec2& screen_position);
 
-        void text_draw_world(const render_text* text, const glm::vec2& world_position);
-        void text_draw_screen(const render_text* text, const glm::vec2& screen_position);
+        void text_draw_world(const render_text_dynamic* text, const glm::vec2& world_position);
+        void text_draw_screen(const render_text_dynamic* text, const glm::vec2& screen_position);
+        void text_draw_screen(const render_text_static* text, const glm::vec2& screen_position);
 
         /**
          * @brief Get the output size of the renderer.

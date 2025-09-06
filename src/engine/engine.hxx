@@ -96,17 +96,11 @@ namespace engine {
 
         /**
          * @brief Start running the game loop.
-         *
          * @note This function will block until the game is quit as it runs a while loop.
          */
         void run();
 
-        //
-        // The following are engine component accessors. Use these to access the engine's components
-        // in callbacks.
-        //
-
-        [[nodiscard]] window& get_window();
+        [[nodiscard]] game_window& get_window();
         [[nodiscard]] game_renderer& get_renderer();
         [[nodiscard]] game_camera& get_camera();
         [[nodiscard]] resource_manager& get_resource_manager();
@@ -121,27 +115,29 @@ namespace engine {
          * Provide a pointer to your game's data in the constructor to access it through the engine
          * in your callbacks.
          *
-         * @example
+         * @tparam T The class that represents your game's state.
+         * @return A pointer to your game's data, casted to your game's type.
+         *
+         * @code
          * struct my_game_state {
          *     int score;
          *     glm::vec2 player_position;
          * };
          *
          * void on_create(engine::game_engine* engine) {
+         *    // Access your game's state through the engine.
          *     auto& state = engine->get_state<my_game_state>();
          *     state.score = 0;
          *     state.player_position = { 0.0f, 0.0f };
          * }
-         *
-         * @tparam T The class that represents your game's state.
-         * @return A pointer to your game's data, casted to your game's type.
+         * @endcode
          */
         template <class T>
             requires std::is_class_v<T>
         T& get_state();
 
     private:
-        window m_window;
+        game_window m_window;
         game_renderer m_renderer;
         game_camera m_camera;
         resource_manager m_resource_manager;
@@ -151,7 +147,7 @@ namespace engine {
         void* m_state;
     };
 
-    inline window& game_engine::get_window() {
+    inline game_window& game_engine::get_window() {
         return m_window;
     }
 

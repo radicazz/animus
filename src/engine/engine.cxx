@@ -43,7 +43,7 @@ namespace engine {
         Uint64 last_frame_start_time = SDL_GetPerformanceCounter();
         const Uint64 performance_frequency = SDL_GetPerformanceFrequency();
 
-        while (m_window.is_running() == true) {
+        while (m_window.get_is_running() == true) {
             const Uint64 frame_start_time = SDL_GetPerformanceCounter();
             const float delta_time = (frame_start_time - last_frame_start_time) /
                                      static_cast<float>(performance_frequency);

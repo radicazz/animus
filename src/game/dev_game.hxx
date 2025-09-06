@@ -11,7 +11,8 @@ struct dev_game_state {
     std::unique_ptr<engine::render_sprite> player_sprite;
     std::unique_ptr<engine::render_sprite> asteroid_sprite;
 
-    std::unique_ptr<engine::render_text> example_text;
+    std::unique_ptr<engine::render_text_static> example_static_text;
+    std::unique_ptr<engine::render_text_dynamic> example_dynamic_text;
 
     // Camera control variables (game-specific behavior, not bounds)
     float camera_follow_speed;

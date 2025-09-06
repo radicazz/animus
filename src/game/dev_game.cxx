@@ -14,8 +14,17 @@ void game_create(engine::game_engine* engine) {
     engine::resource_manager& resource_manager = engine->get_resource_manager();
 
     state.player_sprite = resource_manager.sprite_create("assets/sprites/player/default.png");
-    state.asteroid_sprite = resource_manager.sprite_create("assets/sprites/asteroids/ice_1.png");
-    state.example_text = resource_manager.text_create("assets/fonts/Segoe UI.ttf", 20.0f);
+    state.asteroid_sprite =
+        resource_manager.sprite_create("assets/sprites/asteroids/ice_1.png", {64, 64});
+
+    state.example_static_text =
+        resource_manager.text_create_static("assets/fonts/Segoe UI.ttf", 20.0f);
+
+    state.example_dynamic_text =
+        resource_manager.text_create_dynamic("assets/fonts/Segoe UI.ttf", 64.0f);
+    state.example_dynamic_text->set_text("Player");
+    state.example_dynamic_text->set_origin_centered();
+    state.example_dynamic_text->set_scale(0.25f);
 }
 
 void game_destroy(engine::game_engine*) {
@@ -93,7 +102,8 @@ void game_update(engine::game_engine* engine, float delta_time) {
     state.asteroid_sprite->set_rotation(state.asteroid_sprite->get_rotation() + 36.f * delta_time);
 
     // Update the text.
-    state.example_text->set_text("Camera Mode: {}", state.is_camera_free_mode ? "Free" : "Follow");
+    state.example_static_text->set_text("Camera Mode: {}",
+                                        state.is_camera_free_mode ? "Free" : "Follow");
 }
 
 void game_render(engine::game_engine* engine) {
@@ -101,6 +111,9 @@ void game_render(engine::game_engine* engine) {
     engine::game_renderer& renderer = engine->get_renderer();
 
     renderer.sprite_draw_world(state.player_sprite.get(), state.player_position);
+
+    renderer.text_draw_world(state.example_dynamic_text.get(),
+                             state.player_position + glm::vec2{0.f, 30.f});
 
     // Draw a grid of asteroids to see camera movement.
     for (int x = 0; x < 10; ++x) {
@@ -110,5 +123,5 @@ void game_render(engine::game_engine* engine) {
         }
     }
 
-    renderer.text_draw_screen(state.example_text.get(), {10.0f, 10.0f});
+    renderer.text_draw_screen(state.example_static_text.get(), {10.0f, 10.0f});
 }

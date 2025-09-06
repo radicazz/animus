@@ -25,7 +25,11 @@ namespace engine {
         std::unique_ptr<render_sprite> sprite_create(std::string_view file_path,
                                                      const glm::vec2& size);
 
-        std::unique_ptr<render_text> text_create(std::string_view font_path, float font_size);
+        std::unique_ptr<render_text_static> text_create_static(std::string_view font_path,
+                                                               float font_size);
+
+        std::unique_ptr<render_text_dynamic> text_create_dynamic(std::string_view font_path,
+                                                                 float font_size);
 
         void textures_clear();
         void fonts_clear();
