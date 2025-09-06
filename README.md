@@ -1,21 +1,21 @@
-# 🎮 Incarnate
+# ☂️ Incarnate
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.txt)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![CMake](https://img.shields.io/badge/CMake-3.21%2B-blue.svg)](https://cmake.org/)
 [![SDL3](https://img.shields.io/badge/SDL-3.0-red.svg)](https://github.com/libsdl-org/SDL)
 
-A cross-platform 2D game engine built with modern C++, SDL, and love ❤️
+A cross-platform 2D game/engine built with modern C++ & SDL.
 
 ## ✨ Features
 
-- **🎮 Input System**: Keyboard and mouse input handling with customizable key mappings
-- **🖼️ Sprite Rendering**: Hardware-accelerated sprite rendering with rotation and scaling
-- **🎨 Resource Management**: Automatic texture loading and memory management
-- **📐 Mathematics**: GLM integration for 2D transformations and calculations
-- **🏗️ Modular Architecture**: Clean separation between game logic and engine systems
+- **🎮 Input System**: Keyboard and mouse input handling with customizable key mappings.
+- **🖼️ Sprite Rendering**: Hardware-accelerated sprite rendering with rotation and scaling.
+- **🎨 Resource Management**: Automatic texture loading and memory management.
+- **📐 Mathematics**: GLM integration for 2D transformations and calculations.
+- **🏗️ Modular Architecture**: Clean separation between game logic and engine systems.
 
-## 🎮 Demo Controls
+## 🎬 Demo Controls
 
 The included demo showcases the engine's capabilities:
 
@@ -36,21 +36,12 @@ The included demo showcases the engine's capabilities:
   - **macOS**: Xcode Command Line Tools
   - **Linux**: GCC/G++ and development libraries
 
-## 🔧 Dependencies
-
-All dependencies are included as Git submodules and built automatically:
-
-- **[SDL3](https://github.com/libsdl-org/SDL)** - Window management, rendering, and input
-- **[SDL3_image](https://github.com/libsdl-org/SDL_image)** - Image loading (PNG, JPG, etc.)
-- **[SDL3_ttf](https://github.com/libsdl-org/SDL_ttf)** - TrueType font rendering
-- **[GLM](https://github.com/g-truc/glm)** - OpenGL Mathematics library for 2D/3D math
-
 ## 🚀 Quick Start
 
 ### Clone the Repository
 
 ```bash
-# Clone with all submodules
+# Clone with all submodules.
 git clone --recursive https://github.com/radicazz/incarnate.git
 cd incarnate
 
@@ -64,8 +55,11 @@ git submodule update --init --recursive
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
-.\Debug\incarnate.exe
 ```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
 
 ## 📁 Project Structure
 
@@ -74,6 +68,8 @@ incarnate/
 ├── assets/                # Game assets (sprites, fonts)
 │   ├── fonts/             # TrueType fonts
 │   └── sprites/           # Sprite images
+├── docs/                  # Documentation settings
+│   └── style/             # CSS documentation styles
 ├── external/              # Git submodules (SDL, GLM, etc.)
 ├── src/
 │   ├── engine/            # Engine core systems
@@ -101,8 +97,9 @@ void game_create(engine::game_engine* engine) {
     auto& state = engine->get_state<my_game_state>();
     state.player_position = {400, 300};
     
+    // Load an image from the assets folder as a sprite.
     auto& resource_manager = engine->get_resource_manager();
-    state.player_sprite = resource_manager.sprite_load("player.png");
+    state.player_sprite = resource_manager.sprite_load("assets/player.png");
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
@@ -110,15 +107,18 @@ void game_update(engine::game_engine* engine, float delta_time) {
     auto& input = engine->get_input_system();
     auto& camera = engine->get_camera();
     
-    // Handle input and update game state
-    // Camera automatically handles bounds and transformations
+    // Handle input and update game state here.
+
+
+    // Camera automatically handles bounds and transformations.
     camera.follow_target(state.player_position);
 }
 
 void game_render(engine::game_engine* engine) {
     auto& state = engine->get_state<my_game_state>();
     auto& renderer = engine->get_renderer();
-    
+
+    // Render sprites in world space with applied camera transforms.
     renderer.sprite_draw_world(state.player_sprite, state.player_position);
 }
 ```
@@ -127,10 +127,6 @@ void game_render(engine::game_engine* engine) {
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
-
 ---
 
-Made with ❤️ using modern C++ and SDL.
+Made with ❤️
