@@ -25,7 +25,7 @@ void game_destroy(engine::game_engine*) {
 void game_update(engine::game_engine* engine, float delta_time) {
     auto& state = engine->get_state<dev_game_state>();
     engine::input_system& input = engine->get_input_system();
-    engine::camera& camera = engine->get_camera();
+    engine::game_camera& camera = engine->get_camera();
 
     // Toggle camera mode with 'C' key.
     if (input.is_key_pressed(engine::input_key::c)) {
@@ -48,9 +48,9 @@ void game_update(engine::game_engine* engine, float delta_time) {
     state.player_position += movement * state.player_speed * delta_time;
 
     // Keep player within the same bounds as the camera uses.
-    if (camera.has_bounds() == true) {
-        glm::vec2 bounds_min = camera.get_bounds_min();
-        glm::vec2 bounds_max = camera.get_bounds_max();
+    if (camera.has_physical_bounds() == true) {
+        const glm::vec2 bounds_min = camera.get_physical_bounds_min();
+        const glm::vec2 bounds_max = camera.get_physical_bounds_max();
         state.player_position.x = glm::clamp(state.player_position.x, bounds_min.x, bounds_max.x);
         state.player_position.y = glm::clamp(state.player_position.y, bounds_min.y, bounds_max.y);
     }

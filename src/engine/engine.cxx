@@ -22,7 +22,7 @@ namespace engine {
 
         // Set default world bounds for the camera
         // These can be overridden by calling engine.get_camera().set_bounds() if needed
-        m_camera.set_bounds({-500.0f, -500.0f}, {1500.0f, 1500.0f});
+        m_camera.set_physical_bounds({-500.0f, -500.0f}, {1500.0f, 1500.0f});
 
         // Connect camera to renderer
         m_renderer.set_camera(&m_camera);

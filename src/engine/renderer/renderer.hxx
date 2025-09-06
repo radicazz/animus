@@ -6,7 +6,7 @@
 struct TTF_TextEngine;
 
 namespace engine {
-    class camera;
+    class game_camera;
 
     /**
      * @brief Handles rendering of sprites and text with support for camera transformations.
@@ -28,8 +28,8 @@ namespace engine {
         void frame_end();
 
         // TODO: Rename camera to game_camera.
-        void set_camera(const camera* cam);
-        [[nodiscard]] const camera* get_camera() const;
+        void set_camera(const game_camera* cam);
+        [[nodiscard]] const game_camera* get_camera() const;
 
         // Sprite rendering methods
         void sprite_draw_world(const render_sprite* sprite, const glm::vec2& world_position);
@@ -48,7 +48,7 @@ namespace engine {
     private:
         SDL_Renderer* m_sdl_renderer;
         TTF_TextEngine* m_sdl_text_engine;
-        const camera* m_camera;
+        const game_camera* m_camera;
     };
 
     inline SDL_Renderer* game_renderer::get_sdl_renderer() const {
@@ -59,11 +59,11 @@ namespace engine {
         return m_sdl_text_engine;
     }
 
-    inline void game_renderer::set_camera(const camera* cam) {
+    inline void game_renderer::set_camera(const game_camera* cam) {
         m_camera = cam;
     }
 
-    inline const camera* game_renderer::get_camera() const {
+    inline const game_camera* game_renderer::get_camera() const {
         return m_camera;
     }
 }  // namespace engine
