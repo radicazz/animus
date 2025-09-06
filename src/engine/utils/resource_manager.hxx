@@ -1,52 +1,49 @@
 #pragma once
 
-#include <SDL3_ttf/SDL_ttf.h>
-#include <SDL3_image/SDL_image.h>
-
 #include <unordered_map>
 #include <string>
 #include <memory>
 
 #include "../renderer/sprite.hxx"
-#include "../renderer/font.hxx"
+#include "../renderer/text.hxx"
 
 namespace engine {
+    class game_renderer;
+
     /**
-     * @brief Manages the loading and unloading of game resources.
-     *
-     * @note Unloads all textures and fonts when the resource_manager is destroyed.
-     *
-     * @todo
-     * - Add map of textures.
-     * - Use textures to create sprites.
-     * - Add font managing.
-     *
+     * @brief Manages the loading and unloading of game resources for the engine.
      */
     class resource_manager {
     public:
-        resource_manager(SDL_Renderer* renderer);
+        resource_manager(game_renderer& renderer);
         ~resource_manager();
 
         resource_manager(const resource_manager&) = delete;
         resource_manager& operator=(const resource_manager&) = delete;
 
-        game_sprite* sprite_load(std::string_view file_path);
-        game_sprite* sprite_load(std::string_view file_path, const glm::vec2& size);
-        void sprite_unload(std::string_view file_path);
-        void sprite_unload(game_sprite& sprite);
+        std::unique_ptr<render_sprite> sprite_create(std::string_view file_path);
+        std::unique_ptr<render_sprite> sprite_create(std::string_view file_path,
+                                                     const glm::vec2& size);
 
-        bool is_sprite_loaded(std::string_view file_path) const;
+        std::unique_ptr<render_text> text_create(std::string_view font_path, float font_size);
+
+        void textures_clear();
+        void fonts_clear();
 
     private:
         SDL_Texture* texture_get_or_load(std::string_view file_path);
         void texture_unload(std::string_view file_path);
         bool is_texture_loaded(std::string_view file_path) const;
 
-    private:
-        std::unordered_map<std::string, std::unique_ptr<game_sprite>> m_sprites;
-        std::unordered_map<std::string, SDL_Texture*> m_textures;
+        TTF_Font* font_get_or_load(std::string_view font_path, float font_size);
+        void font_unload(std::string_view unique_key);
+        bool is_font_loaded(std::string_view unique_key) const;
+        std::string font_create_unique_key(std::string_view font_path, float font_size) const;
 
-        // Reference to the renderer for handling textures.
-        SDL_Renderer* m_sdl_renderer;
+    private:
+        std::unordered_map<std::string, SDL_Texture*> m_textures;
+        std::unordered_map<std::string, TTF_Font*> m_fonts;
+
+        const game_renderer& m_renderer;
     };
 }  // namespace engine

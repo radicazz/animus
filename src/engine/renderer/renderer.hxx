@@ -1,55 +1,69 @@
 #pragma once
 
 #include "sprite.hxx"
+#include "text.hxx"
+
+struct TTF_TextEngine;
 
 namespace engine {
-    class camera; // Forward declaration
+    class camera;
 
-    class renderer {
+    /**
+     * @brief Handles rendering of sprites and text with support for camera transformations.
+     */
+    class game_renderer {
     public:
-        renderer(SDL_Window* window);
-        ~renderer();
+        explicit game_renderer(SDL_Window* window);
+        ~game_renderer();
 
-        /**
-         * @brief Access the internal SDL_Renderer.
-         *
-         * @return `SDL_Renderer*` Pointer to the SDL_Renderer.
-         *
-         * @note Should only be used internally for the engine.
-         *
-         */
+        game_renderer(const game_renderer&) = delete;
+        game_renderer& operator=(const game_renderer&) = delete;
+        game_renderer(game_renderer&&) = delete;
+        game_renderer& operator=(game_renderer&&) = delete;
+
         [[nodiscard]] SDL_Renderer* get_sdl_renderer() const;
+        [[nodiscard]] TTF_TextEngine* get_sdl_text_engine() const;
 
         void frame_begin();
         void frame_end();
 
-        // Set the camera for rendering transformations
+        // TODO: Rename camera to game_camera.
         void set_camera(const camera* cam);
         [[nodiscard]] const camera* get_camera() const;
 
-        // Draw sprite with world coordinates (camera will transform)
-        void sprite_draw_world(const game_sprite* sprite, const glm::vec2& world_position);
-        
-        // Draw sprite directly in screen coordinates (ignores camera)
-        void sprite_draw_screen(const game_sprite* sprite, const glm::vec2& screen_position);
-        
-        // Draw sprite without any camera transformations (raw screen coordinates)
-        void sprite_draw_raw(const game_sprite* sprite, const glm::vec2& screen_position);
+        // Sprite rendering methods
+        void sprite_draw_world(const render_sprite* sprite, const glm::vec2& world_position);
+        void sprite_draw_screen(const render_sprite* sprite, const glm::vec2& screen_position);
+        void sprite_draw_raw(const render_sprite* sprite, const glm::vec2& screen_position);
+
+        void text_draw_world(const render_text* text, const glm::vec2& world_position);
+        void text_draw_screen(const render_text* text, const glm::vec2& screen_position);
 
         /**
          * @brief Get the output size of the renderer.
-         *
          * @return `glm::vec2` representing the output size in pixels.
          */
         [[nodiscard]] glm::vec2 get_output_size() const;
 
     private:
         SDL_Renderer* m_sdl_renderer;
-        const camera* m_camera; // Camera reference for transformations
+        TTF_TextEngine* m_sdl_text_engine;
+        const camera* m_camera;
     };
 
-    inline SDL_Renderer* renderer::get_sdl_renderer() const {
+    inline SDL_Renderer* game_renderer::get_sdl_renderer() const {
         return m_sdl_renderer;
     }
 
+    inline TTF_TextEngine* game_renderer::get_sdl_text_engine() const {
+        return m_sdl_text_engine;
+    }
+
+    inline void game_renderer::set_camera(const camera* cam) {
+        m_camera = cam;
+    }
+
+    inline const camera* game_renderer::get_camera() const {
+        return m_camera;
+    }
 }  // namespace engine

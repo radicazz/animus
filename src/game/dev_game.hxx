@@ -2,22 +2,20 @@
 
 #include "../engine/engine.hxx"
 
-/**
- * @brief Development game state structure.
- *
- * This is a very simple game state representation used for development during the game. The
- * structure along with it's callbacks provide an example for how this engine might be used.
- */
+// Just a simple example of a game's state and structure showing off engine features during
+// development of the project.
 struct dev_game_state {
     glm::vec2 player_position;
     float player_speed;
 
-    engine::game_sprite* player_sprite;
-    engine::game_sprite* asteroid_sprite;
+    std::unique_ptr<engine::render_sprite> player_sprite;
+    std::unique_ptr<engine::render_sprite> asteroid_sprite;
+
+    std::unique_ptr<engine::render_text> example_text;
 
     // Camera control variables (game-specific behavior, not bounds)
     float camera_follow_speed;
-    
+
     // Free camera mode toggle
     bool is_camera_free_mode;
     float camera_move_speed;

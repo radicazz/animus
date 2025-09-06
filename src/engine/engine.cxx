@@ -9,7 +9,7 @@ namespace engine {
                    static_cast<int>(details.window_size.y)),
           m_renderer(m_window.get_sdl_window()),
           m_camera({0.f, 0.f}, 1.f),
-          m_resource_manager(m_renderer.get_sdl_renderer()),
+          m_resource_manager(m_renderer),
           m_input_system(),
           m_state(state),
           m_callbacks(callbacks) {
@@ -19,11 +19,11 @@ namespace engine {
 
         // Set up camera with proper viewport size
         m_camera.set_viewport_size(details.window_size);
-        
+
         // Set default world bounds for the camera
         // These can be overridden by calling engine.get_camera().set_bounds() if needed
         m_camera.set_bounds({-500.0f, -500.0f}, {1500.0f, 1500.0f});
-        
+
         // Connect camera to renderer
         m_renderer.set_camera(&m_camera);
 

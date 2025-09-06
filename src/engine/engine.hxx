@@ -107,7 +107,7 @@ namespace engine {
         //
 
         [[nodiscard]] window& get_window();
-        [[nodiscard]] renderer& get_renderer();
+        [[nodiscard]] game_renderer& get_renderer();
         [[nodiscard]] camera& get_camera();
         [[nodiscard]] resource_manager& get_resource_manager();
         [[nodiscard]] input_system& get_input_system();
@@ -142,7 +142,7 @@ namespace engine {
 
     private:
         window m_window;
-        renderer m_renderer;
+        game_renderer m_renderer;
         camera m_camera;
         resource_manager m_resource_manager;
         input_system m_input_system;
@@ -155,7 +155,7 @@ namespace engine {
         return m_window;
     }
 
-    inline renderer& game_engine::get_renderer() {
+    inline game_renderer& game_engine::get_renderer() {
         return m_renderer;
     }
 
