@@ -11,6 +11,7 @@ A cross-platform 2D game/engine built with modern C++ & SDL.
 
 - **🎮 Input System**: Keyboard and mouse input handling with customizable key mappings.
 - **🖼️ Sprite Rendering**: Hardware-accelerated sprite rendering with rotation and scaling.
+- **🅰️ Text Rendering**: TTF font rendering with support for rotation and scaling.
 - **🎨 Resource Management**: Automatic texture loading and memory management.
 - **📐 Mathematics**: GLM integration for 2D transformations and calculations.
 - **🏗️ Modular Architecture**: Clean separation between game logic and engine systems.
@@ -57,9 +58,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
 ```
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+You should find `incarnate.exe` in `build/bin/` along with the assets folder and required libraries.
 
 ## 📁 Project Structure
 
@@ -68,7 +67,7 @@ incarnate/
 ├── assets/                # Game assets (sprites, fonts)
 │   ├── fonts/             # TrueType fonts
 │   └── sprites/           # Sprite images
-├── docs/                  # Documentation settings
+├── docs/
 │   └── style/             # CSS documentation styles
 ├── external/              # Git submodules (SDL, GLM, etc.)
 ├── src/
@@ -90,16 +89,19 @@ incarnate/
 
 struct my_game_state {
     glm::vec2 player_position;
-    engine::game_sprite* player_sprite;
+    float player_speed;
+    std::unique_ptr<engine::render_sprite> player_sprite;
 };
 
 void game_create(engine::game_engine* engine) {
     auto& state = engine->get_state<my_game_state>();
-    state.player_position = {400, 300};
-    
-    // Load an image from the assets folder as a sprite.
     auto& resource_manager = engine->get_resource_manager();
-    state.player_sprite = resource_manager.sprite_load("assets/player.png");
+
+    state.player_position = {400.f, 300.f};
+    state.player_speed = 200.f;
+
+    // Load an image from the assets folder as a sprite. The underlying texture will be automatically managed.
+    state.player_sprite = resource_manager.sprite_create("assets/player.png");
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
@@ -107,10 +109,26 @@ void game_update(engine::game_engine* engine, float delta_time) {
     auto& input = engine->get_input_system();
     auto& camera = engine->get_camera();
     
-    // Handle input and update game state here.
+    // Use the input system to capture WASD movement.
+    glm::vec2 movement(0.0f);
 
+    if (input.is_key_held(engine::input_key::w)) {
+        movement.y -= 1.0f;
+    }
+    if (input.is_key_held(engine::input_key::s)) {
+        movement.y += 1.0f;
+    }
+    if (input.is_key_held(engine::input_key::a)) {
+        movement.x -= 1.0f;
+    }
+    if (input.is_key_held(engine::input_key::d)) {
+        movement.x += 1.0f;
+    }
 
-    // Camera automatically handles bounds and transformations.
+    // Smoothly update the player's position with delta_time.
+    state.player_position += movement * state.player_speed * delta_time;
+
+    // Make the camera follow the player.
     camera.follow_target(state.player_position);
 }
 
@@ -118,8 +136,8 @@ void game_render(engine::game_engine* engine) {
     auto& state = engine->get_state<my_game_state>();
     auto& renderer = engine->get_renderer();
 
-    // Render sprites in world space with applied camera transforms.
-    renderer.sprite_draw_world(state.player_sprite, state.player_position);
+    // Render the player sprite in world space with applied camera transforms.
+    renderer.sprite_draw_world(state.player_sprite.get(), state.player_position);
 }
 ```
 
@@ -129,4 +147,4 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 
 ---
 
-Made with ❤️
+Made with lots of ❤️ for fun.
