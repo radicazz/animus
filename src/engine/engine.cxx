@@ -8,14 +8,14 @@ namespace engine {
                    static_cast<int>(details.window_size.y)),
           m_renderer(m_window.get_sdl_window()),
           m_camera({0.f, 0.f}, 1.f),
+          m_viewport(details.window_size),
           m_resources(m_renderer),
           m_input(),
           m_ecs_manager(),
           m_info(info),
           m_is_running(true) {
-        // TODO: Move this camera code.
-        m_camera.set_viewport_size(details.window_size);
         m_renderer.set_camera(&m_camera);
+        m_renderer.set_viewport(&m_viewport);
 
         safe_invoke(m_info.on_create, this);
     }

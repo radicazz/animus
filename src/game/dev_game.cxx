@@ -59,6 +59,7 @@ void game_update(engine::game_engine* engine, float delta_time) {
     auto& state = engine->get_state<dev_game_state>();
     engine::game_input& input = engine->get_input();
     engine::game_camera& camera = engine->get_camera();
+    engine::game_viewport& viewport = engine->get_viewport();
     engine::ecs_manager& ecs = engine->get_ecs_manager();
 
     // Toggle camera mode with 'C' key.
@@ -121,7 +122,6 @@ void game_update(engine::game_engine* engine, float delta_time) {
         }
     } else {
         // FOLLOW MODE: Camera follows the player
-
         camera.follow_target(ecs.get_position(state.player_entity), state.camera_follow_speed);
     }
 
@@ -131,13 +131,15 @@ void game_update(engine::game_engine* engine, float delta_time) {
         asteroid_transform->rotation_degrees += 45.f * delta_time;
         if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
             asteroid_transform->position =
-                camera.screen_to_world(input.get_mouse_screen_position());
+                viewport.screen_to_world(camera, input.get_mouse_screen_position());
         }
     }
 
     // Update the text.
     state.debug_text->set_text("Camera Mode: {}", state.is_camera_free_mode ? "Free" : "Follow");
     state.debug_text->set_origin_centered();
+
+    viewport.clamp_camera_to_bounds(camera);
 }
 
 void game_render(engine::game_engine* engine, float interpolation_alpha) {

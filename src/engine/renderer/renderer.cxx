@@ -1,13 +1,18 @@
 #include "renderer.hxx"
 
-#include "../camera/camera.hxx"
+#include "camera.hxx"
+#include "viewport.hxx"
 
 #include <SDL3_ttf/SDL_ttf.h>
-
+#include <SDL3/SDL.h>
 #include <stdexcept>
 
 namespace engine {
-    game_renderer::game_renderer(SDL_Window* window) : m_sdl_renderer(nullptr), m_camera(nullptr) {
+    game_renderer::game_renderer(SDL_Window* window)
+        : m_sdl_renderer(nullptr),
+          m_sdl_text_engine(nullptr),
+          m_camera(nullptr),
+          m_viewport(nullptr) {
         if (m_sdl_renderer = SDL_CreateRenderer(window, nullptr); m_sdl_renderer == nullptr) {
             throw std::runtime_error("Failed to create renderer");
         }
@@ -29,6 +34,13 @@ namespace engine {
     }
 
     void game_renderer::frame_begin() {
+        // Apply viewport if present
+        if (m_viewport != nullptr) {
+            m_viewport->apply_to_sdl(m_sdl_renderer);
+        } else {
+            SDL_SetRenderViewport(m_sdl_renderer, nullptr);  // full output
+        }
+
         SDL_SetRenderDrawColor(m_sdl_renderer, 0, 0, 0, 255);
         SDL_RenderClear(m_sdl_renderer);
     }
@@ -43,22 +55,19 @@ namespace engine {
             return;
         }
 
-        glm::vec2 screen_position;
+        glm::vec2 screen_position = world_position;
 
-        if (m_camera != nullptr) {
-            // Transform world position to screen coordinates using camera
-            screen_position = m_camera->world_to_screen(world_position);
+        if (m_camera != nullptr && m_viewport != nullptr) {
+            // Transform via viewport + camera
+            screen_position = m_viewport->world_to_screen(*m_camera, world_position);
 
-            // Frustum culling: skip drawing if sprite is outside view
-            if (m_camera->is_in_view(world_position, sprite->get_size()) == false) {
+            // Frustum culling
+            if (m_viewport->is_in_view(*m_camera, world_position, sprite->get_size()) == false) {
                 return;
             }
-        } else {
-            // No camera set, use world position as screen position
-            screen_position = world_position;
         }
 
-        // Apply camera zoom to sprite size and origin to make sprites scale with zoom
+        // Apply camera zoom to sprite size and origin
         glm::vec2 final_size = sprite->get_size();
         glm::vec2 final_origin = sprite->get_origin();
         glm::vec2 final_scale = sprite->get_scale();
@@ -75,8 +84,6 @@ namespace engine {
                                     screen_position.y - final_origin.y, final_size.x, final_size.y};
         const SDL_FPoint center = {final_origin.x, final_origin.y};
 
-        // TODO: Add options for flipping with SDL_FLIP_NONE.
-
         SDL_RenderTextureRotated(m_sdl_renderer, sprite->get_sdl_texture(), nullptr, &dst_rect,
                                  sprite->get_rotation(), &center, SDL_FLIP_NONE);
     }
@@ -90,7 +97,6 @@ namespace engine {
         const glm::vec2 size = sprite->get_size();
         const glm::vec2 origin = sprite->get_origin();
 
-        // No camera transformations at all - raw screen coordinates
         const SDL_FRect dst_rect = {screen_position.x - origin.x, screen_position.y - origin.y,
                                     size.x, size.y};
         const SDL_FPoint center = {origin.x, origin.y};
@@ -109,7 +115,7 @@ namespace engine {
 
         if (m_camera != nullptr) {
             // Transform world position to screen coordinates using camera
-            screen_position = m_camera->world_to_screen(world_position);
+            screen_position = m_viewport->world_to_screen(*m_camera, world_position);
 
             // Frustum culling: skip drawing if text is outside view
             // Account for text scale and origin when calculating bounds
@@ -119,7 +125,7 @@ namespace engine {
             const glm::vec2 total_scale = text_scale * camera_zoom;
             const glm::vec2 scaled_size = text_size * total_scale;
 
-            if (m_camera->is_in_view(world_position, scaled_size) == false) {
+            if (m_viewport->is_in_view(*m_camera, world_position, scaled_size) == false) {
                 return;
             }
         } else {
@@ -192,8 +198,9 @@ namespace engine {
     }
 
     glm::vec2 game_renderer::get_output_size() const {
-        int w, h;
-        SDL_GetCurrentRenderOutputSize(m_sdl_renderer, &w, &h);
+        int w = 0, h = 0;
+        SDL_GetRenderOutputSize(m_sdl_renderer, &w, &h);
         return {static_cast<float>(w), static_cast<float>(h)};
     }
+
 }  // namespace engine

@@ -3,8 +3,9 @@
 #include <type_traits>
 
 #include "engine/version.hxx"
-#include "camera/camera.hxx"
 #include "renderer/renderer.hxx"
+#include "renderer/camera.hxx"
+#include "renderer/viewport.hxx"
 #include "window/window.hxx"
 #include "utils/resource_manager.hxx"
 #include "utils/input_system.hxx"
@@ -128,6 +129,7 @@ namespace engine {
         [[nodiscard]] game_window& get_window();
         [[nodiscard]] game_renderer& get_renderer();
         [[nodiscard]] game_camera& get_camera();
+        [[nodiscard]] game_viewport& get_viewport();
         [[nodiscard]] game_resources& get_resources();
         [[nodiscard]] game_input& get_input();
         [[nodiscard]] ecs_manager& get_ecs_manager();
@@ -166,6 +168,7 @@ namespace engine {
         game_window m_window;
         game_renderer m_renderer;
         game_camera m_camera;
+        game_viewport m_viewport;
         game_resources m_resources;
         game_input m_input;
         ecs_manager m_ecs_manager;
@@ -184,6 +187,10 @@ namespace engine {
 
     inline game_camera& game_engine::get_camera() {
         return m_camera;
+    }
+
+    inline game_viewport& game_engine::get_viewport() {
+        return m_viewport;
     }
 
     inline game_resources& game_engine::get_resources() {
