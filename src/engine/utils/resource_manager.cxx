@@ -97,7 +97,7 @@ namespace engine {
     }
 
     bool resource_manager::is_texture_loaded(std::string_view file_path) const {
-        return m_textures.find(file_path.data()) != m_textures.end();
+        return m_textures.contains(file_path.data());
     }
 
     TTF_Font* resource_manager::font_get_or_load(std::string_view font_path, float font_size) {
@@ -128,12 +128,11 @@ namespace engine {
     }
 
     bool resource_manager::is_font_loaded(std::string_view unique_key) const {
-        return m_fonts.find(unique_key.data()) != m_fonts.end();
+        return m_fonts.contains(unique_key.data());
     }
 
     std::string resource_manager::font_create_unique_key(std::string_view font_path,
                                                          float font_size) const {
         return std::format("{}:{}", font_path, font_size);
     }
-
 }  // namespace engine
