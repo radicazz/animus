@@ -3,8 +3,7 @@
 #include <stdexcept>
 
 namespace engine {
-    game_window::game_window(std::string_view title, int width, int height)
-        : m_window(nullptr), m_is_running(true) {
+    game_window::game_window(std::string_view title, int width, int height) : m_window(nullptr) {
         if (SDL_Init(SDL_INIT_VIDEO) == false) {
             throw std::runtime_error("Failed to initialize SDL.");
         }

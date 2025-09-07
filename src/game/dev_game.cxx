@@ -8,7 +8,7 @@ void game_create(engine::game_engine* engine) {
     auto player_sprite = resource_manager.sprite_create("assets/sprites/player/default.png");
     state.player_entity = ecs.create_sprite_entity({300, 300}, std::move(player_sprite));
     ecs.add_component<engine::component_velocity>(state.player_entity) = {
-        .linear = {0.0f, 0.0f}, .max_speed = 100.0f, .drag = 0.1f};
+        .linear = {0.0f, 0.0f}, .max_speed = 200.0f, .drag = 0.1f};
 
     // Asteroid
     auto asteroid_sprite =
@@ -42,7 +42,15 @@ void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
     engine::game_camera& camera = engine->get_camera();
     engine::ecs_manager& ecs = engine->get_ecs_manager();
 
-    // Update ECS physics systems
+    auto transform_view = ecs.get_entities_with<engine::component_transform_interpolated>();
+    for (auto entity : transform_view) {
+        auto& transform = transform_view.get<engine::component_transform_interpolated>(entity);
+        // Store previous position and rotation before physics update for interpolation.
+        transform.previous_position = transform.position;
+        transform.previous_rotation_degrees = transform.rotation_degrees;
+    }
+
+    // Update various physics systems.
     ecs.update_physics(fixed_delta_time);
     ecs.update_lifetime(fixed_delta_time);
 }
@@ -62,9 +70,9 @@ void game_update(engine::game_engine* engine, float delta_time) {
         auto* player_velocity =
             ecs.try_get_component<engine::component_velocity>(state.player_entity);
         if (player_velocity != nullptr) {
-            glm::vec2 input_force{0.0f, 0.0f};
             constexpr float acceleration = 1000.0f;  // pixels per second squared
 
+            glm::vec2 input_force{0.0f, 0.0f};
             if (input.is_key_held(engine::input_key::a)) {
                 input_force.x -= acceleration;
             }
@@ -113,11 +121,12 @@ void game_update(engine::game_engine* engine, float delta_time) {
         }
     } else {
         // FOLLOW MODE: Camera follows the player
+
         camera.follow_target(ecs.get_position(state.player_entity), state.camera_follow_speed);
     }
 
     auto* asteroid_transform =
-        ecs.try_get_component<engine::component_transform>(state.asteroid_entity);
+        ecs.try_get_component<engine::component_transform_interpolated>(state.asteroid_entity);
     if (asteroid_transform != nullptr) {
         asteroid_transform->rotation_degrees += 45.f * delta_time;
         if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
@@ -131,12 +140,12 @@ void game_update(engine::game_engine* engine, float delta_time) {
     state.debug_text->set_origin_centered();
 }
 
-void game_render(engine::game_engine* engine) {
+void game_render(engine::game_engine* engine, float interpolation_alpha) {
     auto& state = engine->get_state<dev_game_state>();
     engine::game_renderer& renderer = engine->get_renderer();
     engine::ecs_manager& ecs = engine->get_ecs_manager();
 
-    ecs.render_sprites(engine);
+    ecs.render_sprites(engine, interpolation_alpha);
 
     if (ecs.is_valid(state.player_entity) == true) {
         glm::vec2 player_position = ecs.get_position(state.player_entity);

@@ -18,8 +18,6 @@ namespace engine {
         [[nodiscard]] glm::vec2 get_logical_size() const;
         [[nodiscard]] glm::vec2 get_pixel_size() const;
 
-        [[nodiscard]] bool get_is_running() const;
-
         /**
          * @brief Set the running state of the window.
          * @param is_running The new running state.
@@ -29,19 +27,9 @@ namespace engine {
 
     private:
         SDL_Window* m_window;
-        bool m_is_running;
     };
 
     inline SDL_Window* game_window::get_sdl_window() const {
         return m_window;
     }
-
-    inline bool game_window::get_is_running() const {
-        return m_is_running;
-    }
-
-    inline void game_window::set_is_running(bool is_running) {
-        m_is_running = is_running;
-    }
-
 }  // namespace engine

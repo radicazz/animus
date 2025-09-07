@@ -4,10 +4,10 @@
 
 #include "engine/version.hxx"
 #include "camera/camera.hxx"
-#include "input/input_system.hxx"
 #include "renderer/renderer.hxx"
 #include "window/window.hxx"
 #include "utils/resource_manager.hxx"
+#include "utils/input_system.hxx"
 #include "ecs/ecs_manager.hxx"
 
 namespace engine {
@@ -88,7 +88,7 @@ namespace engine {
         /**
          * @brief Called every frame during rendering.
          */
-        void (*on_render)(game_engine*) = nullptr;
+        void (*on_render)(game_engine*, float) = nullptr;
     };
 
     template <class... Args>
@@ -113,6 +113,11 @@ namespace engine {
     public:
         game_engine(const game_details& details, const game_info& info);
         ~game_engine();
+
+        game_engine(const game_engine&) = delete;
+        game_engine& operator=(const game_engine&) = delete;
+        game_engine(game_engine&&) = delete;
+        game_engine& operator=(game_engine&&) = delete;
 
         /**
          * @brief Start running the game loop.
@@ -166,6 +171,7 @@ namespace engine {
         ecs_manager m_ecs_manager;
 
         game_info m_info;
+        bool m_is_running;
     };
 
     inline game_window& game_engine::get_window() {

@@ -11,7 +11,8 @@ namespace engine {
           m_resources(m_renderer),
           m_input(),
           m_ecs_manager(),
-          m_info(info) {
+          m_info(info),
+          m_is_running(true) {
         // TODO: Move this camera code.
         m_camera.set_viewport_size(details.window_size);
         m_renderer.set_camera(&m_camera);
@@ -27,10 +28,10 @@ namespace engine {
         Uint64 last_frame_start_time = SDL_GetPerformanceCounter();
         const Uint64 performance_frequency = SDL_GetPerformanceFrequency();
 
-        constexpr float fixed_timestep_seconds = 1.0f / 64.0f;
+        constexpr float fixed_timestep_seconds = 1.0f / 32.0f;
         float fixed_time_accumulator = 0.0f;
 
-        while (m_window.get_is_running() == true) {
+        while (m_is_running == true) {
             const Uint64 frame_start_time = SDL_GetPerformanceCounter();
             const float delta_time = (frame_start_time - last_frame_start_time) /
                                      static_cast<float>(performance_frequency);
@@ -42,7 +43,7 @@ namespace engine {
             SDL_Event event;
             while (SDL_PollEvent(&event) == true) {
                 if (event.type == SDL_EVENT_QUIT) {
-                    m_window.set_is_running(false);
+                    m_is_running = false;
                 }
 
                 m_input.process_event(event);
@@ -54,10 +55,12 @@ namespace engine {
                 fixed_time_accumulator -= fixed_timestep_seconds;
             }
 
+            const float interpolation_alpha = fixed_time_accumulator / fixed_timestep_seconds;
+
             safe_invoke(m_info.on_update, this, delta_time);
 
             m_renderer.frame_begin();
-            safe_invoke(m_info.on_render, this);
+            safe_invoke(m_info.on_render, this, interpolation_alpha);
             m_renderer.frame_end();
         }
     }

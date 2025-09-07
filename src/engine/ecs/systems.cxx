@@ -1,5 +1,8 @@
 #include "systems.hxx"
+
+#include <glm/glm.hpp>
 #include "../engine.hxx"
+
 #include <algorithm>
 #include <vector>
 #include <cmath>
@@ -39,9 +42,9 @@ namespace engine {
     }
 
     void system_physics::integrate_velocity(entt::registry& registry, float delta_time) {
-        auto view = registry.view<component_transform, component_velocity>();
+        auto view = registry.view<component_transform_interpolated, component_velocity>();
         for (auto entity : view) {
-            auto& transform = view.get<component_transform>(entity);
+            auto& transform = view.get<component_transform_interpolated>(entity);
             const auto& velocity = view.get<component_velocity>(entity);
 
             // Update position based on velocity
@@ -50,8 +53,9 @@ namespace engine {
     }
 
     // Renderer System Implementation
-    void system_renderer::render(entt::registry& registry, game_engine* engine) {
-        auto view = registry.view<component_transform, component_sprite>();
+    void system_renderer::render(entt::registry& registry, game_engine* engine,
+                                 float interpolation_alpha) {
+        auto view = registry.view<component_transform_interpolated, component_sprite>();
         auto& renderer = engine->get_renderer();
 
         std::vector<entt::entity> entities;
@@ -72,15 +76,21 @@ namespace engine {
 
         // Render all entities
         for (auto entity : entities) {
-            const auto& transform = registry.get<component_transform>(entity);
+            const auto& transform = registry.get<component_transform_interpolated>(entity);
             const auto& sprite_comp = registry.get<component_sprite>(entity);
 
+            glm::vec2 interpolated_pos =
+                glm::mix(transform.previous_position, transform.position, interpolation_alpha);
+
+            float interpolated_rotation = glm::mix(transform.previous_rotation_degrees,
+                                                   transform.rotation_degrees, interpolation_alpha);
+
             // Apply transform to sprite
-            sprite_comp.sprite->set_rotation(transform.rotation_degrees);
+            sprite_comp.sprite->set_rotation(interpolated_rotation);
             sprite_comp.sprite->set_scale(transform.scale);
 
             // Render sprite at world position
-            renderer.sprite_draw_world(sprite_comp.sprite.get(), transform.position);
+            renderer.sprite_draw_world(sprite_comp.sprite.get(), interpolated_pos);
         }
     }
 
@@ -91,14 +101,10 @@ namespace engine {
 
         for (auto entity : view) {
             auto& lifetime = view.get<component_lifetime>(entity);
-            lifetime.remaining_time -= delta_time;
+            lifetime.remaining_time_seconds -= delta_time;
 
-            if (lifetime.remaining_time <= 0.0f) {
-                if (lifetime.destroy_on_expire == true) {
-                    entities_to_destroy.push_back(entity);
-                } else {
-                    // Do something here?
-                }
+            if (lifetime.remaining_time_seconds <= 0.0f) {
+                entities_to_destroy.push_back(entity);
             }
         }
 
@@ -115,7 +121,8 @@ namespace engine {
         auto entity = registry.create();
 
         // Add transform component
-        registry.emplace<component_transform>(entity, position, 0.0f, glm::vec2{1.0f, 1.0f});
+        registry.emplace<component_transform_interpolated>(entity, position, position, 0.0f, 0.0f,
+                                                           glm::vec2{1.0f, 1.0f});
 
         // Add sprite component
         registry.emplace<component_sprite>(entity, std::move(sprite));
@@ -125,13 +132,13 @@ namespace engine {
 
     void ecs_utils::set_position(entt::registry& registry, entt::entity entity,
                                  const glm::vec2& position) {
-        if (auto* transform = registry.try_get<component_transform>(entity)) {
+        if (auto* transform = registry.try_get<component_transform_interpolated>(entity)) {
             transform->position = position;
         }
     }
 
     glm::vec2 ecs_utils::get_position(entt::registry& registry, entt::entity entity) {
-        if (auto* transform = registry.try_get<component_transform>(entity)) {
+        if (auto* transform = registry.try_get<component_transform_interpolated>(entity)) {
             return transform->position;
         }
 
@@ -140,13 +147,13 @@ namespace engine {
 
     void ecs_utils::set_rotation(entt::registry& registry, entt::entity entity,
                                  float rotation_degrees) {
-        if (auto* transform = registry.try_get<component_transform>(entity)) {
+        if (auto* transform = registry.try_get<component_transform_interpolated>(entity)) {
             transform->rotation_degrees = rotation_degrees;
         }
     }
 
     float ecs_utils::get_rotation(entt::registry& registry, entt::entity entity) {
-        if (auto* transform = registry.try_get<component_transform>(entity)) {
+        if (auto* transform = registry.try_get<component_transform_interpolated>(entity)) {
             return transform->rotation_degrees;
         }
 

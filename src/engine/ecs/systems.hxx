@@ -24,7 +24,8 @@ namespace engine {
      */
     class system_renderer {
     public:
-        static void render(entt::registry& registry, game_engine* engine);
+        static void render(entt::registry& registry, game_engine* engine,
+                           float interpolation_alpha);
     };
 
     /**

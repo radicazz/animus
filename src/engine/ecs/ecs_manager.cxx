@@ -15,8 +15,8 @@ namespace engine {
         system_lifetime::update(m_registry, delta_time);
     }
 
-    void ecs_manager::render_sprites(game_engine* engine) {
-        system_renderer::render(m_registry, engine);
+    void ecs_manager::render_sprites(game_engine* engine, float interpolation_alpha) {
+        system_renderer::render(m_registry, engine, interpolation_alpha);
     }
 
     entt::entity ecs_manager::create_sprite_entity(const glm::vec2& position,
