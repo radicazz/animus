@@ -7,12 +7,15 @@
 struct dev_game_state {
     glm::vec2 player_position;
     float player_speed;
-
     std::unique_ptr<engine::render_sprite> player_sprite;
+
+    glm::vec2 asteroid_position;
     std::unique_ptr<engine::render_sprite> asteroid_sprite;
 
-    std::unique_ptr<engine::render_text_static> example_static_text;
-    std::unique_ptr<engine::render_text_dynamic> example_dynamic_text;
+    glm::vec2 debug_text_position;
+    std::unique_ptr<engine::render_text_static> debug_text;
+
+    std::unique_ptr<engine::render_text_dynamic> player_label_text;
 
     // Camera control variables (game-specific behavior, not bounds)
     float camera_follow_speed;

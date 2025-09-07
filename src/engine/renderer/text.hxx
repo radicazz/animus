@@ -63,6 +63,7 @@ namespace engine {
 
         void set_color(const render_color& new_color);
         void set_origin(const glm::vec2& new_origin);
+        void set_origin_centered();
 
         [[nodiscard]] bool is_valid() const;
 
@@ -75,22 +76,27 @@ namespace engine {
         return m_sdl_text;
     }
 
+    inline glm::vec2 render_text_static::get_origin() const {
+        return m_origin;
+    }
+
     template <typename... Args>
     inline void render_text_static::set_text(std::format_string<Args...> fmt, Args&&... args) {
         std::string formatted_text = std::format(fmt, std::forward<Args>(args)...);
         set_text_raw(formatted_text);
     }
 
-    inline bool render_text_static::is_valid() const {
-        return m_sdl_text != nullptr;
-    }
-
-    inline glm::vec2 render_text_static::get_origin() const {
-        return m_origin;
-    }
-
     inline void render_text_static::set_origin(const glm::vec2& new_origin) {
         m_origin = new_origin;
+    }
+
+    inline void render_text_static::set_origin_centered() {
+        const glm::vec2 text_size = get_size();
+        set_origin({text_size.x * 0.5f, text_size.y * 0.5f});
+    }
+
+    inline bool render_text_static::is_valid() const {
+        return m_sdl_text != nullptr;
     }
 
     /**
@@ -255,8 +261,7 @@ namespace engine {
     }
 
     inline void render_text_dynamic::set_origin_centered() {
-        const glm::vec2 size = get_size();
-        set_origin(size * 0.5f);
+        m_static_text->set_origin_centered();
     }
 
     inline void render_text_dynamic::mark_texture_dirty() {

@@ -2,29 +2,34 @@
 
 void game_create(engine::game_engine* engine) {
     auto& state = engine->get_state<dev_game_state>();
-    state.player_position = {100, 100};
-    state.player_speed = 200.f;
-
-    state.camera_follow_speed = 0.05f;
-
-    // Free camera settings
-    state.is_camera_free_mode = false;
-    state.camera_move_speed = 300.f;
-
     engine::resource_manager& resource_manager = engine->get_resource_manager();
 
+    // Player
+    state.player_position = {100, 100};
+    state.player_speed = 200.f;
     state.player_sprite = resource_manager.sprite_create("assets/sprites/player/default.png");
+
+    // Asteroid
+    state.asteroid_position = {300, 300};
     state.asteroid_sprite =
         resource_manager.sprite_create("assets/sprites/asteroids/ice_1.png", {64, 64});
 
-    state.example_static_text =
-        resource_manager.text_create_static("assets/fonts/Segoe UI.ttf", 20.0f);
+    // Camera
+    state.camera_follow_speed = 0.05f;
+    state.is_camera_free_mode = false;
+    state.camera_move_speed = 300.f;
 
-    state.example_dynamic_text =
+    // Static text
+    state.debug_text = resource_manager.text_create_static("assets/fonts/Segoe UI.ttf", 18.0f);
+    state.debug_text->set_text("Camera Mode: Follow");
+    state.debug_text_position = {10, 10};
+
+    // Dynamic text.
+    state.player_label_text =
         resource_manager.text_create_dynamic("assets/fonts/Segoe UI.ttf", 64.0f);
-    state.example_dynamic_text->set_text("Player");
-    state.example_dynamic_text->set_origin_centered();
-    state.example_dynamic_text->set_scale(0.25f);
+    state.player_label_text->set_text("player");
+    state.player_label_text->set_origin_centered();
+    state.player_label_text->set_scale(0.25f);
 }
 
 void game_destroy(engine::game_engine*) {
@@ -101,9 +106,13 @@ void game_update(engine::game_engine* engine, float delta_time) {
     // Rotate asteroids.
     state.asteroid_sprite->set_rotation(state.asteroid_sprite->get_rotation() + 36.f * delta_time);
 
+    if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
+        state.asteroid_position = camera.screen_to_world(input.get_mouse_screen_position());
+    }
+
     // Update the text.
-    state.example_static_text->set_text("Camera Mode: {}",
-                                        state.is_camera_free_mode ? "Free" : "Follow");
+    state.debug_text->set_text("Camera Mode: {}", state.is_camera_free_mode ? "Free" : "Follow");
+    state.debug_text->set_origin_centered();
 }
 
 void game_render(engine::game_engine* engine) {
@@ -111,17 +120,12 @@ void game_render(engine::game_engine* engine) {
     engine::game_renderer& renderer = engine->get_renderer();
 
     renderer.sprite_draw_world(state.player_sprite.get(), state.player_position);
-
-    renderer.text_draw_world(state.example_dynamic_text.get(),
+    renderer.text_draw_world(state.player_label_text.get(),
                              state.player_position + glm::vec2{0.f, 30.f});
 
-    // Draw a grid of asteroids to see camera movement.
-    for (int x = 0; x < 10; ++x) {
-        for (int y = 0; y < 10; ++y) {
-            glm::vec2 grid_position = {x * 150.0f, y * 150.0f};
-            renderer.sprite_draw_world(state.asteroid_sprite.get(), grid_position);
-        }
-    }
+    renderer.sprite_draw_world(state.asteroid_sprite.get(), state.asteroid_position);
 
-    renderer.text_draw_screen(state.example_static_text.get(), {10.0f, 10.0f});
+    // Render our overlay text at the top-middle of the screen.
+    const glm::vec2 screen_size = renderer.get_output_size();
+    renderer.text_draw_screen(state.debug_text.get(), {screen_size.x * 0.5f, 10});
 }

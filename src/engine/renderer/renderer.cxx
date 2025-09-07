@@ -156,10 +156,11 @@ namespace engine {
         const glm::vec2 final_position = screen_position - scaled_origin;
 
         // Set up destination rectangle
-        SDL_FRect dest_rect = {final_position.x, final_position.y, final_size.x, final_size.y};
+        const SDL_FRect dest_rect = {final_position.x, final_position.y, final_size.x,
+                                     final_size.y};
 
         // Set up rotation center point (relative to destination rectangle)
-        SDL_FPoint center = {scaled_origin.x, scaled_origin.y};
+        const SDL_FPoint center = {scaled_origin.x, scaled_origin.y};
 
         // Render with transformations
         if (text_rotation != 0.0f) {
@@ -178,9 +179,18 @@ namespace engine {
             return;
         }
 
-        const glm::vec2 text_origin = text->get_origin();
+        // Account for origin.
+        glm::vec2 adjusted_position = screen_position - text->get_origin();
 
-        TTF_DrawRendererText(text->get_sdl_text(), screen_position.x - text_origin.x,
-                             screen_position.y - text_origin.y);
+        // For some reason this only works when rounded to nearest whole numbers... like ???
+        adjusted_position = glm::floor(adjusted_position);
+
+        TTF_DrawRendererText(text->get_sdl_text(), adjusted_position.x, adjusted_position.y);
+    }
+
+    glm::vec2 game_renderer::get_output_size() const {
+        int w, h;
+        SDL_GetCurrentRenderOutputSize(m_sdl_renderer, &w, &h);
+        return {static_cast<float>(w), static_cast<float>(h)};
     }
 }  // namespace engine
