@@ -43,7 +43,7 @@ namespace engine {
     }
 
     void ecs_manager::set_velocity(entt::entity entity, const glm::vec2& velocity) {
-        ecs_utils::set_velocity(m_registry, entity, velocity);
+        ecs_utils::set_linear_velocity(m_registry, entity, velocity);
     }
 
     void ecs_manager::add_impulse(entt::entity entity, const glm::vec2& impulse) {

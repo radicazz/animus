@@ -54,14 +54,21 @@ namespace engine {
         auto view = registry.view<component_transform, component_sprite>();
         auto& renderer = engine->get_renderer();
 
-        // Collect all renderable entities (for potential sorting if needed later)
         std::vector<entt::entity> entities;
+        entities.reserve(view.size_hint());
+
         for (auto entity : view) {
             const auto& sprite_comp = view.get<component_sprite>(entity);
-            if (sprite_comp.sprite_image) {
-                entities.push_back(entity);
+            if (sprite_comp.sprite != nullptr) {
+                entities.emplace_back(entity);
             }
         }
+
+        std::sort(entities.begin(), entities.end(), [&](entt::entity a, entt::entity b) {
+            const auto& sprite_a = registry.get<component_sprite>(a);
+            const auto& sprite_b = registry.get<component_sprite>(b);
+            return sprite_a.layer < sprite_b.layer;
+        });
 
         // Render all entities
         for (auto entity : entities) {
@@ -69,11 +76,11 @@ namespace engine {
             const auto& sprite_comp = registry.get<component_sprite>(entity);
 
             // Apply transform to sprite
-            sprite_comp.sprite_image->set_rotation(transform.rotation_degrees);
-            sprite_comp.sprite_image->set_scale(transform.scale);
+            sprite_comp.sprite->set_rotation(transform.rotation_degrees);
+            sprite_comp.sprite->set_scale(transform.scale);
 
             // Render sprite at world position
-            renderer.sprite_draw_world(sprite_comp.sprite_image.get(), transform.position);
+            renderer.sprite_draw_world(sprite_comp.sprite.get(), transform.position);
         }
     }
 
@@ -86,8 +93,12 @@ namespace engine {
             auto& lifetime = view.get<component_lifetime>(entity);
             lifetime.remaining_time -= delta_time;
 
-            if (lifetime.remaining_time <= 0.0f && lifetime.destroy_on_expire) {
-                entities_to_destroy.push_back(entity);
+            if (lifetime.remaining_time <= 0.0f) {
+                if (lifetime.destroy_on_expire == true) {
+                    entities_to_destroy.push_back(entity);
+                } else {
+                    // Do something here?
+                }
             }
         }
 
@@ -123,11 +134,27 @@ namespace engine {
         if (auto* transform = registry.try_get<component_transform>(entity)) {
             return transform->position;
         }
+
         return {0.0f, 0.0f};
     }
 
-    void ecs_utils::set_velocity(entt::registry& registry, entt::entity entity,
-                                 const glm::vec2& velocity) {
+    void ecs_utils::set_rotation(entt::registry& registry, entt::entity entity,
+                                 float rotation_degrees) {
+        if (auto* transform = registry.try_get<component_transform>(entity)) {
+            transform->rotation_degrees = rotation_degrees;
+        }
+    }
+
+    float ecs_utils::get_rotation(entt::registry& registry, entt::entity entity) {
+        if (auto* transform = registry.try_get<component_transform>(entity)) {
+            return transform->rotation_degrees;
+        }
+
+        return 0.0f;
+    }
+
+    void ecs_utils::set_linear_velocity(entt::registry& registry, entt::entity entity,
+                                        const glm::vec2& velocity) {
         if (auto* vel = registry.try_get<component_velocity>(entity)) {
             vel->linear = velocity;
         }

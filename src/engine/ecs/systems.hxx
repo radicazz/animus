@@ -35,22 +35,22 @@ namespace engine {
         static void update(entt::registry& registry, float delta_time);
     };
 
-    /**
-     * @brief Utility functions for ECS operations
-     */
     class ecs_utils {
     public:
-        // Entity creation helpers
         static entt::entity create_sprite_entity(entt::registry& registry,
                                                  const glm::vec2& position,
                                                  std::unique_ptr<render_sprite> sprite);
 
-        // Component helpers
         static void set_position(entt::registry& registry, entt::entity entity,
                                  const glm::vec2& position);
         static glm::vec2 get_position(entt::registry& registry, entt::entity entity);
-        static void set_velocity(entt::registry& registry, entt::entity entity,
-                                 const glm::vec2& velocity);
+
+        static void set_rotation(entt::registry& registry, entt::entity entity,
+                                 float rotation_degrees);
+        static float get_rotation(entt::registry& registry, entt::entity entity);
+
+        static void set_linear_velocity(entt::registry& registry, entt::entity entity,
+                                        const glm::vec2& velocity);
         static void add_impulse(entt::registry& registry, entt::entity entity,
                                 const glm::vec2& impulse);
 

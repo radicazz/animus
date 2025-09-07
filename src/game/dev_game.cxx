@@ -63,7 +63,7 @@ void game_update(engine::game_engine* engine, float delta_time) {
             ecs.try_get_component<engine::component_velocity>(state.player_entity);
         if (player_velocity != nullptr) {
             glm::vec2 input_force{0.0f, 0.0f};
-            constexpr float acceleration = 500.0f;  // pixels per second squared
+            constexpr float acceleration = 1000.0f;  // pixels per second squared
 
             if (input.is_key_held(engine::input_key::a)) {
                 input_force.x -= acceleration;
