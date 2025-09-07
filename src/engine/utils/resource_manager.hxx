@@ -19,15 +19,15 @@ namespace engine {
      * the resource is already loaded and reuse it if available. The manager also provides methods
      * to unload specific resources or clear all loaded resources manually.
      */
-    class resource_manager {
+    class game_resources {
     public:
-        resource_manager(game_renderer& renderer);
-        ~resource_manager();
+        game_resources(game_renderer& renderer);
+        ~game_resources();
 
-        resource_manager(const resource_manager&) = delete;
-        resource_manager& operator=(const resource_manager&) = delete;
-        resource_manager(resource_manager&&) = delete;
-        resource_manager& operator=(resource_manager&&) = delete;
+        game_resources(const game_resources&) = delete;
+        game_resources& operator=(const game_resources&) = delete;
+        game_resources(game_resources&&) = delete;
+        game_resources& operator=(game_resources&&) = delete;
 
         /**
          * @brief Creates a sprite from an image texture file.

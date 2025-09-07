@@ -2,17 +2,18 @@
 
 void game_create(engine::game_engine* engine) {
     auto& state = engine->get_state<dev_game_state>();
-    engine::resource_manager& resource_manager = engine->get_resource_manager();
+    engine::game_resources& resource_manager = engine->get_resources();
+    engine::ecs_manager& ecs = engine->get_ecs_manager();
 
-    // Player
-    state.player_position = {100, 100};
-    state.player_speed = 200.f;
-    state.player_sprite = resource_manager.sprite_create("assets/sprites/player/default.png");
+    auto player_sprite = resource_manager.sprite_create("assets/sprites/player/default.png");
+    state.player_entity = ecs.create_sprite_entity({300, 300}, std::move(player_sprite));
+    ecs.add_component<engine::component_velocity>(state.player_entity) = {
+        .linear = {0.0f, 0.0f}, .max_speed = 100.0f, .drag = 0.1f};
 
     // Asteroid
-    state.asteroid_position = {300, 300};
-    state.asteroid_sprite =
+    auto asteroid_sprite =
         resource_manager.sprite_create("assets/sprites/asteroids/ice_1.png", {64, 64});
+    state.asteroid_entity = ecs.create_sprite_entity({300, 300}, std::move(asteroid_sprite));
 
     // Camera
     state.camera_follow_speed = 0.05f;
@@ -39,45 +40,47 @@ void game_destroy(engine::game_engine*) {
 void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
     auto& state = engine->get_state<dev_game_state>();
     engine::game_camera& camera = engine->get_camera();
+    engine::ecs_manager& ecs = engine->get_ecs_manager();
 
-    // Keep player within camera bounds
-    if (camera.has_physical_bounds()) {
-        const glm::vec2 bounds_min = camera.get_physical_bounds_min();
-        const glm::vec2 bounds_max = camera.get_physical_bounds_max();
-
-        if (state.player_position.x < bounds_min.x || state.player_position.x > bounds_max.x) {
-            state.player_velocity.x = -state.player_velocity.x * 0.5f;  // Bounce with energy loss
-            state.player_position.x =
-                glm::clamp(state.player_position.x, bounds_min.x, bounds_max.x);
-        }
-    }
+    // Update ECS physics systems
+    ecs.update_physics(fixed_delta_time);
+    ecs.update_lifetime(fixed_delta_time);
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
     auto& state = engine->get_state<dev_game_state>();
-    engine::input_system& input = engine->get_input_system();
+    engine::game_input& input = engine->get_input();
     engine::game_camera& camera = engine->get_camera();
+    engine::ecs_manager& ecs = engine->get_ecs_manager();
 
     // Toggle camera mode with 'C' key.
     if (input.is_key_pressed(engine::input_key::c)) {
         state.is_camera_free_mode = !state.is_camera_free_mode;
     }
 
-    glm::vec2 movement = {0.0f, 0.0f};
-    if (input.is_key_held(engine::input_key::a)) {
-        movement.x -= 1.0f;
-    }
-    if (input.is_key_held(engine::input_key::d)) {
-        movement.x += 1.0f;
-    }
-    if (input.is_key_held(engine::input_key::w)) {
-        movement.y -= 1.0f;
-    }
-    if (input.is_key_held(engine::input_key::s)) {
-        movement.y += 1.0f;
-    }
+    if (ecs.is_valid(state.player_entity) == true) {
+        auto* player_velocity =
+            ecs.try_get_component<engine::component_velocity>(state.player_entity);
+        if (player_velocity != nullptr) {
+            glm::vec2 input_force{0.0f, 0.0f};
+            constexpr float acceleration = 500.0f;  // pixels per second squared
 
-    state.player_position += movement * state.player_speed * delta_time;
+            if (input.is_key_held(engine::input_key::a)) {
+                input_force.x -= acceleration;
+            }
+            if (input.is_key_held(engine::input_key::d)) {
+                input_force.x += acceleration;
+            }
+            if (input.is_key_held(engine::input_key::w)) {
+                input_force.y -= acceleration;
+            }
+            if (input.is_key_held(engine::input_key::s)) {
+                input_force.y += acceleration;
+            }
+
+            player_velocity->linear += input_force * delta_time;
+        }
+    }
 
     // Camera zoom controls - 'o' to zoom out, 'p' to zoom in.
     if (input.is_key_held(engine::input_key::o)) {
@@ -110,14 +113,17 @@ void game_update(engine::game_engine* engine, float delta_time) {
         }
     } else {
         // FOLLOW MODE: Camera follows the player
-        camera.follow_target(state.player_position, state.camera_follow_speed);
+        camera.follow_target(ecs.get_position(state.player_entity), state.camera_follow_speed);
     }
 
-    // Rotate asteroids.
-    state.asteroid_sprite->set_rotation(state.asteroid_sprite->get_rotation() + 36.f * delta_time);
-
-    if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
-        state.asteroid_position = camera.screen_to_world(input.get_mouse_screen_position());
+    auto* asteroid_transform =
+        ecs.try_get_component<engine::component_transform>(state.asteroid_entity);
+    if (asteroid_transform != nullptr) {
+        asteroid_transform->rotation_degrees += 45.f * delta_time;
+        if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
+            asteroid_transform->position =
+                camera.screen_to_world(input.get_mouse_screen_position());
+        }
     }
 
     // Update the text.
@@ -128,12 +134,15 @@ void game_update(engine::game_engine* engine, float delta_time) {
 void game_render(engine::game_engine* engine) {
     auto& state = engine->get_state<dev_game_state>();
     engine::game_renderer& renderer = engine->get_renderer();
+    engine::ecs_manager& ecs = engine->get_ecs_manager();
 
-    renderer.sprite_draw_world(state.player_sprite.get(), state.player_position);
-    renderer.text_draw_world(state.player_label_text.get(),
-                             state.player_position + glm::vec2{0.f, 30.f});
+    ecs.render_sprites(engine);
 
-    renderer.sprite_draw_world(state.asteroid_sprite.get(), state.asteroid_position);
+    if (ecs.is_valid(state.player_entity) == true) {
+        glm::vec2 player_position = ecs.get_position(state.player_entity);
+        renderer.text_draw_world(state.player_label_text.get(),
+                                 player_position + glm::vec2{0.f, 30.f});
+    }
 
     // Render our overlay text at the top-middle of the screen.
     const glm::vec2 screen_size = renderer.get_output_size();

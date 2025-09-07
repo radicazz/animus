@@ -9,26 +9,26 @@
 #include <format>
 
 namespace engine {
-    resource_manager::resource_manager(game_renderer& renderer) : m_renderer(renderer) {
+    game_resources::game_resources(game_renderer& renderer) : m_renderer(renderer) {
     }
 
-    resource_manager::~resource_manager() {
+    game_resources::~game_resources() {
         textures_clear();
         fonts_clear();
     }
 
-    std::unique_ptr<render_sprite> resource_manager::sprite_create(std::string_view file_path) {
+    std::unique_ptr<render_sprite> game_resources::sprite_create(std::string_view file_path) {
         SDL_Texture* texture = texture_get_or_load(file_path);
         return std::make_unique<render_sprite>(file_path, texture);
     }
 
-    std::unique_ptr<render_sprite> resource_manager::sprite_create(std::string_view file_path,
-                                                                   const glm::vec2& size) {
+    std::unique_ptr<render_sprite> game_resources::sprite_create(std::string_view file_path,
+                                                                 const glm::vec2& size) {
         SDL_Texture* texture = texture_get_or_load(file_path);
         return std::make_unique<render_sprite>(file_path, texture, size);
     }
 
-    std::unique_ptr<render_text_static> resource_manager::text_create_static(
+    std::unique_ptr<render_text_static> game_resources::text_create_static(
         std::string_view font_path, float font_size) {
         TTF_Font* font = font_get_or_load(font_path, font_size);
         TTF_Text* text = TTF_CreateText(m_renderer.get_sdl_text_engine(), font,
@@ -37,7 +37,7 @@ namespace engine {
         return std::make_unique<render_text_static>(text);
     }
 
-    std::unique_ptr<render_text_dynamic> resource_manager::text_create_dynamic(
+    std::unique_ptr<render_text_dynamic> game_resources::text_create_dynamic(
         std::string_view font_path, float font_size) {
         TTF_Font* font = font_get_or_load(font_path, font_size);
         TTF_Text* text = TTF_CreateText(m_renderer.get_sdl_text_engine(), font,
@@ -52,7 +52,7 @@ namespace engine {
                                                      m_renderer.get_sdl_renderer(), font);
     }
 
-    void resource_manager::textures_clear() {
+    void game_resources::textures_clear() {
         for (auto& [key, texture] : m_textures) {
             SDL_DestroyTexture(texture);
             SDL_Log("Unloaded texture: %s", key.c_str());
@@ -61,7 +61,7 @@ namespace engine {
         m_textures.clear();
     }
 
-    void resource_manager::fonts_clear() {
+    void game_resources::fonts_clear() {
         for (auto& [key, font] : m_fonts) {
             TTF_CloseFont(font);
             SDL_Log("Unloaded font: %s", key.c_str());
@@ -70,7 +70,7 @@ namespace engine {
         m_fonts.clear();
     }
 
-    SDL_Texture* resource_manager::texture_get_or_load(std::string_view file_path) {
+    SDL_Texture* game_resources::texture_get_or_load(std::string_view file_path) {
         if (is_texture_loaded(file_path) == true) {
             return m_textures.at(file_path.data());
         }
@@ -87,7 +87,7 @@ namespace engine {
         return texture;
     }
 
-    void resource_manager::texture_unload(std::string_view file_path) {
+    void game_resources::texture_unload(std::string_view file_path) {
         auto it = m_textures.find(file_path.data());
         if (it != m_textures.end()) {
             SDL_DestroyTexture(it->second);
@@ -96,11 +96,11 @@ namespace engine {
         }
     }
 
-    bool resource_manager::is_texture_loaded(std::string_view file_path) const {
+    bool game_resources::is_texture_loaded(std::string_view file_path) const {
         return m_textures.contains(file_path.data());
     }
 
-    TTF_Font* resource_manager::font_get_or_load(std::string_view font_path, float font_size) {
+    TTF_Font* game_resources::font_get_or_load(std::string_view font_path, float font_size) {
         std::string unique_key = font_create_unique_key(font_path, font_size);
 
         if (is_font_loaded(unique_key) == true) {
@@ -119,7 +119,7 @@ namespace engine {
         return font;
     }
 
-    void resource_manager::font_unload(std::string_view unique_key) {
+    void game_resources::font_unload(std::string_view unique_key) {
         auto it = m_fonts.find(unique_key.data());
         if (it != m_fonts.end()) {
             TTF_CloseFont(it->second);
@@ -127,12 +127,12 @@ namespace engine {
         }
     }
 
-    bool resource_manager::is_font_loaded(std::string_view unique_key) const {
+    bool game_resources::is_font_loaded(std::string_view unique_key) const {
         return m_fonts.contains(unique_key.data());
     }
 
-    std::string resource_manager::font_create_unique_key(std::string_view font_path,
-                                                         float font_size) const {
+    std::string game_resources::font_create_unique_key(std::string_view font_path,
+                                                       float font_size) const {
         return std::format("{}:{}", font_path, font_size);
     }
 }  // namespace engine

@@ -8,6 +8,7 @@
 #include "renderer/renderer.hxx"
 #include "window/window.hxx"
 #include "utils/resource_manager.hxx"
+#include "ecs/ecs_manager.hxx"
 
 namespace engine {
     /**
@@ -20,7 +21,7 @@ namespace engine {
      *
      * @return consteval bool True if this is a debug build, false otherwise.
      */
-    consteval bool is_debug_build() {
+    constexpr bool is_debug_build() {
 #ifdef NDEBUG
         return false;
 #else
@@ -46,7 +47,9 @@ namespace engine {
      * 5. `destroy` (once during shutdown)
      *
      */
-    struct game_callbacks {
+    struct game_info {
+        void* state = nullptr;
+
         /**
          * @brief Called last in the engine's constructor.
          *
@@ -108,7 +111,7 @@ namespace engine {
 
     class game_engine {
     public:
-        game_engine(const game_details& details, void* state, const game_callbacks& callbacks);
+        game_engine(const game_details& details, const game_info& info);
         ~game_engine();
 
         /**
@@ -120,8 +123,9 @@ namespace engine {
         [[nodiscard]] game_window& get_window();
         [[nodiscard]] game_renderer& get_renderer();
         [[nodiscard]] game_camera& get_camera();
-        [[nodiscard]] resource_manager& get_resource_manager();
-        [[nodiscard]] input_system& get_input_system();
+        [[nodiscard]] game_resources& get_resources();
+        [[nodiscard]] game_input& get_input();
+        [[nodiscard]] ecs_manager& get_ecs_manager();
 
         /**
          * @brief Get a pointer to your game's data.
@@ -157,11 +161,11 @@ namespace engine {
         game_window m_window;
         game_renderer m_renderer;
         game_camera m_camera;
-        resource_manager m_resource_manager;
-        input_system m_input_system;
+        game_resources m_resources;
+        game_input m_input;
+        ecs_manager m_ecs_manager;
 
-        game_callbacks m_callbacks;
-        void* m_state;
+        game_info m_info;
     };
 
     inline game_window& game_engine::get_window() {
@@ -176,17 +180,21 @@ namespace engine {
         return m_camera;
     }
 
-    inline resource_manager& game_engine::get_resource_manager() {
-        return m_resource_manager;
+    inline game_resources& game_engine::get_resources() {
+        return m_resources;
     }
 
-    inline input_system& game_engine::get_input_system() {
-        return m_input_system;
+    inline game_input& game_engine::get_input() {
+        return m_input;
+    }
+
+    inline ecs_manager& game_engine::get_ecs_manager() {
+        return m_ecs_manager;
     }
 
     template <class T>
         requires std::is_class_v<T>
     inline T& game_engine::get_state() {
-        return *static_cast<T*>(m_state);
+        return *static_cast<T*>(m_info.state);
     }
 }  // namespace engine

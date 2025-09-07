@@ -28,10 +28,12 @@ namespace engine {
         [[nodiscard]] glm::vec2 get_size() const;
         [[nodiscard]] glm::vec2 get_origin() const;
         [[nodiscard]] float get_rotation() const;
+        [[nodiscard]] glm::vec2 get_scale() const;
 
         void set_size(const glm::vec2& size);
         void set_origin(const glm::vec2& origin);
         void set_rotation(float rotation);
+        void set_scale(const glm::vec2& scale);
 
         [[nodiscard]] bool is_valid() const;
 
@@ -43,7 +45,8 @@ namespace engine {
         SDL_Texture* m_sdl_texture;  // Underlying SDL_Texture.
         glm::vec2 m_size;            // Size of the image that makes the sprite.
         glm::vec2 m_origin;          // Origin point of the sprite (automatically centered).
-        float m_rotation;            // Rotation angle of the sprite.
+        glm::vec2 m_scale;
+        float m_rotation;  // Rotation angle of the sprite.
     };
 
     inline SDL_Texture* render_sprite::get_sdl_texture() const {
@@ -66,6 +69,10 @@ namespace engine {
         return m_rotation;
     }
 
+    inline glm::vec2 render_sprite::get_scale() const {
+        return m_scale;
+    }
+
     inline void render_sprite::set_size(const glm::vec2& size) {
         m_size = size;
     }
@@ -76,6 +83,10 @@ namespace engine {
 
     inline void render_sprite::set_rotation(float rotation) {
         m_rotation = rotation;
+    }
+
+    inline void render_sprite::set_scale(const glm::vec2& scale) {
+        m_scale = scale;
     }
 
     inline bool render_sprite::is_valid() const {

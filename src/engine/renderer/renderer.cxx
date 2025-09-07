@@ -61,12 +61,15 @@ namespace engine {
         // Apply camera zoom to sprite size and origin to make sprites scale with zoom
         glm::vec2 final_size = sprite->get_size();
         glm::vec2 final_origin = sprite->get_origin();
+        glm::vec2 final_scale = sprite->get_scale();
 
         if (m_camera != nullptr) {
             float zoom = m_camera->get_zoom();
             final_size *= zoom;
             final_origin *= zoom;
         }
+
+        final_size *= final_scale;
 
         const SDL_FRect dst_rect = {screen_position.x - final_origin.x,
                                     screen_position.y - final_origin.y, final_size.x, final_size.y};

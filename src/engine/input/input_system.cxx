@@ -2,11 +2,10 @@
 #include <unordered_map>
 
 namespace engine {
-    input_system::input_system()
-        : m_mouse_pos(0, 0), m_mouse_delta(0, 0), m_previous_mouse_pos(0, 0) {
+    game_input::game_input() : m_mouse_pos(0, 0), m_mouse_delta(0, 0), m_previous_mouse_pos(0, 0) {
     }
 
-    void input_system::update() {
+    void game_input::update() {
         // Clear frame-specific states
         m_pressed_this_frame.clear();
         m_released_this_frame.clear();
@@ -19,7 +18,7 @@ namespace engine {
         m_previous_keys = m_current_keys;
     }
 
-    void input_system::process_event(const SDL_Event& event) {
+    void game_input::process_event(const SDL_Event& event) {
         switch (event.type) {
             case SDL_EVENT_KEY_DOWN: {
                 input_key k = sdl_key_to_key(event.key.scancode);
@@ -64,7 +63,7 @@ namespace engine {
         }
     }
 
-    input_key input_system::sdl_key_to_key(SDL_Scancode scancode) const {
+    input_key game_input::sdl_key_to_key(SDL_Scancode scancode) const {
         static const std::unordered_map<SDL_Scancode, input_key> key_map = {
             {SDL_SCANCODE_W, input_key::w},
             {SDL_SCANCODE_A, input_key::a},
@@ -73,6 +72,7 @@ namespace engine {
             {SDL_SCANCODE_C, input_key::c},
             {SDL_SCANCODE_O, input_key::o},
             {SDL_SCANCODE_P, input_key::p},
+            {SDL_SCANCODE_G, input_key::g},
             {SDL_SCANCODE_UP, input_key::arrow_up},
             {SDL_SCANCODE_DOWN, input_key::arrow_down},
             {SDL_SCANCODE_LEFT, input_key::arrow_left},
@@ -84,7 +84,7 @@ namespace engine {
         return (it != key_map.end()) ? it->second : input_key::none;
     }
 
-    input_key input_system::sdl_mouse_to_key(Uint8 button) const {
+    input_key game_input::sdl_mouse_to_key(Uint8 button) const {
         switch (button) {
             case SDL_BUTTON_LEFT:
                 return input_key::mouse_left;

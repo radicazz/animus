@@ -3,35 +3,31 @@
 #include <stdexcept>
 
 namespace engine {
-    game_engine::game_engine(const game_details& details, void* state,
-                             const game_callbacks& callbacks)
+    game_engine::game_engine(const game_details& details, const game_info& info)
         : m_window(details.window_title, static_cast<int>(details.window_size.x),
                    static_cast<int>(details.window_size.y)),
           m_renderer(m_window.get_sdl_window()),
           m_camera({0.f, 0.f}, 1.f),
-          m_resource_manager(m_renderer),
-          m_input_system(),
-          m_state(state),
-          m_callbacks(callbacks) {
+          m_resources(m_renderer),
+          m_input(),
+          m_ecs_manager(),
+          m_info(info) {
         // TODO: Move this camera code.
-        // Set up camera with proper viewport size
         m_camera.set_viewport_size(details.window_size);
-        m_camera.set_physical_bounds({-500.0f, -500.0f}, {1500.0f, 1500.0f});
         m_renderer.set_camera(&m_camera);
 
-        safe_invoke(m_callbacks.on_create, this);
+        safe_invoke(m_info.on_create, this);
     }
 
     game_engine::~game_engine() {
-        safe_invoke(m_callbacks.on_destroy, this);
+        safe_invoke(m_info.on_destroy, this);
     }
 
     void game_engine::run() {
         Uint64 last_frame_start_time = SDL_GetPerformanceCounter();
         const Uint64 performance_frequency = SDL_GetPerformanceFrequency();
 
-        // About 32 Hz fixed timestep.
-        constexpr float fixed_timestep_seconds = 1.0f / 32.0f;
+        constexpr float fixed_timestep_seconds = 1.0f / 64.0f;
         float fixed_time_accumulator = 0.0f;
 
         while (m_window.get_is_running() == true) {
@@ -41,7 +37,7 @@ namespace engine {
             fixed_time_accumulator += delta_time;
             last_frame_start_time = frame_start_time;
 
-            m_input_system.update();
+            m_input.update();
 
             SDL_Event event;
             while (SDL_PollEvent(&event) == true) {
@@ -49,19 +45,19 @@ namespace engine {
                     m_window.set_is_running(false);
                 }
 
-                m_input_system.process_event(event);
+                m_input.process_event(event);
             }
 
             // Run fixed update as many times as needed to catch up
             while (fixed_time_accumulator >= fixed_timestep_seconds) {
-                safe_invoke(m_callbacks.on_fixed_update, this, fixed_timestep_seconds);
+                safe_invoke(m_info.on_fixed_update, this, fixed_timestep_seconds);
                 fixed_time_accumulator -= fixed_timestep_seconds;
             }
 
-            safe_invoke(m_callbacks.on_update, this, delta_time);
+            safe_invoke(m_info.on_update, this, delta_time);
 
             m_renderer.frame_begin();
-            safe_invoke(m_callbacks.on_render, this);
+            safe_invoke(m_info.on_render, this);
             m_renderer.frame_end();
         }
     }

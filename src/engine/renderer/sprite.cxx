@@ -11,6 +11,7 @@ namespace engine {
           m_sdl_texture(texture),
           m_size{0, 0},
           m_origin{0, 0},
+          m_scale{1.0f, 1.0f},
           m_rotation(0.f) {
         auto_size_and_origin();
     }
@@ -21,6 +22,7 @@ namespace engine {
           m_sdl_texture(texture),
           m_size(size),
           m_origin(size * 0.5f),
+          m_scale{1.0f, 1.0f},
           m_rotation(0.f) {
     }
 

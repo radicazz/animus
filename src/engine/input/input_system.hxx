@@ -14,6 +14,7 @@ namespace engine {
         c,
         o,
         p,
+        g,
         arrow_up,
         arrow_down,
         arrow_left,
@@ -28,9 +29,9 @@ namespace engine {
 
     enum class input_state { pressed, held, released };
 
-    class input_system {
+    class game_input {
     public:
-        input_system();
+        game_input();
 
         void update();
         void process_event(const SDL_Event& event);
@@ -70,23 +71,23 @@ namespace engine {
         glm::vec2 m_previous_mouse_pos;
     };
 
-    inline bool input_system::is_key_pressed(input_key k) const {
+    inline bool game_input::is_key_pressed(input_key k) const {
         return m_pressed_this_frame.find(k) != m_pressed_this_frame.end();
     }
 
-    inline bool input_system::is_key_held(input_key k) const {
+    inline bool game_input::is_key_held(input_key k) const {
         return m_current_keys.find(k) != m_current_keys.end();
     }
 
-    inline bool input_system::is_key_released(input_key k) const {
+    inline bool game_input::is_key_released(input_key k) const {
         return m_released_this_frame.find(k) != m_released_this_frame.end();
     }
 
-    inline glm::vec2 input_system::get_mouse_screen_position() const {
+    inline glm::vec2 game_input::get_mouse_screen_position() const {
         return m_mouse_pos;
     }
 
-    inline glm::vec2 input_system::get_mouse_move_delta() const {
+    inline glm::vec2 game_input::get_mouse_move_delta() const {
         return m_mouse_delta;
     }
 }  // namespace engine
