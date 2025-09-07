@@ -54,7 +54,7 @@ set_target_properties(incarnate PROPERTIES
 
 # On Windows, set the executable to be a GUI application.
 if(WIN32)
-    set_target_properties(incarnate PROPERTIES 
+    set_target_properties(incarnate PROPERTIES
         WIN32_EXECUTABLE TRUE
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
     )
@@ -78,46 +78,50 @@ target_compile_features(incarnate PRIVATE cxx_std_20)
 
 # Enhanced compiler-specific warnings and optimizations
 target_compile_options(incarnate PRIVATE
+
     # MSVC
     $<$<CXX_COMPILER_ID:MSVC>:
-        /W4                 # High warning level
-        /permissive-        # Disable non-conforming code
-        /utf-8              # Source and execution character sets are UTF-8
-        /Zc:__cplusplus     # Enable updated __cplusplus macro
-        $<$<CONFIG:Debug>:/RTC1>    # Runtime checks in debug
-        $<$<CONFIG:Release>:/O2>    # Optimize for speed in release
+    /W4 # High warning level
+    /permissive- # Disable non-conforming code
+    /utf-8 # Source and execution character sets are UTF-8
+    /Zc:__cplusplus # Enable updated __cplusplus macro
+    $<$<CONFIG:Debug>:/RTC1> # Runtime checks in debug
+    $<$<CONFIG:Release>:/O2> # Optimize for speed in release
     >
+
     # GCC
     $<$<CXX_COMPILER_ID:GNU>:
-        -Wall -Wextra -Wpedantic
-        -Wconversion -Wsign-conversion
-        -Wcast-qual -Wformat=2
-        -Wundef -Werror=return-type
-        $<$<CONFIG:Debug>:-Og -g>
-        $<$<CONFIG:Release>:-O3 -DNDEBUG>
+    -Wall -Wextra -Wpedantic
+    -Wconversion -Wsign-conversion
+    -Wcast-qual -Wformat=2
+    -Wundef -Werror=return-type
+    $<$<CONFIG:Debug>:-Og -g>
+    $<$<CONFIG:Release>:-O3 -DNDEBUG>
     >
+
     # Clang
     $<$<CXX_COMPILER_ID:Clang>:
-        -Wall -Wextra -Wpedantic
-        -Wconversion -Wsign-conversion
-        -Wcast-qual -Wformat=2
-        -Wundef -Werror=return-type
-        $<$<CONFIG:Debug>:-Og -g>
-        $<$<CONFIG:Release>:-O3 -DNDEBUG>
+    -Wall -Wextra -Wpedantic
+    -Wconversion -Wsign-conversion
+    -Wcast-qual -Wformat=2
+    -Wundef -Werror=return-type
+    $<$<CONFIG:Debug>:-Og -g>
+    $<$<CONFIG:Release>:-O3 -DNDEBUG>
     >
 )
 
 # Debug/Release specific settings
 target_compile_definitions(incarnate PRIVATE
     $<$<CONFIG:Debug>:
-        INC_DEBUG_BUILD=1
-        DEBUG
-        _DEBUG
+    INC_DEBUG_BUILD=1
+    DEBUG
+    _DEBUG
     >
     $<$<CONFIG:Release>:
-        NDEBUG
-        INC_RELEASE_BUILD=1
+    NDEBUG
+    INC_RELEASE_BUILD=1
     >
+
     # Platform-specific definitions
     $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN NOMINMAX>
     $<$<PLATFORM_ID:Linux>:_GNU_SOURCE>
@@ -125,20 +129,21 @@ target_compile_definitions(incarnate PRIVATE
 
 # Link libraries with proper visibility
 target_link_libraries(
-    incarnate 
+    incarnate
     PRIVATE
-        SDL3::SDL3
-        SDL3_image::SDL3_image
-        SDL3_ttf::SDL3_ttf
+    SDL3::SDL3
+    SDL3_image::SDL3_image
+    SDL3_ttf::SDL3_ttf
 )
 
 # Include directories - prefer target-based approach when possible
 target_include_directories(
-    incarnate 
+    incarnate
     PRIVATE
-        "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/external/glm"
-        "${CMAKE_BINARY_DIR}/generated"  # For generated headers like version.hxx
+    "${CMAKE_SOURCE_DIR}/src"
+    "${CMAKE_SOURCE_DIR}/external/glm"
+    "${CMAKE_SOURCE_DIR}/external/entt/single_include"
+    "${CMAKE_BINARY_DIR}/generated" # For generated headers like version.hxx
 )
 
 # DLL copying with better platform handling
@@ -151,8 +156,8 @@ if(WIN32)
 
     add_custom_command(TARGET incarnate POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${INCARNATE_DEPENDENCY_DLLS}
-                $<TARGET_FILE_DIR:incarnate>
+        ${INCARNATE_DEPENDENCY_DLLS}
+        $<TARGET_FILE_DIR:incarnate>
         COMMENT "Copying DLLs to output directory"
     )
 endif()
@@ -171,8 +176,8 @@ set(ASSETS_DEST_DIR "$<TARGET_FILE_DIR:incarnate>/assets")
 
 add_custom_command(TARGET incarnate POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-        "${ASSETS_SOURCE_DIR}"
-        "${ASSETS_DEST_DIR}"
+    "${ASSETS_SOURCE_DIR}"
+    "${ASSETS_DEST_DIR}"
     COMMENT "Copying game assets to ${ASSETS_DEST_DIR}"
     VERBATIM
 )
@@ -186,9 +191,9 @@ add_custom_command(TARGET incarnate PRE_BUILD
 
 # Enhanced install rules with proper component support
 install(TARGETS incarnate
-    RUNTIME 
-        DESTINATION bin
-        COMPONENT Runtime
+    RUNTIME
+    DESTINATION bin
+    COMPONENT Runtime
 )
 
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/assets"
@@ -245,12 +250,14 @@ option(INCARNATE_STATIC_ANALYSIS "Enable static analysis tools" OFF)
 # Testing support
 if(INCARNATE_ENABLE_TESTING)
     enable_testing()
+
     # Could add test subdirectory here if tests are implemented
 endif()
 
 # Documentation support
 if(INCARNATE_ENABLE_DOCS)
     find_package(Doxygen REQUIRED)
+
     if(DOXYGEN_FOUND)
         # Configure Doxyfile with project variables
         configure_file(
@@ -258,23 +265,23 @@ if(INCARNATE_ENABLE_DOCS)
             "${CMAKE_BINARY_DIR}/Doxyfile"
             @ONLY
         )
-        
+
         # Create docs directory
         file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/docs")
-        
+
         # Copy CSS and layout files to build directory for Doxygen
         configure_file(
             "${CMAKE_SOURCE_DIR}/docs/style/simple-dark.css"
             "${CMAKE_BINARY_DIR}/simple-dark.css"
             COPYONLY
         )
-        
+
         configure_file(
             "${CMAKE_SOURCE_DIR}/docs/layout.xml"
             "${CMAKE_BINARY_DIR}/layout.xml"
             COPYONLY
         )
-        
+
         # Add custom target for generating documentation automatically
         add_custom_target(docs ALL
             COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
@@ -283,7 +290,7 @@ if(INCARNATE_ENABLE_DOCS)
             VERBATIM
             DEPENDS "${CMAKE_BINARY_DIR}/simple-dark.css" "${CMAKE_BINARY_DIR}/layout.xml"
         )
-        
+
         message(STATUS "Documentation generation enabled and will build automatically.")
     else()
         message(WARNING "Doxygen not found! Documentation generation disabled.")
