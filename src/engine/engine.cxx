@@ -13,40 +13,32 @@ namespace engine {
           m_input_system(),
           m_state(state),
           m_callbacks(callbacks) {
-        if (m_state == nullptr) {
-            throw std::invalid_argument("Game state is a required engine parameter.");
-        }
-
+        // TODO: Move this camera code.
         // Set up camera with proper viewport size
         m_camera.set_viewport_size(details.window_size);
-
-        // Set default world bounds for the camera
-        // These can be overridden by calling engine.get_camera().set_bounds() if needed
         m_camera.set_physical_bounds({-500.0f, -500.0f}, {1500.0f, 1500.0f});
-
-        // Connect camera to renderer
         m_renderer.set_camera(&m_camera);
 
-        if (m_callbacks.on_create != nullptr) {
-            m_callbacks.on_create(this);
-        }
+        safe_invoke(m_callbacks.on_create, this);
     }
 
     game_engine::~game_engine() {
-        if (m_callbacks.on_destroy != nullptr) {
-            m_callbacks.on_destroy(this);
-        }
+        safe_invoke(m_callbacks.on_destroy, this);
     }
 
     void game_engine::run() {
-        // Timing variables for calculating delta time.
         Uint64 last_frame_start_time = SDL_GetPerformanceCounter();
         const Uint64 performance_frequency = SDL_GetPerformanceFrequency();
+
+        // About 32 Hz fixed timestep.
+        constexpr float fixed_timestep_seconds = 1.0f / 32.0f;
+        float fixed_time_accumulator = 0.0f;
 
         while (m_window.get_is_running() == true) {
             const Uint64 frame_start_time = SDL_GetPerformanceCounter();
             const float delta_time = (frame_start_time - last_frame_start_time) /
                                      static_cast<float>(performance_frequency);
+            fixed_time_accumulator += delta_time;
             last_frame_start_time = frame_start_time;
 
             m_input_system.update();
@@ -60,14 +52,16 @@ namespace engine {
                 m_input_system.process_event(event);
             }
 
-            if (m_callbacks.on_update != nullptr) {
-                m_callbacks.on_update(this, delta_time);
+            // Run fixed update as many times as needed to catch up
+            while (fixed_time_accumulator >= fixed_timestep_seconds) {
+                safe_invoke(m_callbacks.on_fixed_update, this, fixed_timestep_seconds);
+                fixed_time_accumulator -= fixed_timestep_seconds;
             }
 
+            safe_invoke(m_callbacks.on_update, this, delta_time);
+
             m_renderer.frame_begin();
-            if (m_callbacks.on_render != nullptr) {
-                m_callbacks.on_render(this);
-            }
+            safe_invoke(m_callbacks.on_render, this);
             m_renderer.frame_end();
         }
     }

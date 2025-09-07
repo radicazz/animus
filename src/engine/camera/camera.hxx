@@ -38,8 +38,13 @@ namespace engine {
     private:
         void clamp_to_physical_bounds();
 
+    private:
         glm::vec2 m_world_position;
+
         float m_zoom_level;
+        static constexpr float min_zoom = 1.f;
+        static constexpr float max_zoom = 2.f;
+
         glm::vec2 m_viewport_size{800.0f, 600.0f};
 
         // Camera bounds (optional)
@@ -49,9 +54,6 @@ namespace engine {
 
         // Following
         glm::vec2 m_follow_offset{0.0f};
-
-        static constexpr float min_zoom = 0.1f;
-        static constexpr float max_zoom = 5.0f;
     };
 
     inline void game_camera::set_position(const glm::vec2& position) {

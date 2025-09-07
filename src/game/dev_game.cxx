@@ -36,6 +36,23 @@ void game_destroy(engine::game_engine*) {
     // RAII currently handles resource cleanup so nothing to really do here.
 }
 
+void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
+    auto& state = engine->get_state<dev_game_state>();
+    engine::game_camera& camera = engine->get_camera();
+
+    // Keep player within camera bounds
+    if (camera.has_physical_bounds()) {
+        const glm::vec2 bounds_min = camera.get_physical_bounds_min();
+        const glm::vec2 bounds_max = camera.get_physical_bounds_max();
+
+        if (state.player_position.x < bounds_min.x || state.player_position.x > bounds_max.x) {
+            state.player_velocity.x = -state.player_velocity.x * 0.5f;  // Bounce with energy loss
+            state.player_position.x =
+                glm::clamp(state.player_position.x, bounds_min.x, bounds_max.x);
+        }
+    }
+}
+
 void game_update(engine::game_engine* engine, float delta_time) {
     auto& state = engine->get_state<dev_game_state>();
     engine::input_system& input = engine->get_input_system();
@@ -46,28 +63,21 @@ void game_update(engine::game_engine* engine, float delta_time) {
         state.is_camera_free_mode = !state.is_camera_free_mode;
     }
 
-    glm::vec2 movement(0.0f);
-    if (input.is_key_held(engine::input_key::w)) {
-        movement.y -= 1.0f;
-    }
-    if (input.is_key_held(engine::input_key::s)) {
-        movement.y += 1.0f;
-    }
+    glm::vec2 movement = {0.0f, 0.0f};
     if (input.is_key_held(engine::input_key::a)) {
         movement.x -= 1.0f;
     }
     if (input.is_key_held(engine::input_key::d)) {
         movement.x += 1.0f;
     }
-    state.player_position += movement * state.player_speed * delta_time;
-
-    // Keep player within the same bounds as the camera uses.
-    if (camera.has_physical_bounds() == true) {
-        const glm::vec2 bounds_min = camera.get_physical_bounds_min();
-        const glm::vec2 bounds_max = camera.get_physical_bounds_max();
-        state.player_position.x = glm::clamp(state.player_position.x, bounds_min.x, bounds_max.x);
-        state.player_position.y = glm::clamp(state.player_position.y, bounds_min.y, bounds_max.y);
+    if (input.is_key_held(engine::input_key::w)) {
+        movement.y -= 1.0f;
     }
+    if (input.is_key_held(engine::input_key::s)) {
+        movement.y += 1.0f;
+    }
+
+    state.player_position += movement * state.player_speed * delta_time;
 
     // Camera zoom controls - 'o' to zoom out, 'p' to zoom in.
     if (input.is_key_held(engine::input_key::o)) {

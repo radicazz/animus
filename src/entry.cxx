@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
         engine::game_callbacks callbacks = {.on_create = game_create,
                                             .on_destroy = game_destroy,
                                             .on_update = game_update,
+                                            .on_fixed_update = game_fixed_update,
                                             .on_render = game_render};
 
         // Initial game engine window parameters such as title and size.

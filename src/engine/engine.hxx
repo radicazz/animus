@@ -38,11 +38,12 @@ namespace engine {
      * `engine::game_engine` pointer as its first argument, allowing access to the engine's
      * functionality.
      *
-     * These functions are called in the following order:
-     * 1. `create`
-     * 2. `update`
-     * 3. `render`
-     * 4. `destroy`
+     * These functions are called in the following order each frame:
+     * 1. `create` (once during initialization)
+     * 2. `fixed_update` (called 1+ times per frame at 32 Hz)
+     * 3. `update` (once per frame)
+     * 4. `render` (once per frame)
+     * 5. `destroy` (once during shutdown)
      *
      */
     struct game_callbacks {
@@ -51,7 +52,6 @@ namespace engine {
          *
          * Use this as an opportunity to initialize your game state outside of it's own constructor.
          * For example, load sprites, fonts and other resources here.
-         *
          */
         void (*on_create)(game_engine*) = nullptr;
 
@@ -65,18 +65,35 @@ namespace engine {
 
         /**
          * @brief Called every frame before rendering.
-         *
          * @note This callback has an extra parameter, `float delta_time`, which represents the time
          *       elapsed since the last frame.
          */
         void (*on_update)(game_engine*, float delta_time) = nullptr;
 
         /**
-         * @brief Called every frame during rendering.
+         * @brief Called at a fixed timestep (32 Hz) for consistent physics updates.
          *
+         * This callback is called at regular intervals regardless of framerate,
+         * making it ideal for physics simulation, collision detection, and other
+         * systems that require consistent timing.
+         *
+         * @note The fixed_delta_time parameter is always 1/32 seconds (~31.25ms).
+         *       Multiple calls may occur in a single frame to maintain timing accuracy.
+         */
+        void (*on_fixed_update)(game_engine*, float fixed_delta_time) = nullptr;
+
+        /**
+         * @brief Called every frame during rendering.
          */
         void (*on_render)(game_engine*) = nullptr;
     };
+
+    template <class... Args>
+    void safe_invoke(void (*func)(Args...), Args... args) {
+        if (func != nullptr) {
+            func(args...);
+        }
+    }
 
     /**
      * @brief Details for initializing the game engine.
