@@ -147,7 +147,7 @@ void game_render(engine::game_engine* engine, float interpolation_alpha) {
     engine::game_renderer& renderer = engine->get_renderer();
     engine::ecs_manager& ecs = engine->get_ecs_manager();
 
-    ecs.render_sprites(engine, interpolation_alpha);
+    ecs.render_sprites(renderer, interpolation_alpha);
 
     if (ecs.is_valid(state.player_entity) == true) {
         glm::vec2 player_position = ecs.get_position(state.player_entity);

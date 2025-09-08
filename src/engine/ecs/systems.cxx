@@ -53,10 +53,9 @@ namespace engine {
     }
 
     // Renderer System Implementation
-    void system_renderer::render(entt::registry& registry, game_engine* engine,
+    void system_renderer::render(entt::registry& registry, game_renderer& renderer,
                                  float interpolation_alpha) {
         auto view = registry.view<component_transform_interpolated, component_sprite>();
-        auto& renderer = engine->get_renderer();
 
         std::vector<entt::entity> entities;
         entities.reserve(view.size_hint());

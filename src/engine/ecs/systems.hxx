@@ -4,7 +4,7 @@
 #include "components.hxx"
 
 namespace engine {
-    class game_engine;
+    class game_renderer;
 
     /**
      * @brief Physics system that handles velocity integration and movement
@@ -24,7 +24,7 @@ namespace engine {
      */
     class system_renderer {
     public:
-        static void render(entt::registry& registry, game_engine* engine,
+        static void render(entt::registry& registry, game_renderer& renderer,
                            float interpolation_alpha);
     };
 

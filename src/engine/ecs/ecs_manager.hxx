@@ -25,7 +25,7 @@ namespace engine {
 
         void update_physics(float fixed_delta_time);
         void update_lifetime(float fixed_delta_time);
-        void render_sprites(game_engine* engine, float interpolation_alpha);
+        void render_sprites(game_renderer& renderer, float interpolation_alpha);
 
         entt::entity create_sprite_entity(const glm::vec2& position,
                                           std::unique_ptr<render_sprite> sprite);
