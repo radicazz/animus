@@ -72,10 +72,10 @@ incarnate/
 ├── external/              # Git submodules (SDL, GLM, etc.)
 ├── src/
 │   ├── engine/            # Engine core systems
-│   │   ├── camera/        # 2D camera with following and bounds
-│   │   ├── input/         # Input handling system
-│   │   ├── renderer/      # Sprite rendering system
-│   │   └── resource/      # Asset loading and management
+│   │   ├── ecs/           # Entity Component System
+│   │   ├── renderer/      # Sprite & Font rendering system
+│   │   ├── utils/         # Utility functions
+│   │   └── window/        # Window management
 │   └── game/              # Demo game implementation
 ├── build/                 # Build output (generated)
 ├── CMakeLists.txt         # Main CMake configuration
@@ -88,62 +88,79 @@ incarnate/
 #include "engine/engine.hxx"
 
 struct my_game_state {
-    glm::vec2 player_position;
-    float player_speed;
-    std::unique_ptr<engine::render_sprite> player_sprite;
+    entt::entity player = {entt::null};
 };
 
 void game_create(engine::game_engine* engine) {
     auto& state = engine->get_state<my_game_state>();
-    auto& resource_manager = engine->get_resource_manager();
+    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_resources& resources = engine->get_resources();
 
-    state.player_position = {400.f, 300.f};
-    state.player_speed = 200.f;
+    // Load an image from the assets folder as a sprite.
+    auto player_sprite = resources.sprite_create("assets/player.png");
 
-    // Load an image from the assets folder as a sprite. The underlying texture will be automatically managed.
-    state.player_sprite = resource_manager.sprite_create("assets/player.png");
+    // Register your player entity with the sprite.
+    state.player = ecs.create_sprite_entity({400.f, 300.f}, std::move(player_sprite));
+
+    // Add velocity component for movement.
+    ecs.add_component<engine::component_velocity>(state.player) = {
+        .linear = {0.0f, 0.0f}, .max_speed = 200.0f, .drag = 0.1f};
+}
+
+void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
+    engine::ecs_manager& ecs = engine->get_ecs_manager();
+
+    // Update physics for all the entities in the engine.
+    ecs.update_physics(fixed_delta_time);
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
     auto& state = engine->get_state<my_game_state>();
-    auto& input = engine->get_input_system();
-    auto& camera = engine->get_camera();
-    
-    // Use the input system to capture WASD movement.
-    glm::vec2 movement(0.0f);
+    engine::game_input& input = engine->get_input_system();
+    engine::ecs_manager& ecs = engine->get_ecs_manager();
 
-    if (input.is_key_held(engine::input_key::w)) {
-        movement.y -= 1.0f;
-    }
-    if (input.is_key_held(engine::input_key::s)) {
-        movement.y += 1.0f;
-    }
-    if (input.is_key_held(engine::input_key::a)) {
-        movement.x -= 1.0f;
-    }
-    if (input.is_key_held(engine::input_key::d)) {
-        movement.x += 1.0f;
-    }
+    // Make sure the player has not been destroyed.
+    if (ecs.is_valid(state.player)) {
+        // Access the velocity component.
+        auto* velocity = ecs.get_component<engine::component_velocity>(state.player);
+        if (velocity) {
+            constexpr float acceleration = 500.0f;
 
-    // Smoothly update the player's position with delta_time.
-    state.player_position += movement * state.player_speed * delta_time;
+            // Use the input system to capture WASD movement.
+            glm::vec2 movement(0.0f);
 
-    // Make the camera follow the player.
-    camera.follow_target(state.player_position);
+            if (input.is_key_held(engine::input_key::w)) {
+                movement.y -= 1.0f;
+            }
+            if (input.is_key_held(engine::input_key::s)) {
+                movement.y += 1.0f;
+            }
+            if (input.is_key_held(engine::input_key::a)) {
+                movement.x -= 1.0f;
+            }
+            if (input.is_key_held(engine::input_key::d)) {
+                movement.x += 1.0f;
+            }
+
+            // Apply movement to the player.
+            velocity->linear += movement * acceleration * delta_time;
+        }
+    }
 }
 
-void game_render(engine::game_engine* engine) {
+void game_render(engine::game_engine* engine, float interpolation_alpha) {
     auto& state = engine->get_state<my_game_state>();
-    auto& renderer = engine->get_renderer();
+    engine::game_renderer& renderer = engine->get_renderer();
+    engine::ecs_manager& ecs = engine->get_ecs_manager();
 
-    // Render the player sprite in world space with applied camera transforms.
-    renderer.sprite_draw_world(state.player_sprite.get(), state.player_position);
+    // Render all the sprites in the game.
+    ecs.render_sprites(renderer, interpolation_alpha);
 }
 ```
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.txt](LICENSE.txt) file for details.
 
 ---
 
