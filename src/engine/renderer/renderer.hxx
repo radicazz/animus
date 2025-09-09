@@ -41,7 +41,7 @@ namespace engine {
         void text_draw_world(const render_text_dynamic* text, const glm::vec2& world_position);
         void text_draw_screen(const render_text_dynamic* text, const glm::vec2& screen_position);
 
-        void text_draw_screen(const render_text_static* text, const glm::vec2& screen_position);
+        void text_draw_screen(const game_text_static::uptr& text, const glm::vec2& screen_position);
 
         /**
          * @brief Get the output size of the renderer.

@@ -25,19 +25,22 @@ namespace engine {
      *
      * @code
      * // Use the resource manager to create a static text object.
-     * std::unique_ptr<render_text_static> text =
+     * game_text_static::uptr text =
      * resource_manager.create_text_static("assets/fonts/arial.ttf", 24);
      * text->set_text("Hello, World!");
      *
      * // During rendering, use the game renderer to display your text.
-     * game_renderer.draw_text_screen(text.get(), {10, 10});
+     * game_renderer.draw_text_screen(text, {10, 10});
      * @endcode
      */
-    class render_text_static {
+    class game_text_static {
     public:
-        render_text_static() = delete;
-        render_text_static(TTF_Text* sdl_text);
-        ~render_text_static();
+        using uptr = std::unique_ptr<game_text_static>;
+
+    public:
+        game_text_static() = delete;
+        game_text_static(TTF_Text* sdl_text);
+        ~game_text_static();
 
         /**
          * @brief Access the internal SDL text object.
@@ -72,30 +75,30 @@ namespace engine {
         glm::vec2 m_origin;
     };
 
-    inline TTF_Text* render_text_static::get_sdl_text() const {
+    inline TTF_Text* game_text_static::get_sdl_text() const {
         return m_sdl_text;
     }
 
-    inline glm::vec2 render_text_static::get_origin() const {
+    inline glm::vec2 game_text_static::get_origin() const {
         return m_origin;
     }
 
     template <typename... Args>
-    inline void render_text_static::set_text(std::format_string<Args...> fmt, Args&&... args) {
+    inline void game_text_static::set_text(std::format_string<Args...> fmt, Args&&... args) {
         std::string formatted_text = std::format(fmt, std::forward<Args>(args)...);
         set_text_raw(formatted_text);
     }
 
-    inline void render_text_static::set_origin(const glm::vec2& new_origin) {
+    inline void game_text_static::set_origin(const glm::vec2& new_origin) {
         m_origin = new_origin;
     }
 
-    inline void render_text_static::set_origin_centered() {
+    inline void game_text_static::set_origin_centered() {
         const glm::vec2 text_size = get_size();
         set_origin({text_size.x * 0.5f, text_size.y * 0.5f});
     }
 
-    inline bool render_text_static::is_valid() const {
+    inline bool game_text_static::is_valid() const {
         return m_sdl_text != nullptr;
     }
 
@@ -122,8 +125,7 @@ namespace engine {
      */
     class render_text_dynamic {
     public:
-        render_text_dynamic(std::string_view content,
-                            std::unique_ptr<render_text_static> static_text,
+        render_text_dynamic(std::string_view content, game_text_static::uptr static_text,
                             SDL_Renderer* sdl_renderer, TTF_Font* font);
         ~render_text_dynamic();
 
@@ -142,7 +144,7 @@ namespace engine {
          * @note This utility should only be used internally by the game renderer.
          */
         [[nodiscard]] SDL_Texture* get_sdl_texture() const;
-        [[nodiscard]] const render_text_static* get_static_text() const;
+        [[nodiscard]] const game_text_static* get_static_text() const;
 
         [[nodiscard]] game_color get_color() const;
         [[nodiscard]] glm::vec2 get_size() const;
@@ -191,7 +193,7 @@ namespace engine {
         SDL_Texture* create_texture_from_surface();
 
     private:
-        std::unique_ptr<render_text_static> m_static_text;
+        game_text_static::uptr m_static_text;
 
         SDL_Renderer* m_sdl_renderer;
         TTF_Font* m_sdl_font;
@@ -211,7 +213,7 @@ namespace engine {
         set_text_raw(formatted_text);
     }
 
-    inline const render_text_static* render_text_dynamic::get_static_text() const {
+    inline const game_text_static* render_text_dynamic::get_static_text() const {
         return m_static_text.get();
     }
 

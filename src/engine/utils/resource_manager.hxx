@@ -50,8 +50,7 @@ namespace engine {
          * @param font_size The size of the font.
          * @return A unique pointer to the created static text object.
          */
-        std::unique_ptr<render_text_static> text_create_static(std::string_view font_path,
-                                                               float font_size);
+        game_text_static::uptr text_create_static(std::string_view font_path, float font_size);
 
         /**
          * @brief Creates a dynamic text object from a font file.

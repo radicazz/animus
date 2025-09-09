@@ -46,11 +46,11 @@ void game_update(engine::game_engine* engine, float delta_time) {
     }
 
     // Zoom in and out with O and P keys.
-    if (input.is_key_held(engine::input_key::o)) {
+    if (input.is_key_held(engine::input_key::o) == true) {
         camera.zoom_by(1.0f - delta_time);
     }
 
-    if (input.is_key_held(engine::input_key::p)) {
+    if (input.is_key_held(engine::input_key::p) == true) {
         camera.zoom_by(1.0f + delta_time);
     }
 
@@ -139,5 +139,5 @@ void game_render(engine::game_engine* engine, float interpolation_alpha) {
 
     // Render our overlay text at the top-middle of the screen.
     const glm::vec2 screen_size = renderer.get_output_size();
-    renderer.text_draw_screen(state.debug_text.get(), {screen_size.x * 0.5f, 10});
+    renderer.text_draw_screen(state.debug_text, {screen_size.x * 0.5f, 10});
 }

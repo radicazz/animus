@@ -3,41 +3,41 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 namespace engine {
-    render_text_static::render_text_static(TTF_Text* sdl_text)
+    game_text_static::game_text_static(TTF_Text* sdl_text)
         : m_sdl_text(sdl_text), m_origin(0.0f, 0.0f) {
         if (m_sdl_text == nullptr) {
             throw std::invalid_argument("Invalid SDL text object");
         }
     }
 
-    render_text_static::~render_text_static() {
+    game_text_static::~game_text_static() {
         if (m_sdl_text != nullptr) {
             TTF_DestroyText(m_sdl_text);
         }
     }
 
-    game_color render_text_static::get_color() const {
+    game_color game_text_static::get_color() const {
         game_color color = {};
         TTF_GetTextColor(m_sdl_text, &color.r, &color.g, &color.b, &color.a);
         return color;
     }
 
-    glm::vec2 render_text_static::get_size() const {
+    glm::vec2 game_text_static::get_size() const {
         int w, h;
         TTF_GetTextSize(m_sdl_text, &w, &h);
         return {static_cast<float>(w), static_cast<float>(h)};
     }
 
-    void render_text_static::set_text_raw(std::string_view new_text) {
+    void game_text_static::set_text_raw(std::string_view new_text) {
         TTF_SetTextString(m_sdl_text, new_text.data(), new_text.length());
     }
 
-    void render_text_static::set_color(const game_color& new_color) {
+    void game_text_static::set_color(const game_color& new_color) {
         TTF_SetTextColor(m_sdl_text, new_color.r, new_color.g, new_color.b, new_color.a);
     }
 
     render_text_dynamic::render_text_dynamic(std::string_view content,
-                                             std::unique_ptr<render_text_static> static_text,
+                                             std::unique_ptr<game_text_static> static_text,
                                              SDL_Renderer* sdl_renderer, TTF_Font* font)
         : m_static_text(std::move(static_text)),
           m_sdl_renderer(sdl_renderer),

@@ -9,7 +9,7 @@ struct demo_game_state {
     entt::entity asteroid;
 
     glm::vec2 debug_text_position;
-    std::unique_ptr<engine::render_text_static> debug_text;
+    engine::game_text_static::uptr debug_text;
 
     bool is_free_camera;
     float free_camera_speed;

@@ -181,7 +181,7 @@ namespace engine {
         }
     }
 
-    void game_renderer::text_draw_screen(const render_text_static* text,
+    void game_renderer::text_draw_screen(const game_text_static::uptr& text,
                                          const glm::vec2& screen_position) {
         if (text == nullptr || text->is_valid() == false) {
             return;
