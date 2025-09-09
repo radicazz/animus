@@ -9,23 +9,12 @@ A cross-platform 2D game/engine built with modern C++ & SDL.
 
 ## ✨ Features
 
-- **🎮 Input System**: Keyboard and mouse input handling with customizable key mappings.
-- **🖼️ Sprite Rendering**: Hardware-accelerated sprite rendering with rotation and scaling.
-- **🅰️ Text Rendering**: TTF font rendering with support for rotation and scaling.
-- **🎨 Resource Management**: Automatic texture loading and memory management.
-- **📐 Mathematics**: GLM integration for 2D transformations and calculations.
-- **🏗️ Modular Architecture**: Clean separation between game logic and engine systems.
-
-## 🎬 Demo Controls
-
-The included demo showcases the engine's capabilities:
-
-- **WASD** - Move player
-- **C** - Toggle between camera follow mode and free camera mode
-- **Arrow Keys** - Move camera (free camera mode only)
-- **O** - Zoom out
-- **P** - Zoom in
-- **ESC** - Exit
+- **Input System**: Keyboard and mouse input handling with customizable key mappings.
+- **Sprite Rendering**: Hardware-accelerated sprite rendering with rotation and scaling.
+- **Text Rendering**: TTF font rendering with support for rotation and scaling.
+- **Resource Management**: Automatic texture loading and memory management.
+- **Mathematics**: GLM integration for 2D transformations and calculations.
+- **Modular Architecture**: Clean separation between game logic and engine systems.
 
 ## 📋 Requirements
 
@@ -39,26 +28,36 @@ The included demo showcases the engine's capabilities:
 
 ## 🚀 Quick Start
 
-### Clone the Repository
+### Clone
 
 ```bash
 # Clone with all submodules.
 git clone --recursive https://github.com/radicazz/incarnate.git
 cd incarnate
+```
 
-# If you forgot --recursive, initialize submodules:
+In case you forgot to clone with submodules, you can initialize them with:
+
+```bash
 git submodule update --init --recursive
 ```
 
-### 🖥️ Build
+### Build
 
-```batch
+```bash
+# Make a build directory.
 mkdir build && cd build
+
+# Configure the project.
 cmake .. -DCMAKE_BUILD_TYPE=Debug
+
+# Build the project.
 cmake --build .
 ```
 
-You should find `incarnate.exe` in `build/bin/` along with the assets folder and required libraries.
+### Run
+
+You should find your compiled libraries and executable in the `build/` directory.
 
 ## 📁 Project Structure
 
@@ -67,8 +66,7 @@ incarnate/
 ├── assets/                # Game assets (sprites, fonts)
 │   ├── fonts/             # TrueType fonts
 │   └── sprites/           # Sprite images
-├── docs/
-│   └── style/             # CSS documentation styles
+├── docs/                  # Documentation generation settings
 ├── external/              # Git submodules (SDL, GLM, etc.)
 ├── src/
 │   ├── engine/            # Engine core systems
@@ -76,7 +74,7 @@ incarnate/
 │   │   ├── renderer/      # Sprite & Font rendering system
 │   │   ├── utils/         # Utility functions
 │   │   └── window/        # Window management
-│   └── game/              # Demo game implementation
+│   └── game/              # Development game showcasing features
 ├── build/                 # Build output (generated)
 ├── CMakeLists.txt         # Main CMake configuration
 └── README.md              # This file
@@ -87,12 +85,15 @@ incarnate/
 ```cpp
 #include "engine/engine.hxx"
 
-struct my_game_state {
+/* Cross-platform SDL entry-point */
+#include <SDL3/SDL_main.h>
+
+struct game_state {
     entt::entity player = {entt::null};
 };
 
 void game_create(engine::game_engine* engine) {
-    auto& state = engine->get_state<my_game_state>();
+    auto& state = engine->get_state<game_state>();
     engine::ecs_manager& ecs = engine->get_ecs_manager();
     engine::game_resources& resources = engine->get_resources();
 
@@ -115,7 +116,7 @@ void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
-    auto& state = engine->get_state<my_game_state>();
+    auto& state = engine->get_state<game_state>();
     engine::game_input& input = engine->get_input_system();
     engine::ecs_manager& ecs = engine->get_ecs_manager();
 
@@ -149,12 +150,41 @@ void game_update(engine::game_engine* engine, float delta_time) {
 }
 
 void game_render(engine::game_engine* engine, float interpolation_alpha) {
-    auto& state = engine->get_state<my_game_state>();
+    auto& state = engine->get_state<game_state>();
     engine::game_renderer& renderer = engine->get_renderer();
     engine::ecs_manager& ecs = engine->get_ecs_manager();
 
     // Render all the sprites in the game.
     ecs.render_sprites(renderer, interpolation_alpha);
+}
+
+int main(int argc, char* argv[]) {
+    try {
+        game_state state;
+
+        // Register your callbacks to hook into the game engine.
+        engine::game_info info = {
+            .state = &state,
+            .on_create = game_create,
+            .on_fixed_update = game_fixed_update,
+            .on_update = game_update,
+            .on_render = game_render
+        };
+
+        engine::game_details details = {
+            .window_title = "Example",
+            .window_size = {1280, 720}
+        };
+
+        engine::game_engine game(details, info);
+
+        // Execute the game loop.
+        game.run();
+    } catch (const std::exception& e) {
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
 ```
 
