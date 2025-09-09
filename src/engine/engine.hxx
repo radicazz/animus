@@ -9,7 +9,7 @@
 #include "window/window.hxx"
 #include "utils/resource_manager.hxx"
 #include "utils/input_system.hxx"
-#include "ecs/ecs_manager.hxx"
+#include "ecs/game_entities.hxx"
 
 namespace engine {
     /**
@@ -132,7 +132,7 @@ namespace engine {
         [[nodiscard]] game_viewport& get_viewport();
         [[nodiscard]] game_resources& get_resources();
         [[nodiscard]] game_input& get_input();
-        [[nodiscard]] ecs_manager& get_ecs_manager();
+        [[nodiscard]] game_entities& get_entities();
 
         /**
          * @brief Get a pointer to your game's data.
@@ -171,7 +171,7 @@ namespace engine {
         game_viewport m_viewport;
         game_resources m_resources;
         game_input m_input;
-        ecs_manager m_ecs_manager;
+        game_entities m_entities;
 
         game_info m_info;
         bool m_is_running;
@@ -201,8 +201,8 @@ namespace engine {
         return m_input;
     }
 
-    inline ecs_manager& game_engine::get_ecs_manager() {
-        return m_ecs_manager;
+    inline game_entities& game_engine::get_entities() {
+        return m_entities;
     }
 
     template <class T>

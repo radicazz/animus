@@ -11,7 +11,7 @@ namespace engine {
           m_viewport(details.window_size),
           m_resources(m_renderer),
           m_input(),
-          m_ecs_manager(),
+          m_entities(),
           m_info(info),
           m_is_running(true) {
         m_renderer.set_camera(&m_camera);

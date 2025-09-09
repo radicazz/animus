@@ -3,17 +3,17 @@
 void game_create(engine::game_engine* engine) {
     auto& state = engine->get_state<dev_game_state>();
     engine::game_resources& resource_manager = engine->get_resources();
-    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_entities& entities = engine->get_entities();
 
     auto player_sprite = resource_manager.sprite_create("assets/sprites/player/default.png");
-    state.player_entity = ecs.create_sprite_entity({300, 300}, std::move(player_sprite));
-    ecs.add_component<engine::component_velocity>(state.player_entity) = {
+    state.player_entity = entities.create_sprite({300, 300}, std::move(player_sprite));
+    entities.add<engine::component_velocity>(state.player_entity) = {
         .linear = {0.0f, 0.0f}, .max_speed = 200.0f, .drag = 0.1f};
 
     // Asteroid
     auto asteroid_sprite =
         resource_manager.sprite_create("assets/sprites/asteroids/ice_1.png", {64, 64});
-    state.asteroid_entity = ecs.create_sprite_entity({300, 300}, std::move(asteroid_sprite));
+    state.asteroid_entity = entities.create_sprite({300, 300}, std::move(asteroid_sprite));
 
     // Camera
     state.camera_follow_speed = 0.05f;
@@ -39,10 +39,9 @@ void game_destroy(engine::game_engine*) {
 
 void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
     auto& state = engine->get_state<dev_game_state>();
-    engine::game_camera& camera = engine->get_camera();
-    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_entities& entities = engine->get_entities();
 
-    auto transform_view = ecs.get_entities_with<engine::component_transform_interpolated>();
+    auto transform_view = entities.view<engine::component_transform_interpolated>();
     for (auto entity : transform_view) {
         auto& transform = transform_view.get<engine::component_transform_interpolated>(entity);
         // Store previous position and rotation before physics update for interpolation.
@@ -51,8 +50,8 @@ void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
     }
 
     // Update various physics systems.
-    ecs.update_physics(fixed_delta_time);
-    ecs.update_lifetime(fixed_delta_time);
+    entities.update_physics(fixed_delta_time);
+    entities.update_lifetime(fixed_delta_time);
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
@@ -60,16 +59,15 @@ void game_update(engine::game_engine* engine, float delta_time) {
     engine::game_input& input = engine->get_input();
     engine::game_camera& camera = engine->get_camera();
     engine::game_viewport& viewport = engine->get_viewport();
-    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_entities& entities = engine->get_entities();
 
     // Toggle camera mode with 'C' key.
     if (input.is_key_pressed(engine::input_key::c)) {
         state.is_camera_free_mode = !state.is_camera_free_mode;
     }
 
-    if (ecs.is_valid(state.player_entity) == true) {
-        auto* player_velocity =
-            ecs.try_get_component<engine::component_velocity>(state.player_entity);
+    if (entities.valid(state.player_entity) == true) {
+        auto* player_velocity = entities.try_get<engine::component_velocity>(state.player_entity);
         if (player_velocity != nullptr) {
             constexpr float acceleration = 1000.0f;  // pixels per second squared
 
@@ -122,11 +120,11 @@ void game_update(engine::game_engine* engine, float delta_time) {
         }
     } else {
         // FOLLOW MODE: Camera follows the player
-        camera.follow_target(ecs.get_position(state.player_entity), state.camera_follow_speed);
+        camera.follow_target(entities.get_position(state.player_entity), state.camera_follow_speed);
     }
 
     auto* asteroid_transform =
-        ecs.try_get_component<engine::component_transform_interpolated>(state.asteroid_entity);
+        entities.try_get<engine::component_transform_interpolated>(state.asteroid_entity);
     if (asteroid_transform != nullptr) {
         asteroid_transform->rotation_degrees += 45.f * delta_time;
         if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
@@ -145,12 +143,12 @@ void game_update(engine::game_engine* engine, float delta_time) {
 void game_render(engine::game_engine* engine, float interpolation_alpha) {
     auto& state = engine->get_state<dev_game_state>();
     engine::game_renderer& renderer = engine->get_renderer();
-    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_entities& entities = engine->get_entities();
 
-    ecs.render_sprites(renderer, interpolation_alpha);
+    entities.render(renderer, interpolation_alpha);
 
-    if (ecs.is_valid(state.player_entity) == true) {
-        glm::vec2 player_position = ecs.get_position(state.player_entity);
+    if (entities.valid(state.player_entity) == true) {
+        glm::vec2 player_position = entities.get_position(state.player_entity);
         renderer.text_draw_world(state.player_label_text.get(),
                                  player_position + glm::vec2{0.f, 30.f});
     }

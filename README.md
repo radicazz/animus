@@ -94,68 +94,65 @@ struct game_state {
 
 void game_create(engine::game_engine* engine) {
     auto& state = engine->get_state<game_state>();
-    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_entities& entities = engine->get_entities();
     engine::game_resources& resources = engine->get_resources();
 
     // Load an image from the assets folder as a sprite.
     auto player_sprite = resources.sprite_create("assets/player.png");
 
     // Register your player entity with the sprite.
-    state.player = ecs.create_sprite_entity({400.f, 300.f}, std::move(player_sprite));
+    state.player = entities.create_sprite({400.f, 300.f}, std::move(player_sprite));
 
     // Add velocity component for movement.
-    ecs.add_component<engine::component_velocity>(state.player) = {
+    entities.add<engine::component_velocity>(state.player) = {
         .linear = {0.0f, 0.0f}, .max_speed = 200.0f, .drag = 0.1f};
 }
 
 void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
-    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_entities& entities = engine->get_entities();
 
     // Update physics for all the entities in the engine.
-    ecs.update_physics(fixed_delta_time);
+    entities.update_physics(fixed_delta_time);
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
     auto& state = engine->get_state<game_state>();
-    engine::game_input& input = engine->get_input_system();
-    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_input& input = engine->get_input();
+    engine::game_entities& entities = engine->get_entities();
 
-    // Make sure the player has not been destroyed.
-    if (ecs.is_valid(state.player)) {
-        // Access the velocity component.
-        auto* velocity = ecs.get_component<engine::component_velocity>(state.player);
-        if (velocity) {
-            constexpr float acceleration = 500.0f;
+// Access the velocity component.
+auto* velocity = entities.try_get<engine::component_velocity>(state.player);
+if (velocity) {
+    constexpr float acceleration = 500.0f;
 
-            // Use the input system to capture WASD movement.
-            glm::vec2 movement(0.0f);
+    // Use the input system to capture WASD movement.
+    glm::vec2 movement(0.0f);
 
-            if (input.is_key_held(engine::input_key::w)) {
-                movement.y -= 1.0f;
-            }
-            if (input.is_key_held(engine::input_key::s)) {
-                movement.y += 1.0f;
-            }
-            if (input.is_key_held(engine::input_key::a)) {
-                movement.x -= 1.0f;
-            }
-            if (input.is_key_held(engine::input_key::d)) {
-                movement.x += 1.0f;
-            }
-
-            // Apply movement to the player.
-            velocity->linear += movement * acceleration * delta_time;
+    if (input.is_key_held(engine::input_key::w)) {
+            movement.y -= 1.0f;
         }
+        if (input.is_key_held(engine::input_key::s)) {
+            movement.y += 1.0f;
+        }
+        if (input.is_key_held(engine::input_key::a)) {
+            movement.x -= 1.0f;
+        }
+        if (input.is_key_held(engine::input_key::d)) {
+            movement.x += 1.0f;
+        }
+
+        // Apply movement to the player.
+        velocity->linear += movement * acceleration * delta_time;
     }
 }
 
 void game_render(engine::game_engine* engine, float interpolation_alpha) {
     auto& state = engine->get_state<game_state>();
     engine::game_renderer& renderer = engine->get_renderer();
-    engine::ecs_manager& ecs = engine->get_ecs_manager();
+    engine::game_entities& entities = engine->get_entities();
 
     // Render all the sprites in the game.
-    ecs.render_sprites(renderer, interpolation_alpha);
+    entities.render(renderer, interpolation_alpha);
 }
 
 int main(int argc, char* argv[]) {
