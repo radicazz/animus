@@ -35,11 +35,10 @@ namespace engine {
         [[nodiscard]] bool is_valid(entt::entity entity) const;
         void clear();
 
-        entt::entity create_sprite_static(const glm::vec2& position,
-                                          std::unique_ptr<render_sprite> sprite, int layer = 0);
+        entt::entity create_sprite_static(const glm::vec2& position, game_sprite::uptr sprite,
+                                          int layer = 0);
 
-        entt::entity create_sprite_interpolated(const glm::vec2& position,
-                                                std::unique_ptr<render_sprite> sprite,
+        entt::entity create_sprite_interpolated(const glm::vec2& position, game_sprite::uptr sprite,
                                                 int layer = 0);
 
         // Component access - simplified API

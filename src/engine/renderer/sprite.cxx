@@ -6,7 +6,7 @@
 #include <format>
 
 namespace engine {
-    render_sprite::render_sprite(std::string_view file_path, SDL_Texture* texture)
+    game_sprite::game_sprite(std::string_view file_path, SDL_Texture* texture)
         : m_file_path(file_path),
           m_sdl_texture(texture),
           m_size{0, 0},
@@ -16,8 +16,8 @@ namespace engine {
         auto_size_and_origin();
     }
 
-    render_sprite::render_sprite(std::string_view file_path, SDL_Texture* texture,
-                                 const glm::vec2& size)
+    game_sprite::game_sprite(std::string_view file_path, SDL_Texture* texture,
+                             const glm::vec2& size)
         : m_file_path(file_path),
           m_sdl_texture(texture),
           m_size(size),
@@ -26,7 +26,7 @@ namespace engine {
           m_rotation(0.f) {
     }
 
-    void render_sprite::auto_size_and_origin() {
+    void game_sprite::auto_size_and_origin() {
         if (is_valid() == false) {
             return;
         }

@@ -34,7 +34,7 @@ namespace engine {
          * @param file_path The path to the texture file.
          * @return A unique pointer to the created sprite.
          */
-        std::unique_ptr<render_sprite> sprite_create(std::string_view file_path);
+        game_sprite::uptr sprite_create(std::string_view file_path);
 
         /**
          * @brief Creates a sprite from an image texture file with a specified size.
@@ -42,8 +42,7 @@ namespace engine {
          * @param size The desired size of the sprite.
          * @return A unique pointer to the created sprite.
          */
-        std::unique_ptr<render_sprite> sprite_create(std::string_view file_path,
-                                                     const glm::vec2& size);
+        game_sprite::uptr sprite_create(std::string_view file_path, const glm::vec2& size);
 
         /**
          * @brief Creates a static text object from a font file.

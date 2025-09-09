@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <string>
+#include <memory>
 
 struct SDL_Texture;
 
@@ -16,11 +17,17 @@ namespace engine {
      * underlying texture will be loaded and managed by the resource manager automatically so there
      * is no need to worry about memory management.
      */
-    class render_sprite {
+    class game_sprite {
     public:
-        render_sprite() = delete;
-        render_sprite(std::string_view file_path, SDL_Texture* texture);
-        render_sprite(std::string_view file_path, SDL_Texture* texture, const glm::vec2& size);
+        /**
+         * @brief Unique pointer type for game_sprite.
+         */
+        using uptr = std::unique_ptr<game_sprite>;
+
+    public:
+        game_sprite() = delete;
+        game_sprite(std::string_view file_path, SDL_Texture* texture);
+        game_sprite(std::string_view file_path, SDL_Texture* texture, const glm::vec2& size);
 
         [[nodiscard]] SDL_Texture* get_sdl_texture() const;
         [[nodiscard]] std::string_view get_file_path() const;
@@ -41,7 +48,7 @@ namespace engine {
         void auto_size_and_origin();
 
     private:
-        std::string m_file_path;     // File path of the sprite image.
+        std::string m_file_path;
         SDL_Texture* m_sdl_texture;  // Underlying SDL_Texture.
         glm::vec2 m_size;            // Size of the image that makes the sprite.
         glm::vec2 m_origin;          // Origin point of the sprite (automatically centered).
@@ -49,47 +56,47 @@ namespace engine {
         float m_rotation;  // Rotation angle of the sprite.
     };
 
-    inline SDL_Texture* render_sprite::get_sdl_texture() const {
+    inline SDL_Texture* game_sprite::get_sdl_texture() const {
         return m_sdl_texture;
     }
 
-    inline std::string_view render_sprite::get_file_path() const {
+    inline std::string_view game_sprite::get_file_path() const {
         return m_file_path;
     }
 
-    inline glm::vec2 render_sprite::get_size() const {
+    inline glm::vec2 game_sprite::get_size() const {
         return m_size;
     }
 
-    inline glm::vec2 render_sprite::get_origin() const {
+    inline glm::vec2 game_sprite::get_origin() const {
         return m_origin;
     }
 
-    inline float render_sprite::get_rotation() const {
+    inline float game_sprite::get_rotation() const {
         return m_rotation;
     }
 
-    inline glm::vec2 render_sprite::get_scale() const {
+    inline glm::vec2 game_sprite::get_scale() const {
         return m_scale;
     }
 
-    inline void render_sprite::set_size(const glm::vec2& size) {
+    inline void game_sprite::set_size(const glm::vec2& size) {
         m_size = size;
     }
 
-    inline void render_sprite::set_origin(const glm::vec2& origin) {
+    inline void game_sprite::set_origin(const glm::vec2& origin) {
         m_origin = origin;
     }
 
-    inline void render_sprite::set_rotation(float rotation) {
+    inline void game_sprite::set_rotation(float rotation) {
         m_rotation = rotation;
     }
 
-    inline void render_sprite::set_scale(const glm::vec2& scale) {
+    inline void game_sprite::set_scale(const glm::vec2& scale) {
         m_scale = scale;
     }
 
-    inline bool render_sprite::is_valid() const {
+    inline bool game_sprite::is_valid() const {
         return m_sdl_texture != nullptr;
     }
 }  // namespace engine

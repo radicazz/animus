@@ -17,15 +17,15 @@ namespace engine {
         fonts_clear();
     }
 
-    std::unique_ptr<render_sprite> game_resources::sprite_create(std::string_view file_path) {
+    game_sprite::uptr game_resources::sprite_create(std::string_view file_path) {
         SDL_Texture* texture = texture_get_or_load(file_path);
-        return std::make_unique<render_sprite>(file_path, texture);
+        return std::make_unique<game_sprite>(file_path, texture);
     }
 
-    std::unique_ptr<render_sprite> game_resources::sprite_create(std::string_view file_path,
-                                                                 const glm::vec2& size) {
+    game_sprite::uptr game_resources::sprite_create(std::string_view file_path,
+                                                    const glm::vec2& size) {
         SDL_Texture* texture = texture_get_or_load(file_path);
-        return std::make_unique<render_sprite>(file_path, texture, size);
+        return std::make_unique<game_sprite>(file_path, texture, size);
     }
 
     std::unique_ptr<render_text_static> game_resources::text_create_static(
@@ -43,10 +43,7 @@ namespace engine {
         TTF_Text* text = TTF_CreateText(m_renderer.get_sdl_text_engine(), font,
                                         engine::default_text_content.data(),
                                         engine::default_text_content.length());
-
-        std::unique_ptr<render_text_static> static_text =
-            std::make_unique<render_text_static>(text);
-
+        auto static_text = std::make_unique<render_text_static>(text);
         return std::make_unique<render_text_dynamic>(engine::default_text_content,
                                                      std::move(static_text),
                                                      m_renderer.get_sdl_renderer(), font);

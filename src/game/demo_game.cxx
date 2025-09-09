@@ -5,7 +5,8 @@ void game_create(engine::game_engine* engine) {
     engine::game_resources& resources = engine->get_resources();
     engine::game_entities& entities = engine->get_entities();
 
-    auto player_sprite = resources.sprite_create("assets/sprites/player/default.png");
+    engine::game_sprite::uptr player_sprite =
+        resources.sprite_create("assets/sprites/player/default.png");
     state.player = entities.create_sprite_interpolated({200, 200}, std::move(player_sprite));
 
     state.player_label = resources.text_create_dynamic("assets/fonts/Segoe UI.ttf", 64.0f);
@@ -13,7 +14,8 @@ void game_create(engine::game_engine* engine) {
     state.player_label->set_origin_centered();
     state.player_label->set_scale(0.25f);
 
-    auto asteroid_sprite = resources.sprite_create("assets/sprites/asteroids/ice_1.png", {64, 64});
+    engine::game_sprite::uptr asteroid_sprite =
+        resources.sprite_create("assets/sprites/asteroids/ice_1.png", {64, 64});
     state.asteroid = entities.create_sprite_interpolated({300, 300}, std::move(asteroid_sprite));
     entities.set_velocity_angular(state.asteroid, 90.f);
 

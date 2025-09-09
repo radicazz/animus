@@ -15,8 +15,7 @@ namespace engine {
     }
 
     entt::entity game_entities::create_sprite_static(const glm::vec2& position,
-                                                     std::unique_ptr<render_sprite> sprite,
-                                                     int layer) {
+                                                     game_sprite::uptr sprite, int layer) {
         entt::entity entity = m_registry.create();
 
         m_registry.emplace<component_transform>(entity, position, 0.0f, glm::vec2{1.0f, 1.0f});
@@ -27,8 +26,7 @@ namespace engine {
     }
 
     entt::entity game_entities::create_sprite_interpolated(const glm::vec2& position,
-                                                           std::unique_ptr<render_sprite> sprite,
-                                                           int layer) {
+                                                           game_sprite::uptr sprite, int layer) {
         entt::entity entity = create_sprite_static(position, std::move(sprite), layer);
 
         m_registry.emplace<component_velocity_linear>(entity, glm::vec2{0.0f, 0.0f}, 0.0f, 0.0f);

@@ -49,7 +49,7 @@ namespace engine {
         SDL_RenderPresent(m_sdl_renderer);
     }
 
-    void game_renderer::sprite_draw_world(const render_sprite* sprite,
+    void game_renderer::sprite_draw_world(const game_sprite::uptr& sprite,
                                           const glm::vec2& world_position) {
         if (sprite == nullptr || sprite->is_valid() == false) {
             return;
@@ -87,8 +87,7 @@ namespace engine {
         SDL_RenderTextureRotated(m_sdl_renderer, sprite->get_sdl_texture(), nullptr, &dst_rect,
                                  sprite->get_rotation(), &center, SDL_FLIP_NONE);
     }
-
-    void game_renderer::sprite_draw_screen(const render_sprite* sprite,
+    void game_renderer::sprite_draw_screen(const game_sprite::uptr& sprite,
                                            const glm::vec2& screen_position) {
         if (sprite == nullptr || sprite->is_valid() == false) {
             return;

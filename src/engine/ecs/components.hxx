@@ -6,7 +6,7 @@
 
 namespace engine {
     struct component_sprite_single {
-        std::unique_ptr<render_sprite> sprite = nullptr;
+        std::unique_ptr<game_sprite> sprite = nullptr;
     };
 
     struct component_renderable {

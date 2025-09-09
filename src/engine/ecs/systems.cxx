@@ -116,7 +116,7 @@ namespace engine {
             sprite_comp.sprite->set_scale(transform.scale);
 
             // Render sprite at world position
-            renderer.sprite_draw_world(sprite_comp.sprite.get(), render_position);
+            renderer.sprite_draw_world(sprite_comp.sprite, render_position);
         }
     }
 
