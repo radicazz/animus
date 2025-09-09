@@ -58,8 +58,7 @@ namespace engine {
          * @param font_size The size of the font.
          * @return A unique pointer to the created dynamic text object.
          */
-        std::unique_ptr<render_text_dynamic> text_create_dynamic(std::string_view font_path,
-                                                                 float font_size);
+        game_text_dynamic::uptr text_create_dynamic(std::string_view font_path, float font_size);
 
         void textures_clear();
         void fonts_clear();

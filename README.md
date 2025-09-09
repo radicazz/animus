@@ -55,10 +55,6 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
 ```
 
-### Run
-
-You should find your compiled libraries and executable in the `build/` directory.
-
 ## 📄 License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.txt](LICENSE.txt) file for details.

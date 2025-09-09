@@ -135,7 +135,7 @@ void game_render(engine::game_engine* engine, float interpolation_alpha) {
 
     const glm::vec2 player_position =
         entities.get_interpolated_position(state.player, interpolation_alpha);
-    renderer.text_draw_world(state.player_label.get(), player_position + glm::vec2{0.f, 30.f});
+    renderer.text_draw_world(state.player_label, player_position + glm::vec2{0.f, 30.f});
 
     // Render our overlay text at the top-middle of the screen.
     const glm::vec2 screen_size = renderer.get_output_size();

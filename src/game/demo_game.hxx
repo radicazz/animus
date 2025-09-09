@@ -4,7 +4,7 @@
 
 struct demo_game_state {
     entt::entity player;
-    std::unique_ptr<engine::render_text_dynamic> player_label;
+    engine::game_text_dynamic::uptr player_label;
 
     entt::entity asteroid;
 

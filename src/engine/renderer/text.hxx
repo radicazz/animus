@@ -123,16 +123,19 @@ namespace engine {
      * dynamic_text->set_text("Hello, Dynamic World!");
      * @endcode
      */
-    class render_text_dynamic {
+    class game_text_dynamic {
     public:
-        render_text_dynamic(std::string_view content, game_text_static::uptr static_text,
-                            SDL_Renderer* sdl_renderer, TTF_Font* font);
-        ~render_text_dynamic();
+        using uptr = std::unique_ptr<game_text_dynamic>;
 
-        render_text_dynamic(const render_text_dynamic&) = delete;
-        render_text_dynamic& operator=(const render_text_dynamic&) = delete;
-        render_text_dynamic(render_text_dynamic&&) = delete;
-        render_text_dynamic& operator=(render_text_dynamic&&) = delete;
+    public:
+        game_text_dynamic(std::string_view content, game_text_static::uptr static_text,
+                          SDL_Renderer* sdl_renderer, TTF_Font* font);
+        ~game_text_dynamic();
+
+        game_text_dynamic(const game_text_dynamic&) = delete;
+        game_text_dynamic& operator=(const game_text_dynamic&) = delete;
+        game_text_dynamic(game_text_dynamic&&) = delete;
+        game_text_dynamic& operator=(game_text_dynamic&&) = delete;
 
         /**
          * @brief Access the internal SDL texture for rendering the text.
@@ -208,65 +211,65 @@ namespace engine {
     };
 
     template <typename... Args>
-    inline void render_text_dynamic::set_text(std::format_string<Args...> fmt, Args&&... args) {
+    inline void game_text_dynamic::set_text(std::format_string<Args...> fmt, Args&&... args) {
         std::string formatted_text = std::format(fmt, std::forward<Args>(args)...);
         set_text_raw(formatted_text);
     }
 
-    inline const game_text_static* render_text_dynamic::get_static_text() const {
+    inline const game_text_static* game_text_dynamic::get_static_text() const {
         return m_static_text.get();
     }
 
-    inline game_color render_text_dynamic::get_color() const {
+    inline game_color game_text_dynamic::get_color() const {
         return m_static_text->get_color();
     }
 
-    inline glm::vec2 render_text_dynamic::get_size() const {
+    inline glm::vec2 game_text_dynamic::get_size() const {
         return m_static_text->get_size();
     }
 
-    inline glm::vec2 render_text_dynamic::get_transformed_size() const {
+    inline glm::vec2 game_text_dynamic::get_transformed_size() const {
         return get_size() * m_scale;
     }
 
-    inline glm::vec2 render_text_dynamic::get_origin() const {
+    inline glm::vec2 game_text_dynamic::get_origin() const {
         return m_static_text->get_origin();
     }
 
-    inline glm::vec2 render_text_dynamic::get_scale() const {
+    inline glm::vec2 game_text_dynamic::get_scale() const {
         return m_scale;
     }
 
-    inline float render_text_dynamic::get_rotation() const {
+    inline float game_text_dynamic::get_rotation() const {
         return m_rotation_degrees;
     }
 
-    inline void render_text_dynamic::set_scale(const glm::vec2& new_scale) {
+    inline void game_text_dynamic::set_scale(const glm::vec2& new_scale) {
         m_scale = new_scale;
     }
 
-    inline void render_text_dynamic::set_scale(float uniform_scale) {
+    inline void game_text_dynamic::set_scale(float uniform_scale) {
         set_scale(glm::vec2{uniform_scale, uniform_scale});
     }
 
-    inline void render_text_dynamic::set_rotation(float degrees) {
+    inline void game_text_dynamic::set_rotation(float degrees) {
         m_rotation_degrees = degrees;
     }
 
-    inline bool render_text_dynamic::is_valid() const {
+    inline bool game_text_dynamic::is_valid() const {
         return m_static_text != nullptr && m_static_text->is_valid() == true &&
                m_sdl_renderer != nullptr && m_sdl_font != nullptr;
     }
 
-    inline void render_text_dynamic::set_origin(const glm::vec2& new_origin) {
+    inline void game_text_dynamic::set_origin(const glm::vec2& new_origin) {
         m_static_text->set_origin(new_origin);
     }
 
-    inline void render_text_dynamic::set_origin_centered() {
+    inline void game_text_dynamic::set_origin_centered() {
         m_static_text->set_origin_centered();
     }
 
-    inline void render_text_dynamic::mark_texture_dirty() {
+    inline void game_text_dynamic::mark_texture_dirty() {
         m_is_texture_dirty = true;
     }
 }  // namespace engine

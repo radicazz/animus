@@ -37,16 +37,16 @@ namespace engine {
         return std::make_unique<game_text_static>(text);
     }
 
-    std::unique_ptr<render_text_dynamic> game_resources::text_create_dynamic(
-        std::string_view font_path, float font_size) {
+    game_text_dynamic::uptr game_resources::text_create_dynamic(std::string_view font_path,
+                                                                float font_size) {
         TTF_Font* font = font_get_or_load(font_path, font_size);
         TTF_Text* text = TTF_CreateText(m_renderer.get_sdl_text_engine(), font,
                                         engine::default_text_content.data(),
                                         engine::default_text_content.length());
         auto static_text = std::make_unique<game_text_static>(text);
-        return std::make_unique<render_text_dynamic>(engine::default_text_content,
-                                                     std::move(static_text),
-                                                     m_renderer.get_sdl_renderer(), font);
+        return std::make_unique<game_text_dynamic>(engine::default_text_content,
+                                                   std::move(static_text),
+                                                   m_renderer.get_sdl_renderer(), font);
     }
 
     void game_resources::textures_clear() {

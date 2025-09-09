@@ -104,7 +104,7 @@ namespace engine {
                                  sprite->get_rotation(), &center, SDL_FLIP_NONE);
     }
 
-    void game_renderer::text_draw_world(const render_text_dynamic* text,
+    void game_renderer::text_draw_world(const game_text_dynamic::uptr& text,
                                         const glm::vec2& world_position) {
         if (text == nullptr || text->is_valid() == false) {
             return;
@@ -135,7 +135,7 @@ namespace engine {
         text_draw_screen(text, screen_position);
     }
 
-    void game_renderer::text_draw_screen(const render_text_dynamic* text,
+    void game_renderer::text_draw_screen(const game_text_dynamic::uptr& text,
                                          const glm::vec2& screen_position) {
         if (text == nullptr || text->is_valid() == false) {
             return;
