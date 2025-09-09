@@ -77,56 +77,60 @@ namespace engine {
 
     void system_renderer::tick(entt::registry& registry, game_renderer& renderer,
                                float interpolation_alpha) {
+        struct render_data {
+            entt::entity entity;
+            int layer;
+            const component_transform* transform;
+            const component_sprite_single* sprite;
+            const component_interpolation* interp;
+        };
+
         auto view =
             registry.view<component_transform, component_renderable, component_sprite_single>();
 
-        std::vector<entt::entity> entities;
-        entities.reserve(view.size_hint());
+        std::vector<render_data> render_queue;
+        render_queue.reserve(view.size_hint());
 
-        for (auto entity : view) {
-            const auto& renderable = registry.get<component_renderable>(entity);
+        for (auto [entity, transform, renderable, sprite] : view.each()) {
             if (renderable.is_visible == true) {
-                entities.push_back(entity);
+                render_queue.emplace_back(
+                    render_data{entity, renderable.layer, &transform, &sprite,
+                                registry.try_get<component_interpolation>(entity)});
             }
         }
 
-        std::sort(entities.begin(), entities.end(), [&](entt::entity a, entt::entity b) {
-            const auto& sprite_a = registry.get<component_renderable>(a);
-            const auto& sprite_b = registry.get<component_renderable>(b);
-            return sprite_a.layer < sprite_b.layer;
-        });
+        // Sort sprites by layer.
+        std::ranges::sort(render_queue,
+                          [](const auto& a, const auto& b) { return a.layer < b.layer; });
 
-        for (auto entity : entities) {
-            const auto& transform = registry.get<component_transform>(entity);
-            const auto& sprite_comp = registry.get<component_sprite_single>(entity);
-
-            glm::vec2 render_position = transform.position;
-            float render_rotation = transform.rotation;
-
-            // Use interpolation if available,
-            if (const auto* interp = registry.try_get<component_interpolation>(entity)) {
-                render_position =
-                    glm::mix(interp->previous_position, transform.position, interpolation_alpha);
-                render_rotation =
-                    glm::mix(interp->previous_rotation, transform.rotation, interpolation_alpha);
+        for (const auto& data : render_queue) {
+            if (data.sprite->sprite == nullptr) {
+                continue;
             }
 
-            // Apply transform to sprite
-            sprite_comp.sprite->set_rotation(render_rotation);
-            sprite_comp.sprite->set_scale(transform.scale);
+            glm::vec2 render_position = data.transform->position;
+            float render_rotation = data.transform->rotation;
 
-            // Render sprite at world position
-            renderer.sprite_draw_world(sprite_comp.sprite, render_position);
+            if (data.interp != nullptr) {
+                render_position = glm::mix(data.interp->previous_position, data.transform->position,
+                                           interpolation_alpha);
+                render_rotation = glm::mix(data.interp->previous_rotation, data.transform->rotation,
+                                           interpolation_alpha);
+            }
+
+            data.sprite->sprite->set_rotation(render_rotation);
+            data.sprite->sprite->set_scale(data.transform->scale);
+
+            renderer.sprite_draw_world(data.sprite->sprite, render_position);
         }
     }
 
     // Lifetime System Implementation
     void system_lifetime::tick(entt::registry& registry, float delta_time) {
-        auto view = registry.view<component_lifetime_destroy>();
+        auto view = registry.view<component_lifetime>();
         std::vector<entt::entity> entities_to_destroy;
 
-        for (auto entity : view) {
-            auto& lifetime = view.get<component_lifetime_destroy>(entity);
+        for (auto [entity, lifetime] : view.each()) {
             lifetime.remaining_seconds -= delta_time;
 
             if (lifetime.remaining_seconds <= 0.0f) {
@@ -134,7 +138,7 @@ namespace engine {
             }
         }
 
-        // Destroy expired entities
+        // Destroy expired entities.
         for (auto entity : entities_to_destroy) {
             registry.destroy(entity);
         }

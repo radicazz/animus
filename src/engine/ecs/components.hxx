@@ -37,7 +37,7 @@ namespace engine {
         float drag = 0.0f;
     };
 
-    struct component_lifetime_destroy {
-        float remaining_seconds = 1.0f;
+    struct component_lifetime {
+        float remaining_seconds = 5.f;
     };
 }  // namespace engine
