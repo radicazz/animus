@@ -16,8 +16,8 @@ namespace engine {
         }
     }
 
-    render_color render_text_static::get_color() const {
-        render_color color = {};
+    game_color render_text_static::get_color() const {
+        game_color color = {};
         TTF_GetTextColor(m_sdl_text, &color.r, &color.g, &color.b, &color.a);
         return color;
     }
@@ -32,7 +32,7 @@ namespace engine {
         TTF_SetTextString(m_sdl_text, new_text.data(), new_text.length());
     }
 
-    void render_text_static::set_color(const render_color& new_color) {
+    void render_text_static::set_color(const game_color& new_color) {
         TTF_SetTextColor(m_sdl_text, new_color.r, new_color.g, new_color.b, new_color.a);
     }
 
@@ -82,7 +82,7 @@ namespace engine {
         mark_texture_dirty();
     }
 
-    void render_text_dynamic::set_color(const render_color& new_color) {
+    void render_text_dynamic::set_color(const game_color& new_color) {
         m_static_text->set_color(new_color);
         mark_texture_dirty();
     }

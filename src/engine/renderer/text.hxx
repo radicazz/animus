@@ -46,7 +46,7 @@ namespace engine {
          */
         [[nodiscard]] TTF_Text* get_sdl_text() const;
 
-        [[nodiscard]] render_color get_color() const;
+        [[nodiscard]] game_color get_color() const;
         [[nodiscard]] glm::vec2 get_size() const;
         [[nodiscard]] glm::vec2 get_origin() const;
 
@@ -61,7 +61,7 @@ namespace engine {
         template <typename... Args>
         void set_text(std::format_string<Args...> fmt, Args&&... args);
 
-        void set_color(const render_color& new_color);
+        void set_color(const game_color& new_color);
         void set_origin(const glm::vec2& new_origin);
         void set_origin_centered();
 
@@ -144,7 +144,7 @@ namespace engine {
         [[nodiscard]] SDL_Texture* get_sdl_texture() const;
         [[nodiscard]] const render_text_static* get_static_text() const;
 
-        [[nodiscard]] render_color get_color() const;
+        [[nodiscard]] game_color get_color() const;
         [[nodiscard]] glm::vec2 get_size() const;
         [[nodiscard]] glm::vec2 get_transformed_size() const;
         [[nodiscard]] glm::vec2 get_origin() const;
@@ -175,7 +175,7 @@ namespace engine {
          * @param new_color The new color to set.
          * @note Changing the color will mark the internal texture as dirty, requiring regeneration.
          */
-        void set_color(const render_color& new_color);
+        void set_color(const game_color& new_color);
         void set_scale(const glm::vec2& new_scale);
         void set_scale(float uniform_scale);
         void set_rotation(float degrees);
@@ -215,7 +215,7 @@ namespace engine {
         return m_static_text.get();
     }
 
-    inline render_color render_text_dynamic::get_color() const {
+    inline game_color render_text_dynamic::get_color() const {
         return m_static_text->get_color();
     }
 
