@@ -3,18 +3,25 @@
 #include <stdexcept>
 
 namespace engine {
-    game_engine::game_engine(const game_details& details, const game_info& info)
-        : m_window(details.window_title, static_cast<int>(details.window_size.x),
-                   static_cast<int>(details.window_size.y)),
+    template <class... Args>
+    void safe_invoke(void (*func)(Args...), Args... args) {
+        if (func != nullptr) {
+            func(args...);
+        }
+    }
+
+    game_engine::game_engine(const game_info& info, std::string_view title, const glm::ivec2& size)
+        : m_window(title, size),
           m_renderer(m_window.get_sdl_window()),
           m_camera({0.f, 0.f}, 1.f),
-          m_viewport(details.window_size),
+          m_viewport(size),
           m_resources(m_renderer),
           m_input(),
           m_entities(),
           m_info(info),
           m_is_running(true),
           m_interpolation_alpha(0.0f) {
+        // TODO: Figure out what to do with these?
         m_renderer.set_camera(&m_camera);
         m_renderer.set_viewport(&m_viewport);
 

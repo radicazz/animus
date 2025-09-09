@@ -5,35 +5,39 @@
 #include "../renderer/sprite.hxx"
 
 namespace engine {
-    /**
-     * @brief A standard 2D transform component with the ability for interpolation.
-     */
-    struct component_transform_interpolated {
-        glm::vec2 position = {0.0f, 0.0f};
-        glm::vec2 previous_position = {0.0f, 0.0f};
-
-        float rotation_degrees = 0.0f;
-        float previous_rotation_degrees = 0.0f;
-
-        glm::vec2 scale = {1.0f, 1.0f};
-    };
-
-    struct component_velocity {
-        glm::vec2 linear = {0.0f, 0.0f};
-        float angular = 0.0f;
-    };
-
-    struct component_sprite {
+    struct component_sprite_single {
         std::unique_ptr<render_sprite> sprite = nullptr;
+    };
+
+    struct component_renderable {
+        bool is_visible = true;
         int layer = 0;
     };
 
-    /**
-     * @brief Component that gives an entity a certain lifetime in seconds. When the time runs out,
-     * the entity is destroyed.
-     */
-    struct component_lifetime {
-        float remaining_time_seconds = 1.0f;
+    struct component_transform {
+        glm::vec2 position = {0.0f, 0.0f};
+        float rotation = 0.0f;
+        glm::vec2 scale = {1.0f, 1.0f};
     };
 
+    struct component_interpolation {
+        glm::vec2 previous_position = {0.0f, 0.0f};
+        float previous_rotation = 0.0f;
+    };
+
+    struct component_velocity_linear {
+        glm::vec2 value = {0.0f, 0.0f};
+        float max_speed = 1000.0f;
+        float drag = 0.0f;
+    };
+
+    struct component_velocity_angular {
+        float value = 0.0f;
+        float max_speed = 360.0f;  // degrees per second
+        float drag = 0.0f;
+    };
+
+    struct component_lifetime_destroy {
+        float remaining_seconds = 1.0f;
+    };
 }  // namespace engine

@@ -7,7 +7,7 @@
 namespace engine {
     class game_window {
     public:
-        game_window(std::string_view title, int width, int height);
+        game_window(std::string_view title, const glm::ivec2& size);
         ~game_window();
 
         [[nodiscard]] SDL_Window* get_sdl_window() const;

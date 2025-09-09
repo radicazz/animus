@@ -11,10 +11,7 @@ namespace engine {
      */
     class system_physics {
     public:
-        static void update(entt::registry& registry, float fixed_delta_time);
-
-    private:
-        static void integrate_velocity(entt::registry& registry, float fixed_delta_time);
+        static void tick(entt::registry& registry, float delta_time);
     };
 
     /**
@@ -23,12 +20,8 @@ namespace engine {
      */
     class system_renderer {
     public:
-        static void render(entt::registry& registry, game_renderer& renderer,
-                           float interpolation_alpha);
-
-    private:
-        static void render_sprites_interpolated(entt::registry& registry, game_renderer& renderer,
-                                                float interpolation_alpha);
+        static void tick(entt::registry& registry, game_renderer& renderer,
+                         float interpolation_alpha);
     };
 
     /**
@@ -36,6 +29,6 @@ namespace engine {
      */
     class system_lifetime {
     public:
-        static void update(entt::registry& registry, float fixed_delta_time);
+        static void tick(entt::registry& registry, float delta_time);
     };
 }  // namespace engine

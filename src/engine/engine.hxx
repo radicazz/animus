@@ -6,7 +6,7 @@
 #include "renderer/renderer.hxx"
 #include "renderer/camera.hxx"
 #include "renderer/viewport.hxx"
-#include "window/window.hxx"
+#include "utils/window.hxx"
 #include "utils/resource_manager.hxx"
 #include "utils/input_system.hxx"
 #include "ecs/game_entities.hxx"
@@ -40,79 +40,40 @@ namespace engine {
      * `engine::game_engine` pointer as its first argument, allowing access to the engine's
      * functionality.
      *
-     * These functions are called in the following order each frame:
-     * 1. `create` (once during initialization)
-     * 2. `fixed_update` (called 1+ times per frame at 32 Hz)
-     * 3. `update` (once per frame)
-     * 4. `render` (once per frame)
-     * 5. `destroy` (once during shutdown)
-     *
+     * @note All callbacks are optional and can be set to `nullptr` if not needed.
      */
     struct game_info {
         void* state = nullptr;
 
         /**
-         * @brief Called last in the engine's constructor.
-         *
-         * Use this as an opportunity to initialize your game state outside of it's own constructor.
-         * For example, load sprites, fonts and other resources here.
+         * @brief Called in the engine's constructor after initialization.
          */
         void (*on_create)(game_engine*) = nullptr;
 
         /**
-         * @brief Called in the engine's constructor.
-         *
-         * RAII handles most of the cleanup, so you typically don't need to do anything here.
-         *
+         * @brief Called in the engine's destructor.
          */
         void (*on_destroy)(game_engine*) = nullptr;
 
         /**
          * @brief Called every frame before rendering.
-         * @note This callback has an extra parameter, `float delta_time`, which represents the time
-         *       elapsed since the last frame.
          */
         void (*on_update)(game_engine*, float delta_time) = nullptr;
 
         /**
          * @brief Called at a fixed timestep (32 Hz) for consistent physics updates.
-         *
-         * This callback is called at regular intervals regardless of framerate,
-         * making it ideal for physics simulation, collision detection, and other
-         * systems that require consistent timing.
-         *
-         * @note The fixed_delta_time parameter is always 1/32 seconds (~31.25ms).
-         *       Multiple calls may occur in a single frame to maintain timing accuracy.
          */
         void (*on_fixed_update)(game_engine*, float fixed_delta_time) = nullptr;
 
         /**
          * @brief Called every frame during rendering.
          */
-        void (*on_render)(game_engine*, float) = nullptr;
-    };
-
-    template <class... Args>
-    void safe_invoke(void (*func)(Args...), Args... args) {
-        if (func != nullptr) {
-            func(args...);
-        }
-    }
-
-    /**
-     * @brief Details for initializing the game engine.
-     *
-     * This structure contains parameters used to configure the game engine during its construction.
-     * It includes settings for the initial window title and size.
-     */
-    struct game_details {
-        std::string_view window_title;
-        glm::vec2 window_size;
+        void (*on_render)(game_engine*, float interpolation_alpha) = nullptr;
     };
 
     class game_engine {
     public:
-        game_engine(const game_details& details, const game_info& info);
+        game_engine(const game_info& info, std::string_view title, const glm::ivec2& size);
         ~game_engine();
 
         game_engine(const game_engine&) = delete;
@@ -162,7 +123,7 @@ namespace engine {
          */
         template <class T>
             requires std::is_class_v<T>
-        T& get_state();
+        [[nodiscard]] T& get_state();
 
         [[nodiscard]] float get_interpolation_alpha() const;
 

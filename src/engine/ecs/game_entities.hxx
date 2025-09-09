@@ -5,17 +5,15 @@
 #include "components.hxx"
 
 namespace engine {
-    class game_engine;
     class game_renderer;
 
     /**
-     * @brief Game entities manager that coordinates all systems and provides easy access to the
-     * registry
+     * @brief ECS wrapper that manages its own registry.
      */
     class game_entities {
     public:
-        game_entities();
-        ~game_entities();
+        game_entities() = default;
+        ~game_entities() = default;
 
         game_entities(const game_entities&) = delete;
         game_entities& operator=(const game_entities&) = delete;
@@ -27,24 +25,22 @@ namespace engine {
         [[nodiscard]] const entt::registry& registry() const;
 
         // System updates
-        void update_physics(float fixed_delta_time);
-        void update_lifetime(float fixed_delta_time);
-        void render_sprites(game_renderer& renderer, float interpolation_alpha);
+        void tick_physics(float delta_time);
+        void tick_lifetime(float delta_time);
+        void tick_renderer(game_renderer& renderer, float alpha);
 
-        /**
-         * @brief Create a sprite entity with interpolated transform and sprite components.
-         * @param position Initial world position of the entity.
-         * @param sprite Unique pointer to the sprite to assign to the entity.
-         * @param layer Rendering layer for the sprite (default is 0).
-         * @return The created entity.
-         */
-        entt::entity create_interpolated_sprite(const glm::vec2& position,
+        [[nodiscard]] entt::entity create();
+        void destroy(entt::entity entity);
+
+        [[nodiscard]] bool is_valid(entt::entity entity) const;
+        void clear();
+
+        entt::entity create_sprite_static(const glm::vec2& position,
+                                          std::unique_ptr<render_sprite> sprite, int layer = 0);
+
+        entt::entity create_sprite_interpolated(const glm::vec2& position,
                                                 std::unique_ptr<render_sprite> sprite,
                                                 int layer = 0);
-
-        void destroy(entt::entity entity);
-        bool valid(entt::entity entity) const;
-        void clear();
 
         // Component access - simplified API
         template <typename Component>
@@ -72,18 +68,20 @@ namespace engine {
         template <typename... Components>
         auto view();
 
-        // Utility methods for common operations
         void set_position(entt::entity entity, const glm::vec2& position);
         glm::vec2 get_position(entt::entity entity) const;
         glm::vec2 get_interpolated_position(entt::entity entity, float alpha) const;
 
-        void set_linear_velocity(entt::entity entity, const glm::vec2& velocity);
-        void set_angular_velocity(entt::entity entity, float angular);
+        void set_velocity_linear(entt::entity entity, const glm::vec2& velocity);
+        void add_impulse_linear(entt::entity entity, const glm::vec2& impulse);
 
-        void add_linear_impulse(entt::entity entity, const glm::vec2& impulse);
-        void add_angular_impulse(entt::entity entity, float impulse);
+        void set_velocity_angular(entt::entity entity, float angular_velocity);
+        void add_impulse_angular(entt::entity entity, float angular_impulse);
 
-        private:
+        void set_visible(entt::entity entity, bool is_visible);
+        void set_layer(entt::entity entity, int layer);
+
+    private:
         entt::registry m_registry;
     };
 
@@ -96,13 +94,17 @@ namespace engine {
         return m_registry;
     }
 
+    inline entt::entity game_entities::create() {
+        return m_registry.create();
+    }
+
     inline void game_entities::destroy(entt::entity entity) {
         if (m_registry.valid(entity)) {
             m_registry.destroy(entity);
         }
     }
 
-    inline bool game_entities::valid(entt::entity entity) const {
+    inline bool game_entities::is_valid(entt::entity entity) const {
         return m_registry.valid(entity);
     }
 

@@ -3,12 +3,16 @@
 #include <stdexcept>
 
 namespace engine {
-    game_window::game_window(std::string_view title, int width, int height) : m_window(nullptr) {
+    game_window::game_window(std::string_view title, const glm::ivec2& size) : m_window(nullptr) {
         if (SDL_Init(SDL_INIT_VIDEO) == false) {
             throw std::runtime_error("Failed to initialize SDL.");
         }
 
-        if (m_window = SDL_CreateWindow(title.data(), width, height, 0); m_window == nullptr) {
+        // TODO: Add window flags to public API?
+        constexpr SDL_WindowFlags window_flags = {};
+
+        if (m_window = SDL_CreateWindow(title.data(), size.x, size.y, window_flags);
+            m_window == nullptr) {
             throw std::runtime_error("Failed to create window.");
         }
     }
