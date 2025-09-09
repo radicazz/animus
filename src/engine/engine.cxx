@@ -13,7 +13,8 @@ namespace engine {
           m_input(),
           m_entities(),
           m_info(info),
-          m_is_running(true) {
+          m_is_running(true),
+          m_interpolation_alpha(0.0f) {
         m_renderer.set_camera(&m_camera);
         m_renderer.set_viewport(&m_viewport);
 
@@ -29,13 +30,13 @@ namespace engine {
         const Uint64 performance_frequency = SDL_GetPerformanceFrequency();
 
         constexpr float fixed_timestep_seconds = 1.0f / 32.0f;
-        float fixed_time_accumulator = 0.0f;
+        float time_accumulator_seconds = 0.0f;
 
         while (m_is_running == true) {
             const Uint64 frame_start_time = SDL_GetPerformanceCounter();
             const float delta_time = (frame_start_time - last_frame_start_time) /
                                      static_cast<float>(performance_frequency);
-            fixed_time_accumulator += delta_time;
+            time_accumulator_seconds += delta_time;
             last_frame_start_time = frame_start_time;
 
             m_input.update();
@@ -50,17 +51,17 @@ namespace engine {
             }
 
             // Run fixed update as many times as needed to catch up
-            while (fixed_time_accumulator >= fixed_timestep_seconds) {
+            while (time_accumulator_seconds >= fixed_timestep_seconds) {
                 safe_invoke(m_info.on_fixed_update, this, fixed_timestep_seconds);
-                fixed_time_accumulator -= fixed_timestep_seconds;
+                time_accumulator_seconds -= fixed_timestep_seconds;
             }
 
-            const float interpolation_alpha = fixed_time_accumulator / fixed_timestep_seconds;
+            m_interpolation_alpha = time_accumulator_seconds / fixed_timestep_seconds;
 
             safe_invoke(m_info.on_update, this, delta_time);
 
             m_renderer.frame_begin();
-            safe_invoke(m_info.on_render, this, interpolation_alpha);
+            safe_invoke(m_info.on_render, this, m_interpolation_alpha);
             m_renderer.frame_end();
         }
     }

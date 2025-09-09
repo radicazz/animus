@@ -8,37 +8,8 @@
 #include <cmath>
 
 namespace engine {
-    void system_physics::update(entt::registry& registry, float delta_time) {
-        apply_drag(registry, delta_time);
-        enforce_speed_limits(registry);
-        integrate_velocity(registry, delta_time);
-    }
-
-    void system_physics::apply_drag(entt::registry& registry, float delta_time) {
-        auto view = registry.view<component_velocity>();
-        for (auto entity : view) {
-            auto& vel = view.get<component_velocity>(entity);
-
-            if (vel.drag > 0.0f) {
-                // Apply exponential drag
-                float drag_factor = std::pow(1.0f - vel.drag, delta_time);
-                vel.linear *= drag_factor;
-            }
-        }
-    }
-
-    void system_physics::enforce_speed_limits(entt::registry& registry) {
-        auto view = registry.view<component_velocity>();
-        for (auto entity : view) {
-            auto& vel = view.get<component_velocity>(entity);
-
-            if (vel.max_speed > 0.0f) {
-                float current_speed = glm::length(vel.linear);
-                if (current_speed > vel.max_speed) {
-                    vel.linear = glm::normalize(vel.linear) * vel.max_speed;
-                }
-            }
-        }
+    void system_physics::update(entt::registry& registry, float fixed_delta_time) {
+        integrate_velocity(registry, fixed_delta_time);
     }
 
     void system_physics::integrate_velocity(entt::registry& registry, float delta_time) {
@@ -47,14 +18,24 @@ namespace engine {
             auto& transform = view.get<component_transform_interpolated>(entity);
             const auto& velocity = view.get<component_velocity>(entity);
 
-            // Update position based on velocity
+            // Store previous position for interpolation
+            transform.previous_position = transform.position;
+            transform.previous_rotation_degrees = transform.rotation_degrees;
+
+            // Integrate position and rotation
             transform.position += velocity.linear * delta_time;
+            transform.rotation_degrees += velocity.angular * delta_time;
         }
     }
 
-    // Renderer System Implementation
     void system_renderer::render(entt::registry& registry, game_renderer& renderer,
                                  float interpolation_alpha) {
+        render_sprites_interpolated(registry, renderer, interpolation_alpha);
+    }
+
+    void system_renderer::render_sprites_interpolated(entt::registry& registry,
+                                                      game_renderer& renderer,
+                                                      float interpolation_alpha) {
         auto view = registry.view<component_transform_interpolated, component_sprite>();
 
         std::vector<entt::entity> entities;
@@ -112,65 +93,4 @@ namespace engine {
             registry.destroy(entity);
         }
     }
-
-    // ECS Utils Implementation
-    entt::entity ecs_utils::create_sprite_entity(entt::registry& registry,
-                                                 const glm::vec2& position,
-                                                 std::unique_ptr<render_sprite> sprite) {
-        auto entity = registry.create();
-
-        // Add transform component
-        registry.emplace<component_transform_interpolated>(entity, position, position, 0.0f, 0.0f,
-                                                           glm::vec2{1.0f, 1.0f});
-
-        // Add sprite component
-        registry.emplace<component_sprite>(entity, std::move(sprite));
-
-        return entity;
-    }
-
-    void ecs_utils::set_position(entt::registry& registry, entt::entity entity,
-                                 const glm::vec2& position) {
-        if (auto* transform = registry.try_get<component_transform_interpolated>(entity)) {
-            transform->position = position;
-        }
-    }
-
-    glm::vec2 ecs_utils::get_position(entt::registry& registry, entt::entity entity) {
-        if (auto* transform = registry.try_get<component_transform_interpolated>(entity)) {
-            return transform->position;
-        }
-
-        return {0.0f, 0.0f};
-    }
-
-    void ecs_utils::set_rotation(entt::registry& registry, entt::entity entity,
-                                 float rotation_degrees) {
-        if (auto* transform = registry.try_get<component_transform_interpolated>(entity)) {
-            transform->rotation_degrees = rotation_degrees;
-        }
-    }
-
-    float ecs_utils::get_rotation(entt::registry& registry, entt::entity entity) {
-        if (auto* transform = registry.try_get<component_transform_interpolated>(entity)) {
-            return transform->rotation_degrees;
-        }
-
-        return 0.0f;
-    }
-
-    void ecs_utils::set_linear_velocity(entt::registry& registry, entt::entity entity,
-                                        const glm::vec2& velocity) {
-        if (auto* vel = registry.try_get<component_velocity>(entity)) {
-            vel->linear = velocity;
-        }
-    }
-
-    void ecs_utils::add_impulse(entt::registry& registry, entt::entity entity,
-                                const glm::vec2& impulse) {
-        if (auto* vel = registry.try_get<component_velocity>(entity)) {
-            vel->linear += impulse;
-        }
-    }
-
 }  // namespace engine

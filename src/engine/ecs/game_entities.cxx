@@ -15,43 +15,74 @@ namespace engine {
         system_lifetime::update(m_registry, delta_time);
     }
 
-    void game_entities::render(game_renderer& renderer, float interpolation_alpha) {
+    void game_entities::render_sprites(game_renderer& renderer, float interpolation_alpha) {
         system_renderer::render(m_registry, renderer, interpolation_alpha);
     }
 
-    entt::entity game_entities::create_sprite(const glm::vec2& position,
-                                              std::unique_ptr<render_sprite> sprite) {
-        return ecs_utils::create_sprite_entity(m_registry, position, std::move(sprite));
-    }
+    entt::entity game_entities::create_interpolated_sprite(const glm::vec2& position,
+                                                           std::unique_ptr<render_sprite> sprite,
+                                                           int layer) {
+        entt::entity entity = m_registry.create();
 
-    void game_entities::destroy(entt::entity entity) {
-        if (m_registry.valid(entity)) {
-            m_registry.destroy(entity);
-        }
-    }
+        // Add transform component
+        auto& transform_comp = m_registry.emplace<component_transform_interpolated>(entity);
+        transform_comp.position = position;
+        transform_comp.previous_position = position;
 
-    bool game_entities::valid(entt::entity entity) const {
-        return m_registry.valid(entity);
-    }
+        // Add sprite component
+        auto& sprite_comp = m_registry.emplace<component_sprite>(entity);
+        sprite_comp.sprite = std::move(sprite);
+        sprite_comp.layer = layer;
 
-    void game_entities::clear() {
-        m_registry.clear();
+        return entity;
     }
 
     void game_entities::set_position(entt::entity entity, const glm::vec2& position) {
-        ecs_utils::set_position(m_registry, entity, position);
+        auto* transform = m_registry.try_get<component_transform_interpolated>(entity);
+        if (transform) {
+            transform->position = position;
+        }
     }
 
     glm::vec2 game_entities::get_position(entt::entity entity) const {
-        return ecs_utils::get_position(const_cast<entt::registry&>(m_registry), entity);
+        auto* transform = m_registry.try_get<component_transform_interpolated>(entity);
+        return transform ? transform->position : glm::vec2{0.0f, 0.0f};
     }
 
-    void game_entities::set_velocity(entt::entity entity, const glm::vec2& velocity) {
-        ecs_utils::set_linear_velocity(m_registry, entity, velocity);
+    glm::vec2 game_entities::get_interpolated_position(entt::entity entity, float alpha) const {
+        auto* transform = m_registry.try_get<component_transform_interpolated>(entity);
+        if (!transform) {
+            return glm::vec2{0.0f, 0.0f};
+        }
+        return glm::mix(transform->previous_position, transform->position, alpha);
     }
 
-    void game_entities::add_impulse(entt::entity entity, const glm::vec2& impulse) {
-        ecs_utils::add_impulse(m_registry, entity, impulse);
+    void game_entities::set_linear_velocity(entt::entity entity, const glm::vec2& velocity) {
+        auto* vel = m_registry.try_get<component_velocity>(entity);
+        if (vel) {
+            vel->linear = velocity;
+        }
+    }
+
+    void game_entities::set_angular_velocity(entt::entity entity, float angular) {
+        auto* vel = m_registry.try_get<component_velocity>(entity);
+        if (vel) {
+            vel->angular = angular;
+        }
+    }
+
+    void game_entities::add_linear_impulse(entt::entity entity, const glm::vec2& impulse) {
+        auto* vel = m_registry.try_get<component_velocity>(entity);
+        if (vel) {
+            vel->linear += impulse;
+        }
+    }
+
+    void game_entities::add_angular_impulse(entt::entity entity, float impulse) {
+        auto* vel = m_registry.try_get<component_velocity>(entity);
+        if (vel) {
+            vel->angular += impulse;
+        }
     }
 
 }  // namespace engine

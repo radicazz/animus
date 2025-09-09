@@ -20,8 +20,7 @@ namespace engine {
 
     struct component_velocity {
         glm::vec2 linear = {0.0f, 0.0f};
-        float max_speed = -1.f;
-        float drag = 0.f;
+        float angular = 0.0f;
     };
 
     struct component_sprite {

@@ -17,7 +17,7 @@ static void dev_game_run() {
 
     // Initial game engine window parameters
     engine::game_details details = {.window_title = "Incarnate Dev Demo",
-                                    .window_size = glm::vec2{800, 600}};
+                                    .window_size = glm::vec2{1200, 800}};
 
     // Create the game and its resources
     engine::game_engine game_engine(details, info);

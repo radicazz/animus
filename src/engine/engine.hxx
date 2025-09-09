@@ -164,6 +164,8 @@ namespace engine {
             requires std::is_class_v<T>
         T& get_state();
 
+        [[nodiscard]] float get_interpolation_alpha() const;
+
     private:
         game_window m_window;
         game_renderer m_renderer;
@@ -175,6 +177,8 @@ namespace engine {
 
         game_info m_info;
         bool m_is_running;
+
+        float m_interpolation_alpha;
     };
 
     inline game_window& game_engine::get_window() {
@@ -209,5 +213,9 @@ namespace engine {
         requires std::is_class_v<T>
     inline T& game_engine::get_state() {
         return *static_cast<T*>(m_info.state);
+    }
+
+    inline float game_engine::get_interpolation_alpha() const {
+        return m_interpolation_alpha;
     }
 }  // namespace engine

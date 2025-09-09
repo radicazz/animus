@@ -12,9 +12,6 @@ struct dev_game_state {
     std::unique_ptr<engine::render_text_static> debug_text;
     std::unique_ptr<engine::render_text_dynamic> player_label_text;
 
-    // Camera control variables (game-specific behavior, not bounds)
-    float camera_follow_speed;
-
     // Free camera mode toggle
     bool is_camera_free_mode;
     float camera_move_speed;

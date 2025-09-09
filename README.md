@@ -101,18 +101,11 @@ void game_create(engine::game_engine* engine) {
     auto player_sprite = resources.sprite_create("assets/player.png");
 
     // Register your player entity with the sprite.
-    state.player = entities.create_sprite({400.f, 300.f}, std::move(player_sprite));
+    state.player = entities.create_interpolated_sprite({400.f, 300.f}, std::move(player_sprite));
 
     // Add velocity component for movement.
     entities.add<engine::component_velocity>(state.player) = {
-        .linear = {0.0f, 0.0f}, .max_speed = 200.0f, .drag = 0.1f};
-}
-
-void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
-    engine::game_entities& entities = engine->get_entities();
-
-    // Update physics for all the entities in the engine.
-    entities.update_physics(fixed_delta_time);
+        .linear = {0.0f, 0.0f}, .angular = 0.f};
 }
 
 void game_update(engine::game_engine* engine, float delta_time) {
@@ -120,15 +113,15 @@ void game_update(engine::game_engine* engine, float delta_time) {
     engine::game_input& input = engine->get_input();
     engine::game_entities& entities = engine->get_entities();
 
-// Access the velocity component.
-auto* velocity = entities.try_get<engine::component_velocity>(state.player);
-if (velocity) {
-    constexpr float acceleration = 500.0f;
+    // Access the velocity component.
+    auto* velocity = entities.try_get<engine::component_velocity>(state.player);
+    if (velocity) {
+        constexpr float acceleration = 500.0f;
 
-    // Use the input system to capture WASD movement.
-    glm::vec2 movement(0.0f);
+        // Use the input system to capture WASD movement.
+        glm::vec2 movement(0.0f);
 
-    if (input.is_key_held(engine::input_key::w)) {
+        if (input.is_key_held(engine::input_key::w)) {
             movement.y -= 1.0f;
         }
         if (input.is_key_held(engine::input_key::s)) {
@@ -141,18 +134,25 @@ if (velocity) {
             movement.x += 1.0f;
         }
 
-        // Apply movement to the player.
+        // Accelerate the player.
         velocity->linear += movement * acceleration * delta_time;
     }
 }
 
+// Currently called about ever 32ms.
+void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
+    engine::game_entities& entities = engine->get_entities();
+
+    // Update physics for all the entities in the engine.
+    entities.update_physics(fixed_delta_time);
+}
+
 void game_render(engine::game_engine* engine, float interpolation_alpha) {
-    auto& state = engine->get_state<game_state>();
     engine::game_renderer& renderer = engine->get_renderer();
     engine::game_entities& entities = engine->get_entities();
 
     // Render all the sprites in the game.
-    entities.render(renderer, interpolation_alpha);
+    entities.render_sprites(renderer, interpolation_alpha);
 }
 
 int main(int argc, char* argv[]) {
@@ -163,6 +163,7 @@ int main(int argc, char* argv[]) {
         engine::game_info info = {
             .state = &state,
             .on_create = game_create,
+            .on_destroy = nullptr,
             .on_fixed_update = game_fixed_update,
             .on_update = game_update,
             .on_render = game_render
