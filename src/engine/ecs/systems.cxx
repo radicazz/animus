@@ -112,10 +112,31 @@ namespace engine {
             float render_rotation = data.transform->rotation;
 
             if (data.interp != nullptr) {
+                // Interpolate the sprite's postion.
                 render_position = glm::mix(data.interp->previous_position, data.transform->position,
                                            interpolation_alpha);
-                render_rotation = glm::mix(data.interp->previous_rotation, data.transform->rotation,
-                                           interpolation_alpha);
+
+                // Interpolate the sprite's rotation, taking into account wrap-around at 360
+                // degrees.
+                const float previous_rotation = data.interp->previous_rotation;
+                const float current_rotation = data.transform->rotation;
+
+                float rotation_diff = current_rotation - previous_rotation;
+                if (rotation_diff > 180.0f) {
+                    rotation_diff -= 360.0f;
+                } else if (rotation_diff < -180.0f) {
+                    rotation_diff += 360.0f;
+                }
+
+                render_rotation = previous_rotation + (rotation_diff * interpolation_alpha);
+
+                while (render_rotation >= 360.0f) {
+                    render_rotation -= 360.0f;
+                }
+
+                while (render_rotation < 0.0f) {
+                    render_rotation += 360.0f;
+                }
             }
 
             data.sprite->sprite->set_rotation(render_rotation);
