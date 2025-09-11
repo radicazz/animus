@@ -4,7 +4,7 @@
 
 namespace engine {
     template <class... Args>
-    void safe_invoke(void (*func)(Args...), Args... args) {
+    void try_invoke_callback(void (*func)(Args...), Args... args) {
         if (func != nullptr) {
             func(args...);
         }
@@ -18,58 +18,67 @@ namespace engine {
           m_resources(m_renderer),
           m_input(),
           m_entities(),
-          m_info(info),
+          m_game(info),
           m_is_running(true),
-          m_interpolation_alpha(0.0f) {
+          m_fixed_delta_time(-1.f),
+          m_interpolation_alpha(0.f),
+          m_delta_time(0.f) {
+        set_tick_rate(32.f);
+
         // TODO: Figure out what to do with these?
         m_renderer.set_camera(&m_camera);
         m_renderer.set_viewport(&m_viewport);
 
-        safe_invoke(m_info.on_create, this);
+        // Allow the game to initialize itself.
+        try_invoke_callback(m_game.on_create, this);
     }
 
     game_engine::~game_engine() {
-        safe_invoke(m_info.on_destroy, this);
+        try_invoke_callback(m_game.on_destroy, this);
     }
 
     void game_engine::run() {
         Uint64 last_frame_start_time = SDL_GetPerformanceCounter();
         const Uint64 performance_frequency = SDL_GetPerformanceFrequency();
 
-        constexpr float fixed_timestep_seconds = 1.0f / 32.0f;
-        float time_accumulator_seconds = 0.0f;
+        float fixed_update_time_accumulator = 0.f;
 
         while (m_is_running == true) {
             const Uint64 frame_start_time = SDL_GetPerformanceCounter();
-            const float delta_time = (frame_start_time - last_frame_start_time) /
-                                     static_cast<float>(performance_frequency);
-            time_accumulator_seconds += delta_time;
+            m_delta_time = (frame_start_time - last_frame_start_time) /
+                           static_cast<float>(performance_frequency);
+            fixed_update_time_accumulator += m_delta_time;
             last_frame_start_time = frame_start_time;
 
-            m_input.update();
-
-            SDL_Event event;
-            while (SDL_PollEvent(&event) == true) {
-                if (event.type == SDL_EVENT_QUIT) {
-                    m_is_running = false;
-                }
-
-                m_input.process_event(event);
-            }
+            process_events();
 
             // Run fixed update as many times as needed to catch up
-            while (time_accumulator_seconds >= fixed_timestep_seconds) {
-                safe_invoke(m_info.on_fixed_update, this, fixed_timestep_seconds);
-                time_accumulator_seconds -= fixed_timestep_seconds;
+            while (fixed_update_time_accumulator >= m_fixed_delta_time) {
+                try_invoke_callback(m_game.on_fixed_update, this, m_fixed_delta_time);
+                fixed_update_time_accumulator -= m_fixed_delta_time;
             }
 
-            m_interpolation_alpha = time_accumulator_seconds / fixed_timestep_seconds;
+            // Calculate interpolation alpha for rendering.
+            m_interpolation_alpha = fixed_update_time_accumulator / m_fixed_delta_time;
 
-            safe_invoke(m_info.on_update, this, delta_time);
+            try_invoke_callback(m_game.on_update, this, m_delta_time);
 
             m_renderer.frame_begin();
-            safe_invoke(m_info.on_render, this, m_interpolation_alpha);
+            try_invoke_callback(m_game.on_render, this, m_interpolation_alpha);
             m_renderer.frame_end();
+        }
+    }
+
+    void game_engine::process_events() {
+        m_input.update();
+
+        SDL_Event event;
+        while (SDL_PollEvent(&event) == true) {
+            if (event.type == SDL_EVENT_QUIT) {
+                m_is_running = false;
+            }
+
+            m_input.process_event(event);
         }
     }
 }  // namespace engine

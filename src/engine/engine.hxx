@@ -61,7 +61,7 @@ namespace engine {
         void (*on_update)(game_engine*, float delta_time) = nullptr;
 
         /**
-         * @brief Called at a fixed timestep (32 Hz) for consistent physics updates.
+         * @brief Called each tick for consistent physics updates.
          */
         void (*on_fixed_update)(game_engine*, float fixed_delta_time) = nullptr;
 
@@ -125,7 +125,23 @@ namespace engine {
             requires std::is_class_v<T>
         [[nodiscard]] T& get_state();
 
+        static constexpr float ticks_to_time(float ticks_per_second);
+        static constexpr float time_to_ticks(float time_seconds);
+
+        [[nodiscard]] float get_tick_rate();
+
+        /**
+         * @brief Set the tick rate (fixed update rate) of the engine.
+         * @param ticks_per_second The number of fixed updates (ticks) to perform per second.
+         */
+        void set_tick_rate(float ticks_per_second);
+
+        [[nodiscard]] float get_fixed_delta_time() const;
+        [[nodiscard]] float get_delta_time() const;
         [[nodiscard]] float get_interpolation_alpha() const;
+
+    private:
+        void process_events();
 
     private:
         game_window m_window;
@@ -136,10 +152,28 @@ namespace engine {
         game_input m_input;
         game_entities m_entities;
 
-        game_info m_info;
+        game_info m_game;
+
+        /**
+         * @brief Whether to keep the game loop running or not.
+         * @note Setting this to false will exit the game loop and end the program.
+         */
         bool m_is_running;
 
+        /**
+         * @brief The amount of time between each fixed update (tick).
+         */
+        float m_fixed_delta_time;
+
+        /**
+         * @brief Fraction of time elapsed towards the next fixed update (tick).
+         */
         float m_interpolation_alpha;
+
+        /**
+         * @brief The time spent between the last two frames in seconds.
+         */
+        float m_delta_time;
     };
 
     inline game_window& game_engine::get_window() {
@@ -173,7 +207,31 @@ namespace engine {
     template <class T>
         requires std::is_class_v<T>
     inline T& game_engine::get_state() {
-        return *static_cast<T*>(m_info.state);
+        return *static_cast<T*>(m_game.state);
+    }
+
+    constexpr float game_engine::ticks_to_time(const float ticks_per_second) {
+        return 1.0f / ticks_per_second;
+    }
+
+    constexpr float game_engine::time_to_ticks(const float time_seconds) {
+        return 1.0f / time_seconds;
+    }
+
+    inline float game_engine::get_tick_rate() {
+        return time_to_ticks(m_fixed_delta_time);
+    }
+
+    inline void game_engine::set_tick_rate(const float ticks_per_second) {
+        m_fixed_delta_time = ticks_to_time(ticks_per_second);
+    }
+
+    inline float game_engine::get_fixed_delta_time() const {
+        return m_fixed_delta_time;
+    }
+
+    inline float game_engine::get_delta_time() const {
+        return m_delta_time;
     }
 
     inline float game_engine::get_interpolation_alpha() const {
