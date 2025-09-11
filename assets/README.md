@@ -1,5 +1,5 @@
-# 🌠 Assets
+# Assets
 
-> During compilation, this folder is copied into the executable's destination folder.
+Game assets such as images and fonts, are stored in this folder.
 
-Place your game assets (sprites, fonts, etc.) in this folder.
+During compilation, this entire folder is copied to the location of the final executable to ensure all assets are accessible at runtime.

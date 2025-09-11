@@ -1,6 +1,6 @@
-# 🔧 Dependencies
+# Dependencies
 
-> All dependencies are included as Git submodules and are built automatically for your platform.
+> All dependencies are included as Git submodules. They will automatically be built for the target platform.
 
 - **[SDL3](https://github.com/libsdl-org/SDL)** - Window management, rendering, and input.
 - **[SDL3_image](https://github.com/libsdl-org/SDL_image)** - Image loading. (PNG, JPG, etc...)
