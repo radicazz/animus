@@ -20,9 +20,9 @@ namespace engine {
           m_entities(),
           m_game(info),
           m_is_running(true),
-          m_fixed_delta_time(-1.f),
-          m_interpolation_alpha(0.f),
-          m_delta_time(0.f) {
+          m_tick_interval(-1.f),
+          m_fraction_to_next_tick(0.f),
+          m_frame_interval(0.f) {
         set_tick_rate(32.f);
 
         // TODO: Figure out what to do with these?
@@ -41,30 +41,28 @@ namespace engine {
         Uint64 last_frame_start_time = SDL_GetPerformanceCounter();
         const Uint64 performance_frequency = SDL_GetPerformanceFrequency();
 
-        float fixed_update_time_accumulator = 0.f;
+        float time_since_last_tick = 0.f;
 
         while (m_is_running == true) {
             const Uint64 frame_start_time = SDL_GetPerformanceCounter();
-            m_delta_time = (frame_start_time - last_frame_start_time) /
-                           static_cast<float>(performance_frequency);
-            fixed_update_time_accumulator += m_delta_time;
+            m_frame_interval = (frame_start_time - last_frame_start_time) /
+                               static_cast<float>(performance_frequency);
+            time_since_last_tick += m_frame_interval;
             last_frame_start_time = frame_start_time;
 
             process_events();
 
-            // Run fixed update as many times as needed to catch up
-            while (fixed_update_time_accumulator >= m_fixed_delta_time) {
-                try_invoke_callback(m_game.on_fixed_update, this, m_fixed_delta_time);
-                fixed_update_time_accumulator -= m_fixed_delta_time;
+            while (time_since_last_tick >= m_tick_interval) {
+                try_invoke_callback(m_game.on_tick, this, m_tick_interval);
+                time_since_last_tick -= m_tick_interval;
             }
 
-            // Calculate interpolation alpha for rendering.
-            m_interpolation_alpha = fixed_update_time_accumulator / m_fixed_delta_time;
+            m_fraction_to_next_tick = time_since_last_tick / m_tick_interval;
 
-            try_invoke_callback(m_game.on_update, this, m_delta_time);
+            try_invoke_callback(m_game.on_frame, this, m_frame_interval);
 
             m_renderer.frame_begin();
-            try_invoke_callback(m_game.on_render, this, m_interpolation_alpha);
+            try_invoke_callback(m_game.on_draw, this, m_fraction_to_next_tick);
             m_renderer.frame_end();
         }
     }

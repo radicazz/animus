@@ -8,11 +8,11 @@
 #include <cmath>
 
 namespace engine {
-    void system_physics::tick(entt::registry& registry, float delta_time) {
-        integrate_velocity(registry, delta_time);
+    void system_physics::update(entt::registry& registry, const float tick_interval) {
+        integrate_velocity(registry, tick_interval);
     }
 
-    void system_physics::integrate_velocity(entt::registry& registry, float delta_time) {
+    void system_physics::integrate_velocity(entt::registry& registry, float tick_interval) {
         auto view = registry.view<component_transform>();
 
         for (auto [entity, transform] : view.each()) {
@@ -26,7 +26,7 @@ namespace engine {
                 glm::vec2 velocity = velocity_linear->value;
 
                 if (velocity_linear->drag > 0.0f) {
-                    const float drag_factor = 1.0f - (velocity_linear->drag * delta_time);
+                    const float drag_factor = 1.0f - (velocity_linear->drag * tick_interval);
                     velocity *= std::max(0.0f, drag_factor);
                     velocity_linear->value = velocity;
                 }
@@ -39,14 +39,14 @@ namespace engine {
                     }
                 }
 
-                transform.position += velocity * delta_time;
+                transform.position += velocity * tick_interval;
             }
 
             if (auto* angular_velocity = registry.try_get<component_velocity_angular>(entity)) {
                 float velocity = angular_velocity->value;
 
                 if (angular_velocity->drag > 0.0f) {
-                    const float drag_factor = 1.0f - (angular_velocity->drag * delta_time);
+                    const float drag_factor = 1.0f - (angular_velocity->drag * tick_interval);
                     velocity *= std::max(0.0f, drag_factor);
                     angular_velocity->value = velocity;
                 }
@@ -58,7 +58,7 @@ namespace engine {
                     }
                 }
 
-                transform.rotation += velocity * delta_time;
+                transform.rotation += velocity * tick_interval;
 
                 // Normalize rotation.
                 while (transform.rotation >= 360.0f) {
@@ -72,8 +72,8 @@ namespace engine {
         }
     }
 
-    void system_renderer::tick(entt::registry& registry, game_renderer& renderer,
-                               float interpolation_alpha) {
+    void system_renderer::update(entt::registry& registry, game_renderer& renderer,
+                                 const float fraction_to_next_tick) {
         struct render_data {
             entt::entity entity;
             int layer;
@@ -111,7 +111,7 @@ namespace engine {
             if (data.interp != nullptr) {
                 // Interpolate the sprite's postion.
                 render_position = glm::mix(data.interp->previous_position, data.transform->position,
-                                           interpolation_alpha);
+                                           fraction_to_next_tick);
 
                 // Interpolate the sprite's rotation, taking into account wrap-around at 360
                 // degrees.
@@ -125,7 +125,7 @@ namespace engine {
                     rotation_diff += 360.0f;
                 }
 
-                render_rotation = previous_rotation + (rotation_diff * interpolation_alpha);
+                render_rotation = previous_rotation + (rotation_diff * fraction_to_next_tick);
 
                 while (render_rotation >= 360.0f) {
                     render_rotation -= 360.0f;
@@ -144,12 +144,12 @@ namespace engine {
     }
 
     // Lifetime System Implementation
-    void system_lifetime::tick(entt::registry& registry, float delta_time) {
+    void system_lifetime::update(entt::registry& registry, float tick_interval) {
         auto view = registry.view<component_lifetime>();
         std::vector<entt::entity> entities_to_destroy;
 
         for (auto [entity, lifetime] : view.each()) {
-            lifetime.remaining_seconds -= delta_time;
+            lifetime.remaining_seconds -= tick_interval;
 
             if (lifetime.remaining_seconds <= 0.0f) {
                 entities_to_destroy.push_back(entity);

@@ -25,9 +25,9 @@ namespace engine {
         [[nodiscard]] const entt::registry& registry() const;
 
         // System updates
-        void tick_physics(float delta_time);
-        void tick_lifetime(float delta_time);
-        void tick_renderer(game_renderer& renderer, float alpha);
+        void system_physics_update(float tick_interval);
+        void system_lifetime_update(float tick_interval);
+        void system_renderer_update(game_renderer& renderer, float fraction_to_next_tick);
 
         [[nodiscard]] entt::entity create();
         void destroy(entt::entity entity);

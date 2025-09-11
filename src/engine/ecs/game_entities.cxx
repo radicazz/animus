@@ -2,16 +2,17 @@
 #include "../engine.hxx"
 
 namespace engine {
-    void game_entities::tick_physics(float delta_time) {
-        system_physics::tick(m_registry, delta_time);
+    void game_entities::system_physics_update(const float tick_interval) {
+        system_physics::update(m_registry, tick_interval);
     }
 
-    void game_entities::tick_lifetime(float delta_time) {
-        system_lifetime::tick(m_registry, delta_time);
+    void game_entities::system_lifetime_update(const float tick_interval) {
+        system_lifetime::update(m_registry, tick_interval);
     }
 
-    void game_entities::tick_renderer(game_renderer& renderer, float alpha) {
-        system_renderer::tick(m_registry, renderer, alpha);
+    void game_entities::system_renderer_update(game_renderer& renderer,
+                                               const float fraction_to_next_tick) {
+        system_renderer::update(m_registry, renderer, fraction_to_next_tick);
     }
 
     entt::entity game_entities::create_sprite_static(const glm::vec2& position,

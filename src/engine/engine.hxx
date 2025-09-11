@@ -14,15 +14,9 @@
 namespace engine {
     /**
      * @brief Check if the current build is a debug build.
-     *
-     * @example
-     * if constexpr (is_debug_build() == true) {
-     *     // Debug-specific code here
-     * }
-     *
      * @return consteval bool True if this is a debug build, false otherwise.
      */
-    constexpr bool is_debug_build() {
+    consteval bool is_debug_build() {
 #ifdef NDEBUG
         return false;
 #else
@@ -56,19 +50,19 @@ namespace engine {
         void (*on_destroy)(game_engine*) = nullptr;
 
         /**
-         * @brief Called every frame before rendering.
+         * @brief Called at a fixed tick rate for game logic updates.
          */
-        void (*on_update)(game_engine*, float delta_time) = nullptr;
+        void (*on_tick)(game_engine*, float tick_interval) = nullptr;
 
         /**
-         * @brief Called each tick for consistent physics updates.
+         * @brief Called every frame before rendering.
          */
-        void (*on_fixed_update)(game_engine*, float fixed_delta_time) = nullptr;
+        void (*on_frame)(game_engine*, float frame_interval) = nullptr;
 
         /**
          * @brief Called every frame during rendering.
          */
-        void (*on_render)(game_engine*, float interpolation_alpha) = nullptr;
+        void (*on_draw)(game_engine*, float progress_to_next_tick) = nullptr;
     };
 
     class game_engine {
@@ -125,20 +119,16 @@ namespace engine {
             requires std::is_class_v<T>
         [[nodiscard]] T& get_state();
 
-        static constexpr float ticks_to_time(float ticks_per_second);
-        static constexpr float time_to_ticks(float time_seconds);
+        static constexpr float tick_rate_to_interval(float tick_rate_seconds);
+        static constexpr float tick_interval_to_rate(float time_seconds);
 
         [[nodiscard]] float get_tick_rate();
+        void set_tick_rate(float tick_rate_seconds);
 
-        /**
-         * @brief Set the tick rate (fixed update rate) of the engine.
-         * @param ticks_per_second The number of fixed updates (ticks) to perform per second.
-         */
-        void set_tick_rate(float ticks_per_second);
+        [[nodiscard]] float get_tick_interval() const;
+        [[nodiscard]] float get_fraction_to_next_tick() const;
 
-        [[nodiscard]] float get_fixed_delta_time() const;
-        [[nodiscard]] float get_delta_time() const;
-        [[nodiscard]] float get_interpolation_alpha() const;
+        [[nodiscard]] float get_frame_interval() const;
 
     private:
         void process_events();
@@ -151,7 +141,6 @@ namespace engine {
         game_resources m_resources;
         game_input m_input;
         game_entities m_entities;
-
         game_info m_game;
 
         /**
@@ -163,17 +152,17 @@ namespace engine {
         /**
          * @brief The amount of time between each fixed update (tick).
          */
-        float m_fixed_delta_time;
+        float m_tick_interval;
 
         /**
          * @brief Fraction of time elapsed towards the next fixed update (tick).
          */
-        float m_interpolation_alpha;
+        float m_fraction_to_next_tick;
 
         /**
          * @brief The time spent between the last two frames in seconds.
          */
-        float m_delta_time;
+        float m_frame_interval;
     };
 
     inline game_window& game_engine::get_window() {
@@ -210,31 +199,31 @@ namespace engine {
         return *static_cast<T*>(m_game.state);
     }
 
-    constexpr float game_engine::ticks_to_time(const float ticks_per_second) {
+    constexpr float game_engine::tick_rate_to_interval(const float ticks_per_second) {
         return 1.0f / ticks_per_second;
     }
 
-    constexpr float game_engine::time_to_ticks(const float time_seconds) {
+    constexpr float game_engine::tick_interval_to_rate(const float time_seconds) {
         return 1.0f / time_seconds;
     }
 
     inline float game_engine::get_tick_rate() {
-        return time_to_ticks(m_fixed_delta_time);
+        return tick_interval_to_rate(m_tick_interval);
     }
 
     inline void game_engine::set_tick_rate(const float ticks_per_second) {
-        m_fixed_delta_time = ticks_to_time(ticks_per_second);
+        m_tick_interval = tick_rate_to_interval(ticks_per_second);
     }
 
-    inline float game_engine::get_fixed_delta_time() const {
-        return m_fixed_delta_time;
+    inline float game_engine::get_tick_interval() const {
+        return m_tick_interval;
     }
 
-    inline float game_engine::get_delta_time() const {
-        return m_delta_time;
+    inline float game_engine::get_frame_interval() const {
+        return m_frame_interval;
     }
 
-    inline float game_engine::get_interpolation_alpha() const {
-        return m_interpolation_alpha;
+    inline float game_engine::get_fraction_to_next_tick() const {
+        return m_fraction_to_next_tick;
     }
 }  // namespace engine

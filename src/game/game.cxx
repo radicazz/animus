@@ -1,6 +1,6 @@
-#include "demo_game.hxx"
+#include "game.hxx"
 
-void game_create(engine::game_engine* engine) {
+void game_on_create(engine::game_engine* engine) {
     auto& state = engine->get_state<demo_game_state>();
     engine::game_resources& resources = engine->get_resources();
     engine::game_entities& entities = engine->get_entities();
@@ -27,13 +27,13 @@ void game_create(engine::game_engine* engine) {
     state.debug_text_position = {10, 10};
 }
 
-void game_fixed_update(engine::game_engine* engine, float fixed_delta_time) {
+void game_on_tick(engine::game_engine* engine, const float tick_interval) {
     engine::game_entities& entities = engine->get_entities();
-    entities.tick_lifetime(fixed_delta_time);
-    entities.tick_physics(fixed_delta_time);
+    entities.system_lifetime_update(tick_interval);
+    entities.system_physics_update(tick_interval);
 }
 
-void game_update(engine::game_engine* engine, float delta_time) {
+void game_on_frame(engine::game_engine* engine, const float frame_interval) {
     auto& state = engine->get_state<demo_game_state>();
     engine::game_input& input = engine->get_input();
     engine::game_camera& camera = engine->get_camera();
@@ -47,11 +47,11 @@ void game_update(engine::game_engine* engine, float delta_time) {
 
     // Zoom in and out with O and P keys.
     if (input.is_key_held(engine::input_key::o) == true) {
-        camera.zoom_by(1.0f - delta_time);
+        camera.zoom_by(1.0f - frame_interval);
     }
 
     if (input.is_key_held(engine::input_key::p) == true) {
-        camera.zoom_by(1.0f + delta_time);
+        camera.zoom_by(1.0f + frame_interval);
     }
 
     // Access and modify the player's velocity based on WASD input.
@@ -77,12 +77,12 @@ void game_update(engine::game_engine* engine, float delta_time) {
             movement_input.y += 1.0f;
         }
 
-        velocity->value += movement_input * acceleration * delta_time;
+        velocity->value += movement_input * acceleration * frame_interval;
     }
 
     if (state.is_free_camera == false) {
         const glm::vec2 target_position =
-            entities.get_interpolated_position(state.player, engine->get_interpolation_alpha());
+            entities.get_interpolated_position(state.player, engine->get_fraction_to_next_tick());
 
         camera.follow_target(target_position);
     } else {
@@ -106,7 +106,7 @@ void game_update(engine::game_engine* engine, float delta_time) {
         }
 
         if (camera_movement.x != 0.0f || camera_movement.y != 0.0f) {
-            camera_movement *= state.free_camera_speed * delta_time;
+            camera_movement *= state.free_camera_speed * frame_interval;
             camera.move_position(camera_movement);
         }
     }
@@ -125,16 +125,16 @@ void game_update(engine::game_engine* engine, float delta_time) {
     state.debug_text->set_origin_centered();
 }
 
-void game_render(engine::game_engine* engine, float interpolation_alpha) {
+void game_on_draw(engine::game_engine* engine, float fraction_to_next_tick) {
     auto& state = engine->get_state<demo_game_state>();
     engine::game_renderer& renderer = engine->get_renderer();
     engine::game_entities& entities = engine->get_entities();
 
     // Draw all renderable ECS entities.
-    entities.tick_renderer(renderer, interpolation_alpha);
+    entities.system_renderer_update(renderer, fraction_to_next_tick);
 
     const glm::vec2 player_position =
-        entities.get_interpolated_position(state.player, interpolation_alpha);
+        entities.get_interpolated_position(state.player, fraction_to_next_tick);
     renderer.text_draw_world(state.player_label, player_position + glm::vec2{0.f, 30.f});
 
     // Render our overlay text at the top-middle of the screen.

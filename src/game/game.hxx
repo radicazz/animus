@@ -15,7 +15,7 @@ struct demo_game_state {
     float free_camera_speed;
 };
 
-void game_create(engine::game_engine* engine);
-void game_fixed_update(engine::game_engine* engine, float fixed_delta_time);
-void game_update(engine::game_engine* engine, float delta_time);
-void game_render(engine::game_engine* engine, float interpolation_alpha);
+void game_on_create(engine::game_engine* engine);
+void game_on_tick(engine::game_engine* engine, float tick_interval);
+void game_on_frame(engine::game_engine* engine, float frame_interval);
+void game_on_draw(engine::game_engine* engine, float progress_to_next_tick);
