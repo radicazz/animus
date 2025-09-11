@@ -30,15 +30,19 @@ namespace engine {
         SDL_SetWindowTitle(m_window, new_title.data());
     }
 
-    glm::vec2 game_window::get_logical_size() const {
-        int width, height;
-        SDL_GetWindowSize(m_window, &width, &height);
-        return {static_cast<float>(width), static_cast<float>(height)};
+    glm::ivec2 game_window::get_logical_size() const {
+        glm::ivec2 size;
+        SDL_GetWindowSize(m_window, &size.x, &size.y);
+        return size;
     }
 
-    glm::vec2 game_window::get_pixel_size() const {
-        int width, height;
-        SDL_GetWindowSizeInPixels(m_window, &width, &height);
-        return {static_cast<float>(width), static_cast<float>(height)};
+    void game_window::set_logical_size(const glm::ivec2& size) {
+        SDL_SetWindowSize(m_window, size.x, size.y);
+    }
+
+    glm::ivec2 game_window::get_pixel_size() const {
+        glm::ivec2 size;
+        SDL_GetWindowSizeInPixels(m_window, &size.x, &size.y);
+        return size;
     }
 }  // namespace engine

@@ -15,15 +15,10 @@ namespace engine {
         [[nodiscard]] std::string get_title() const;
         void set_title(std::string_view new_title);
 
-        [[nodiscard]] glm::vec2 get_logical_size() const;
-        [[nodiscard]] glm::vec2 get_pixel_size() const;
+        [[nodiscard]] glm::ivec2 get_logical_size() const;
+        void set_logical_size(const glm::ivec2& size);
 
-        /**
-         * @brief Set the running state of the window.
-         * @param is_running The new running state.
-         * @note Setting this to false will close the window.
-         */
-        void set_is_running(bool is_running);
+        [[nodiscard]] glm::ivec2 get_pixel_size() const;
 
     private:
         SDL_Window* m_window;
