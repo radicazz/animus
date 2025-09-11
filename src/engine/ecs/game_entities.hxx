@@ -1,11 +1,13 @@
 #pragma once
 
+#include <string_view>
 #include <entt/entt.hpp>
 #include "systems.hxx"
 #include "components.hxx"
 
 namespace engine {
     class game_renderer;
+    class game_resources;
 
     /**
      * @brief ECS wrapper that manages its own registry.
@@ -28,7 +30,8 @@ namespace engine {
         // System updates
         void system_physics_update(float tick_interval);
         void system_lifetime_update(float tick_interval);
-        void system_renderer_update(game_renderer& renderer, float fraction_to_next_tick);
+        void system_renderer_update(game_renderer& renderer, game_resources& resources,
+                                    float fraction_to_next_tick);
 
         [[nodiscard]] entt::entity create();
         void destroy(entt::entity entity);
@@ -36,11 +39,9 @@ namespace engine {
         [[nodiscard]] bool is_valid(entt::entity entity) const;
         void clear();
 
-        entt::entity create_sprite_static(const glm::vec2& position, game_sprite::uptr sprite,
-                                          int layer = 0);
-
-        entt::entity create_sprite_interpolated(const glm::vec2& position, game_sprite::uptr sprite,
-                                                int layer = 0);
+        entt::entity sprite_create(std::string_view resource_key);
+        entt::entity sprite_create_interpolated(std::string_view resource_key);
+        entt::entity create_text_dynamic(std::string_view resource_key);
 
         // Component access - simplified API
         template <typename Component>
@@ -68,9 +69,14 @@ namespace engine {
         template <typename... Components>
         auto view();
 
-        void set_position(entt::entity entity, const glm::vec2& position);
-        glm::vec2 get_position(entt::entity entity) const;
-        glm::vec2 get_interpolated_position(entt::entity entity, float alpha) const;
+        void set_transform_position(entt::entity entity, const glm::vec2& position);
+        glm::vec2 get_transform_position(entt::entity entity) const;
+
+        glm::vec2 get_interpolated_position(entt::entity entity, float fraction_to_next_tick) const;
+        float get_interpolated_rotation(entt::entity entity, float fraction_to_next_tick) const;
+
+        void set_transform_scale(entt::entity entity, const glm::vec2& new_scale);
+        glm::vec2 get_transform_scale(entt::entity entity);
 
         void set_velocity_linear(entt::entity entity, const glm::vec2& velocity);
         void add_impulse_linear(entt::entity entity, const glm::vec2& impulse);
@@ -78,8 +84,8 @@ namespace engine {
         void set_velocity_angular(entt::entity entity, float angular_velocity);
         void add_impulse_angular(entt::entity entity, float angular_impulse);
 
-        void set_visible(entt::entity entity, bool is_visible);
-        void set_layer(entt::entity entity, int layer);
+        void set_renderable_visible(entt::entity entity, bool is_visible);
+        void set_renderable_layer(entt::entity entity, int layer);
 
     private:
         entt::registry m_registry;

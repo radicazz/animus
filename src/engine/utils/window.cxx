@@ -9,10 +9,7 @@ namespace engine {
             throw std::runtime_error("Failed to initialize SDL.");
         }
 
-        // Initialize SDL's log priorities to match our compile-time settings
-        initialize_logging();
-
-        game_log("SDL initialized successfully.");
+        game_log<log_level::info>("SDL initialized: {}.{}", SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
 
         // TODO: Add window flags to public API?
         constexpr SDL_WindowFlags window_flags = {};
@@ -22,17 +19,16 @@ namespace engine {
             throw std::runtime_error("Failed to create window.");
         }
 
-        game_log("Window created: '{}' ({}x{})", title, size.x, size.y);
+        game_log<log_level::info>("Window created: '{}' ({}x{})", title, size.x, size.y);
     }
 
     game_window::~game_window() {
         if (m_window) {
             SDL_DestroyWindow(m_window);
-            game_log("Window destroyed.");
+            game_log<log_level::info>("Window destroyed.");
         }
 
         SDL_Quit();
-        game_log("SDL quit.");
     }
 
     game_window::game_window(game_window&& other) noexcept : m_window(other.m_window) {

@@ -4,12 +4,11 @@
 
 struct demo_game_state {
     entt::entity player;
-    engine::game_text_dynamic::uptr player_label;
+    entt::entity player_label;
 
     entt::entity asteroid;
 
-    glm::vec2 debug_text_position;
-    engine::game_text_static::uptr debug_text;
+    entt::entity camera_mode_text;
 
     bool is_free_camera;
     float free_camera_speed;

@@ -5,26 +5,33 @@ void game_on_create(engine::game_engine* engine) {
     engine::game_resources& resources = engine->get_resources();
     engine::game_entities& entities = engine->get_entities();
 
-    engine::game_sprite::uptr player_sprite =
-        resources.sprite_create("assets/sprites/player/default.png");
-    state.player = entities.create_sprite_interpolated({200, 200}, std::move(player_sprite));
+    // Create player sprite as resource-managed sprite
+    resources.sprite_get_or_create("player_sprite", "assets/sprites/player/default.png");
+    state.player = entities.sprite_create_interpolated("player_sprite");
+    entities.set_transform_position(state.player, {200, 200});
 
-    state.player_label = resources.text_create_dynamic("assets/fonts/Segoe UI.ttf", 64.0f);
-    state.player_label->set_text("player");
-    state.player_label->set_origin_centered();
-    state.player_label->set_scale(0.25f);
+    // Create player label as resource-managed text
+    auto* player_label = resources.text_dynamic_get_or_create("player_label", "player",
+                                                              "assets/fonts/Segoe UI.ttf", 64.0f);
+    player_label->set_origin_centered();
+    state.player_label = entities.create_text_dynamic("player_label");
+    entities.set_transform_position(state.player_label, {200, 230});
+    entities.set_transform_scale(state.player_label, {0.25f, 0.25f});
 
-    engine::game_sprite::uptr asteroid_sprite =
-        resources.sprite_create("assets/sprites/asteroids/ice_1.png", {64, 64});
-    state.asteroid = entities.create_sprite_interpolated({300, 300}, std::move(asteroid_sprite));
+    // Create asteroid sprite as resource-managed sprite
+    auto* asteroid_sprite =
+        resources.sprite_get_or_create("asteroid_sprite", "assets/sprites/asteroids/ice_1.png");
+    asteroid_sprite->set_size({64, 64});
+    asteroid_sprite->set_origin(asteroid_sprite->get_size() * 0.5f);
+    state.asteroid = entities.sprite_create_interpolated("asteroid_sprite");
+    entities.set_transform_position(state.asteroid, {400, 200});
     entities.set_velocity_angular(state.asteroid, 90.f);
 
     state.is_free_camera = false;
     state.free_camera_speed = 300.f;
 
-    state.debug_text = resources.text_create_static("assets/fonts/Segoe UI.ttf", 18.0f);
-    state.debug_text->set_text("Camera Mode: Follow");
-    state.debug_text_position = {10, 10};
+    resources.text_static_get_or_create("camera_mode_text", "Camera Mode: Follow",
+                                        "assets/fonts/Segoe UI.ttf", 18.0f);
 }
 
 void game_on_tick(engine::game_engine* engine, const float tick_interval) {
@@ -39,6 +46,7 @@ void game_on_frame(engine::game_engine* engine, const float frame_interval) {
     engine::game_camera& camera = engine->get_camera();
     engine::game_viewport& viewport = engine->get_viewport();
     engine::game_entities& entities = engine->get_entities();
+    engine::game_resources& resources = engine->get_resources();
 
     // Toggle camera mode with the 'C' key.
     if (input.is_key_pressed(engine::input_key::c) == true) {
@@ -117,27 +125,29 @@ void game_on_frame(engine::game_engine* engine, const float frame_interval) {
             viewport.screen_to_world(camera, input.get_mouse_screen_position());
 
         // Move the asteroid to where we clicked.
-        entities.set_position(state.asteroid, mouse_click_position);
+        entities.set_transform_position(state.asteroid, mouse_click_position);
     }
 
-    // Update the debug text to show the current camera mode.
-    state.debug_text->set_text("Camera Mode: {}", state.is_free_camera ? "Free" : "Follow");
-    state.debug_text->set_origin_centered();
+    // Update player label to follow player
+    const glm::vec2 player_position =
+        entities.get_interpolated_position(state.player, engine->get_fraction_to_next_tick());
+    entities.set_transform_position(state.player_label, player_position + glm::vec2{0.f, 30.f});
 }
 
 void game_on_draw(engine::game_engine* engine, float fraction_to_next_tick) {
     auto& state = engine->get_state<demo_game_state>();
     engine::game_renderer& renderer = engine->get_renderer();
+    engine::game_resources& resources = engine->get_resources();
     engine::game_entities& entities = engine->get_entities();
 
-    // Draw all renderable ECS entities.
-    entities.system_renderer_update(renderer, fraction_to_next_tick);
+    // Update and render the camera mode text indicator to the screen (UI overlay).
+    if (auto* camera_text = resources.text_static_get("camera_mode_text")) {
+        camera_text->set_text("Camera Mode: {}", state.is_free_camera ? "Free" : "Follow");
+        camera_text->set_origin_centered();
+        const glm::vec2 output_size = renderer.get_output_size();
+        renderer.text_draw_screen(camera_text, {output_size.x * 0.5f, 20.f});
+    }
 
-    const glm::vec2 player_position =
-        entities.get_interpolated_position(state.player, fraction_to_next_tick);
-    renderer.text_draw_world(state.player_label, player_position + glm::vec2{0.f, 30.f});
-
-    // Render our overlay text at the top-middle of the screen.
-    const glm::vec2 screen_size = renderer.get_output_size();
-    renderer.text_draw_screen(state.debug_text, {screen_size.x * 0.5f, 10});
+    // Draw all renderable ECS entities (sprites and world-space text).
+    entities.system_renderer_update(renderer, resources, fraction_to_next_tick);
 }

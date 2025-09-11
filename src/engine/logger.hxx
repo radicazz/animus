@@ -22,70 +22,38 @@ namespace engine {
                                       static_cast<std::underlying_type_t<log_level>>(rhs));
     }
 
-    enum class log_category {
-        application = SDL_LOG_CATEGORY_APPLICATION,
-        renderer = SDL_LOG_CATEGORY_RENDER,
-        input = SDL_LOG_CATEGORY_INPUT,
-        audio = SDL_LOG_CATEGORY_AUDIO,
-        system = SDL_LOG_CATEGORY_SYSTEM
-    };
-
     constexpr bool logging_enabled = true;
-    constexpr auto logging_level = log_level::info | log_level::verbose | log_level::warning;
+    constexpr auto logging_level = log_level::info | log_level::warning | log_level::error;
 
     consteval bool should_compile_log_level(log_level level) {
-        if constexpr (logging_enabled == false) {
-            return false;
+        if constexpr (logging_enabled == true) {
+            return (logging_level & level) != static_cast<log_level>(0);
         }
 
-        return (logging_level & level) != static_cast<log_level>(0);
-    }
-
-    // Initialize SDL's log priorities to match our compile-time settings
-    inline void initialize_logging() {
-        if constexpr (logging_enabled) {
-            // Set SDL log priorities based on our enabled levels
-            SDL_LogPriority min_priority = SDL_LOG_PRIORITY_ERROR;
-
-            if constexpr ((logging_level & log_level::verbose) != static_cast<log_level>(0)) {
-                min_priority = SDL_LOG_PRIORITY_VERBOSE;
-            } else if constexpr ((logging_level & log_level::info) != static_cast<log_level>(0)) {
-                min_priority = SDL_LOG_PRIORITY_INFO;
-            } else if constexpr ((logging_level & log_level::warning) !=
-                                 static_cast<log_level>(0)) {
-                min_priority = SDL_LOG_PRIORITY_WARN;
-            }
-
-            // Apply to all categories we use
-            SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, min_priority);
-            SDL_SetLogPriority(SDL_LOG_CATEGORY_RENDER, min_priority);
-            SDL_SetLogPriority(SDL_LOG_CATEGORY_INPUT, min_priority);
-            SDL_SetLogPriority(SDL_LOG_CATEGORY_AUDIO, min_priority);
-            SDL_SetLogPriority(SDL_LOG_CATEGORY_SYSTEM, min_priority);
-        }
+        return false;
     }
 
     template <log_level Level, typename... Args>
     void game_log(std::string_view format_str, Args&&... args) {
-        game_log<Level, log_category::application>(format_str, std::forward<Args>(args)...);
-    }
-
-    template <log_level Level = log_level::info, log_category Category = log_category::application,
-              typename... Args>
-    void game_log(std::string_view format_str, Args&&... args) {
         if constexpr (should_compile_log_level(Level) == true) {
             const std::string message = std::vformat(format_str, std::make_format_args(args...));
-            const int sdl_category = static_cast<int>(Category);
 
-            // Map your log levels to SDL priorities
-            if constexpr ((Level & log_level::error) != static_cast<log_level>(0)) {
-                SDL_LogError(sdl_category, "%s", message.c_str());
-            } else if constexpr ((Level & log_level::warning) != static_cast<log_level>(0)) {
-                SDL_LogWarn(sdl_category, "%s", message.c_str());
-            } else if constexpr ((Level & log_level::info) != static_cast<log_level>(0)) {
-                SDL_LogInfo(sdl_category, "%s", message.c_str());
-            } else if constexpr ((Level & log_level::verbose) != static_cast<log_level>(0)) {
-                SDL_LogVerbose(sdl_category, "%s", message.c_str());
+            switch (Level) {
+                case log_level::info:
+                    SDL_Log("[info] %s", message.c_str());
+                    break;
+                case log_level::verbose:
+                    SDL_Log("[verbose] %s", message.c_str());
+                    break;
+                case log_level::warning:
+                    SDL_Log("[warning] %s", message.c_str());
+                    break;
+                case log_level::error:
+                    SDL_Log("[error] %s", message.c_str());
+                    break;
+                default:
+                    SDL_Log("%s", message.c_str());
+                    break;
             }
         }
     }

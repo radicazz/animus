@@ -22,16 +22,6 @@ namespace engine {
      * Instead, this class should be used for UI elements, HUD labels, and other
      * text that does not need to change size during gameplay because it literally
      * cannot change size.
-     *
-     * @code
-     * // Use the resource manager to create a static text object.
-     * game_text_static::uptr text =
-     * resource_manager.create_text_static("assets/fonts/arial.ttf", 24);
-     * text->set_text("Hello, World!");
-     *
-     * // During rendering, use the game renderer to display your text.
-     * game_renderer.draw_text_screen(text, {10, 10});
-     * @endcode
      */
     class game_text_static {
     public:
@@ -118,16 +108,6 @@ namespace engine {
      * @note Keep in mind that every time you change the text content or the color of this object,
      * the internal texture will need to be regenerated to reflect those changes, coming with a
      * slight performance cost.
-     *
-     * @code
-     * // Use the resource manager to create a dynamic text object.
-     * // Same interface as `render_text_static`.
-     * std::unique_ptr<render_text_dynamic> dynamic_text =
-     * resource_manager.create_dynamic_text("assets/fonts/arial.ttf", 32.f);
-     *
-     * // Triggers a texture regeneration next frame.
-     * dynamic_text->set_text("Hello, Dynamic World!");
-     * @endcode
      */
     class game_text_dynamic {
     public:

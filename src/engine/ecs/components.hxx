@@ -5,8 +5,19 @@
 #include "../renderer/sprite.hxx"
 
 namespace engine {
-    struct component_sprite_single {
-        std::unique_ptr<game_sprite> sprite = nullptr;
+    struct component_sprite {
+        std::string resource_key;
+
+        explicit component_sprite(std::string_view key) : resource_key(key) {
+        }
+    };
+
+    struct component_text_dynamic {
+        std::string resource_key;
+        glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+
+        explicit component_text_dynamic(std::string_view key) : resource_key(key) {
+        }
     };
 
     struct component_renderable {

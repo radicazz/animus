@@ -5,6 +5,7 @@
 
 namespace engine {
     class game_renderer;
+    class game_resources;
 
     class system_physics {
     public:
@@ -21,7 +22,7 @@ namespace engine {
     class system_renderer {
     public:
         static void update(entt::registry& registry, game_renderer& renderer,
-                           float fraction_to_next_tick);
+                           game_resources& resources, float fraction_to_next_tick);
     };
 
     /**

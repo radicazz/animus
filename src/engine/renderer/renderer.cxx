@@ -19,35 +19,30 @@ namespace engine {
             throw std::runtime_error("Failed to create renderer");
         }
 
-        game_log("Renderer created successfully.");
-
         if (TTF_Init() == false) {
             throw std::runtime_error("Failed to initialize SDL_ttf.");
         }
-
-        game_log("SDL_ttf initialized successfully.");
 
         m_sdl_text_engine = TTF_CreateRendererTextEngine(m_sdl_renderer);
         if (m_sdl_text_engine == nullptr) {
             throw std::runtime_error("Failed to create TTF text engine.");
         }
 
-        game_log("TTF text engine created successfully.");
+        game_log<log_level::info>("Renderer created: {}", SDL_GetRendererName(m_sdl_renderer));
     }
 
     game_renderer::~game_renderer() {
         if (m_sdl_text_engine) {
             TTF_DestroyRendererTextEngine(m_sdl_text_engine);
-            game_log("TTF text engine destroyed.");
         }
 
         if (m_sdl_renderer) {
             SDL_DestroyRenderer(m_sdl_renderer);
-            game_log("Renderer destroyed.");
         }
 
+        game_log<log_level::info>("Renderer destroyed");
+
         TTF_Quit();
-        game_log("SDL_ttf quit.");
     }
 
     game_renderer::game_renderer(game_renderer&& other) noexcept
@@ -103,7 +98,7 @@ namespace engine {
         SDL_RenderPresent(m_sdl_renderer);
     }
 
-    void game_renderer::sprite_draw_world(const game_sprite::uptr& sprite,
+    void game_renderer::sprite_draw_world(const game_sprite* sprite,
                                           const glm::vec2& world_position) {
         if (sprite == nullptr || sprite->is_valid() == false) {
             return;
@@ -141,7 +136,7 @@ namespace engine {
         SDL_RenderTextureRotated(m_sdl_renderer, sprite->get_sdl_texture(), nullptr, &dst_rect,
                                  sprite->get_rotation(), &center, SDL_FLIP_NONE);
     }
-    void game_renderer::sprite_draw_screen(const game_sprite::uptr& sprite,
+    void game_renderer::sprite_draw_screen(const game_sprite* sprite,
                                            const glm::vec2& screen_position) {
         if (sprite == nullptr || sprite->is_valid() == false) {
             return;
@@ -158,7 +153,7 @@ namespace engine {
                                  sprite->get_rotation(), &center, SDL_FLIP_NONE);
     }
 
-    void game_renderer::text_draw_world(const game_text_dynamic::uptr& text,
+    void game_renderer::text_draw_world(const game_text_dynamic* text,
                                         const glm::vec2& world_position) {
         if (text == nullptr || text->is_valid() == false) {
             return;
@@ -189,7 +184,7 @@ namespace engine {
         text_draw_screen(text, screen_position);
     }
 
-    void game_renderer::text_draw_screen(const game_text_dynamic::uptr& text,
+    void game_renderer::text_draw_screen(const game_text_dynamic* text,
                                          const glm::vec2& screen_position) {
         if (text == nullptr || text->is_valid() == false) {
             return;
@@ -235,7 +230,7 @@ namespace engine {
         }
     }
 
-    void game_renderer::text_draw_screen(const game_text_static::uptr& text,
+    void game_renderer::text_draw_screen(const game_text_static* text,
                                          const glm::vec2& screen_position) {
         if (text == nullptr || text->is_valid() == false) {
             return;

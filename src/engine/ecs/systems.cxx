@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include "../engine.hxx"
+#include "../utils/resource_manager.hxx"
 
 #include <algorithm>
 #include <vector>
@@ -73,73 +74,70 @@ namespace engine {
     }
 
     void system_renderer::update(entt::registry& registry, game_renderer& renderer,
-                                 const float fraction_to_next_tick) {
-        struct render_data {
-            entt::entity entity;
-            int layer;
-            const component_transform* transform;
-            const component_sprite_single* sprite;
-            const component_interpolation* interp;
-        };
+                                 game_resources& resources, const float fraction_to_next_tick) {
+        // TODO: Optimize all of this rubbish. Also, make the layering work.
 
-        auto view =
-            registry.view<component_transform, component_renderable, component_sprite_single>();
-
-        std::vector<render_data> render_queue;
-        render_queue.reserve(view.size_hint());
-
-        for (auto [entity, transform, renderable, sprite] : view.each()) {
-            if (renderable.is_visible == true) {
-                render_queue.emplace_back(
-                    render_data{entity, renderable.layer, &transform, &sprite,
-                                registry.try_get<component_interpolation>(entity)});
-            }
-        }
-
-        // Sort sprites by layer.
-        std::ranges::sort(render_queue,
-                          [](const auto& a, const auto& b) { return a.layer < b.layer; });
-
-        for (const auto& data : render_queue) {
-            if (data.sprite->sprite == nullptr) {
+        // Render sprites.
+        auto resource_sprite_view =
+            registry.view<component_transform, component_renderable, component_sprite>();
+        for (auto [entity, transform, renderable, sprite_comp] : resource_sprite_view.each()) {
+            if (renderable.is_visible == false) {
                 continue;
             }
 
-            glm::vec2 render_position = data.transform->position;
-            float render_rotation = data.transform->rotation;
+            if (auto* sprite = resources.sprite_get(sprite_comp.resource_key)) {
+                glm::vec2 render_position = transform.position;
+                float render_rotation = transform.rotation;
 
-            if (data.interp != nullptr) {
-                // Interpolate the sprite's postion.
-                render_position = glm::mix(data.interp->previous_position, data.transform->position,
-                                           fraction_to_next_tick);
+                // Apply interpolation if available
+                if (auto* interp = registry.try_get<component_interpolation>(entity)) {
+                    render_position = glm::mix(interp->previous_position, transform.position,
+                                               fraction_to_next_tick);
 
-                // Interpolate the sprite's rotation, taking into account wrap-around at 360
-                // degrees.
-                const float previous_rotation = data.interp->previous_rotation;
-                const float current_rotation = data.transform->rotation;
+                    // Interpolate rotation with wrap-around
+                    const float previous_rotation = interp->previous_rotation;
+                    const float current_rotation = transform.rotation;
 
-                float rotation_diff = current_rotation - previous_rotation;
-                if (rotation_diff > 180.0f) {
-                    rotation_diff -= 360.0f;
-                } else if (rotation_diff < -180.0f) {
-                    rotation_diff += 360.0f;
+                    float rotation_diff = current_rotation - previous_rotation;
+                    if (rotation_diff > 180.0f) {
+                        rotation_diff -= 360.0f;
+                    } else if (rotation_diff < -180.0f) {
+                        rotation_diff += 360.0f;
+                    }
+
+                    render_rotation = previous_rotation + (rotation_diff * fraction_to_next_tick);
                 }
 
-                render_rotation = previous_rotation + (rotation_diff * fraction_to_next_tick);
+                sprite->set_rotation(render_rotation);
+                sprite->set_scale(transform.scale);
 
-                while (render_rotation >= 360.0f) {
-                    render_rotation -= 360.0f;
-                }
+                renderer.sprite_draw_world(sprite, render_position);
+            }
+        }
 
-                while (render_rotation < 0.0f) {
-                    render_rotation += 360.0f;
-                }
+        // Render dynamic text
+        auto dynamic_text_view =
+            registry.view<component_transform, component_renderable, component_text_dynamic>();
+        for (auto [entity, transform, renderable, text_comp] : dynamic_text_view.each()) {
+            if (renderable.is_visible == false) {
+                continue;
             }
 
-            data.sprite->sprite->set_rotation(render_rotation);
-            data.sprite->sprite->set_scale(data.transform->scale);
+            if (auto* text = resources.text_dynamic_get(text_comp.resource_key)) {
+                glm::vec2 render_position = transform.position;
 
-            renderer.sprite_draw_world(data.sprite->sprite, render_position);
+                // Apply interpolation if available
+                if (auto* interp = registry.try_get<component_interpolation>(entity)) {
+                    render_position = glm::mix(interp->previous_position, transform.position,
+                                               fraction_to_next_tick);
+                }
+
+                // Apply transform properties
+                text->set_scale(transform.scale);
+                text->set_rotation(transform.rotation);
+
+                renderer.text_draw_world(text, render_position);
+            }
         }
     }
 

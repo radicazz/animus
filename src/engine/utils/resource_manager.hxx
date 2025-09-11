@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <string>
+#include <string_view>
 #include <memory>
 
 #include "../renderer/sprite.hxx"
@@ -30,53 +31,45 @@ namespace engine {
         game_resources(game_resources&& other) noexcept;
         game_resources& operator=(game_resources&& other) noexcept;
 
-        /**
-         * @brief Creates a sprite from an image texture file.
-         * @param file_path The path to the texture file.
-         * @return A unique pointer to the created sprite.
-         */
-        game_sprite::uptr sprite_create(std::string_view file_path);
+        // Sprite resource management - cached sprites
+        game_sprite* sprite_get_or_create(std::string_view key, std::string_view file_path);
+        game_sprite* sprite_get(std::string_view key);
+        void sprite_destroy(std::string_view key);
 
-        /**
-         * @brief Creates a sprite from an image texture file with a specified size.
-         * @param file_path The path to the texture file.
-         * @param size The desired size of the sprite.
-         * @return A unique pointer to the created sprite.
-         */
-        game_sprite::uptr sprite_create(std::string_view file_path, const glm::vec2& size);
+        game_text_static* text_static_get_or_create(std::string_view key, std::string_view text,
+                                                    std::string_view font_path, float font_size);
+        game_text_static* text_static_get(std::string_view key);
+        void text_static_destroy(std::string_view key);
 
-        /**
-         * @brief Creates a static text object from a font file.
-         * @param font_path The path to the font file.
-         * @param font_size The size of the font.
-         * @return A unique pointer to the created static text object.
-         */
-        game_text_static::uptr text_create_static(std::string_view font_path, float font_size);
-
-        /**
-         * @brief Creates a dynamic text object from a font file.
-         * @param font_path The path to the font file.
-         * @param font_size The size of the font.
-         * @return A unique pointer to the created dynamic text object.
-         */
-        game_text_dynamic::uptr text_create_dynamic(std::string_view font_path, float font_size);
+        game_text_dynamic* text_dynamic_get_or_create(std::string_view key,
+                                                      std::string_view initial_text,
+                                                      std::string_view font_path, float font_size);
+        game_text_dynamic* text_dynamic_get(std::string_view key);
+        void text_dynamic_destroy(std::string_view key);
 
         void textures_clear();
         void fonts_clear();
+        void sprites_clear();
+        void texts_clear();
 
     private:
-        SDL_Texture* texture_get_or_load(std::string_view file_path);
-        void texture_unload(std::string_view file_path);
+        SDL_Texture* texture_get_or_create(std::string_view file_path);
+        void texture_destroy(std::string_view file_path);
         bool is_texture_loaded(std::string_view file_path) const;
 
-        TTF_Font* font_get_or_load(std::string_view font_path, float font_size);
-        void font_unload(std::string_view unique_key);
+        TTF_Font* font_get_or_create(std::string_view font_path, float font_size);
+        void font_destroy(std::string_view unique_key);
         bool is_font_loaded(std::string_view unique_key) const;
-        std::string font_create_unique_key(std::string_view font_path, float font_size) const;
+        std::string get_font_unique_key(std::string_view font_path, float font_size) const;
 
     private:
         std::unordered_map<std::string, SDL_Texture*> m_textures;
+        std::unordered_map<std::string, game_sprite::uptr> m_sprites;
+
         std::unordered_map<std::string, TTF_Font*> m_fonts;
+        std::unordered_map<std::string, game_text_static::uptr> m_static_texts;
+        std::unordered_map<std::string, game_text_dynamic::uptr> m_dynamic_texts;
+
         const game_renderer& m_renderer;
     };
 }  // namespace engine
