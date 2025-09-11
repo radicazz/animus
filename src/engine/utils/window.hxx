@@ -7,8 +7,14 @@
 namespace engine {
     class game_window {
     public:
-        game_window(std::string_view title, const glm::ivec2& size);
+        explicit game_window(std::string_view title, const glm::ivec2& size);
         ~game_window();
+
+        // Resource management - disable copy, enable move
+        game_window(const game_window&) = delete;
+        game_window& operator=(const game_window&) = delete;
+        game_window(game_window&& other) noexcept;
+        game_window& operator=(game_window&& other) noexcept;
 
         [[nodiscard]] SDL_Window* get_sdl_window() const;
 

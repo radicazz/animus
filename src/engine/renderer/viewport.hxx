@@ -21,6 +21,13 @@ namespace engine {
             : m_position_pixels(position_pixels), m_size_pixels(size_pixels) {
         }
 
+        // Rule of 5 - using defaults since no resource management
+        game_viewport(const game_viewport&) = default;
+        game_viewport& operator=(const game_viewport&) = default;
+        game_viewport(game_viewport&&) = default;
+        game_viewport& operator=(game_viewport&&) = default;
+        ~game_viewport() = default;
+
         void set_position_pixels(const glm::vec2& pos) {
             m_position_pixels = pos;
         }

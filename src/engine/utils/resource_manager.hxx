@@ -21,13 +21,14 @@ namespace engine {
      */
     class game_resources {
     public:
-        game_resources(game_renderer& renderer);
+        explicit game_resources(game_renderer& renderer);
         ~game_resources();
 
+        // Resource management - disable copy, enable move
         game_resources(const game_resources&) = delete;
         game_resources& operator=(const game_resources&) = delete;
-        game_resources(game_resources&&) = delete;
-        game_resources& operator=(game_resources&&) = delete;
+        game_resources(game_resources&& other) noexcept;
+        game_resources& operator=(game_resources&& other) noexcept;
 
         /**
          * @brief Creates a sprite from an image texture file.

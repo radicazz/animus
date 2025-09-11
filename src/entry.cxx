@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     try {
         game_run();
     } catch (const std::exception& e) {
-        SDL_Log("Error: %s", e.what());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", e.what(), nullptr);
         return 1;
     }
 

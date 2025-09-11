@@ -1,4 +1,5 @@
 #include "engine.hxx"
+#include "logger.hxx"
 
 #include <stdexcept>
 
@@ -11,25 +12,24 @@ namespace engine {
     }
 
     game_engine::game_engine(const game_info& info, std::string_view title, const glm::ivec2& size)
-        : m_window(title, size),
+        : m_game(info),
+          m_window(title, size),
           m_renderer(m_window.get_sdl_window()),
-          m_camera({0.f, 0.f}, 1.f),
-          m_viewport(size),
           m_resources(m_renderer),
           m_input(),
           m_entities(),
-          m_game(info),
+          m_camera({0.f, 0.f}, 1.f),
+          m_viewport(size),
           m_is_running(true),
           m_tick_interval(-1.f),
-          m_fraction_to_next_tick(0.f),
-          m_frame_interval(0.f) {
+          m_fraction_to_next_tick(-1.f),
+          m_frame_interval(-1.f) {
         set_tick_rate(32.f);
 
         // TODO: Figure out what to do with these?
         m_renderer.set_camera(&m_camera);
         m_renderer.set_viewport(&m_viewport);
 
-        // Allow the game to initialize itself.
         try_invoke_callback(m_game.on_create, this);
     }
 

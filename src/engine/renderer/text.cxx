@@ -16,6 +16,25 @@ namespace engine {
         }
     }
 
+    game_text_static::game_text_static(game_text_static&& other) noexcept
+        : m_sdl_text(other.m_sdl_text), m_origin(other.m_origin) {
+        other.m_sdl_text = nullptr;
+        other.m_origin = glm::vec2(0.0f);
+    }
+
+    game_text_static& game_text_static::operator=(game_text_static&& other) noexcept {
+        if (this != &other) {
+            if (m_sdl_text != nullptr) {
+                TTF_DestroyText(m_sdl_text);
+            }
+            m_sdl_text = other.m_sdl_text;
+            m_origin = other.m_origin;
+            other.m_sdl_text = nullptr;
+            other.m_origin = glm::vec2(0.0f);
+        }
+        return *this;
+    }
+
     game_color game_text_static::get_color() const {
         game_color color = {};
         TTF_GetTextColor(m_sdl_text, &color.r, &color.g, &color.b, &color.a);

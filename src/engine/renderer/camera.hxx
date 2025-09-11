@@ -5,7 +5,14 @@
 namespace engine {
     class game_camera {
     public:
-        game_camera(glm::vec2 world_position, float zoom_level);
+        explicit game_camera(glm::vec2 world_position, float zoom_level);
+
+        // Rule of 5 - using defaults since no resource management
+        game_camera(const game_camera&) = default;
+        game_camera& operator=(const game_camera&) = default;
+        game_camera(game_camera&&) = default;
+        game_camera& operator=(game_camera&&) = default;
+        ~game_camera() = default;
 
         void set_position(const glm::vec2& position);
         [[nodiscard]] glm::vec2 get_position() const;

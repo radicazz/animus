@@ -33,6 +33,13 @@ namespace engine {
     public:
         game_input();
 
+        // Rule of 5 - using defaults since no resource management
+        game_input(const game_input&) = default;
+        game_input& operator=(const game_input&) = default;
+        game_input(game_input&&) = default;
+        game_input& operator=(game_input&&) = default;
+        ~game_input() = default;
+
         void update();
         void process_event(const SDL_Event& event);
 

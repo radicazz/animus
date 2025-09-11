@@ -39,8 +39,14 @@ namespace engine {
 
     public:
         game_text_static() = delete;
-        game_text_static(TTF_Text* sdl_text);
+        explicit game_text_static(TTF_Text* sdl_text);
         ~game_text_static();
+
+        // Resource management - disable copy, enable move
+        game_text_static(const game_text_static&) = delete;
+        game_text_static& operator=(const game_text_static&) = delete;
+        game_text_static(game_text_static&& other) noexcept;
+        game_text_static& operator=(game_text_static&& other) noexcept;
 
         /**
          * @brief Access the internal SDL text object.

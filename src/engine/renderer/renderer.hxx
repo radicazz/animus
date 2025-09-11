@@ -14,14 +14,14 @@ namespace engine {
      */
     class game_renderer {
     public:
-        game_renderer() = delete;
         explicit game_renderer(SDL_Window* window);
         ~game_renderer();
 
+        // Resource management - disable copy, enable move
         game_renderer(const game_renderer&) = delete;
         game_renderer& operator=(const game_renderer&) = delete;
-        game_renderer(game_renderer&&) = delete;
-        game_renderer& operator=(game_renderer&&) = delete;
+        game_renderer(game_renderer&& other) noexcept;
+        game_renderer& operator=(game_renderer&& other) noexcept;
 
         [[nodiscard]] SDL_Renderer* get_sdl_renderer() const;
         [[nodiscard]] TTF_TextEngine* get_sdl_text_engine() const;

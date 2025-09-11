@@ -1,5 +1,6 @@
 #include "resource_manager.hxx"
 
+#include "../logger.hxx"
 #include "../renderer/renderer.hxx"
 
 #include <SDL3_ttf/SDL_ttf.h>
@@ -15,6 +16,27 @@ namespace engine {
     game_resources::~game_resources() {
         textures_clear();
         fonts_clear();
+    }
+
+    game_resources::game_resources(game_resources&& other) noexcept
+        : m_textures(std::move(other.m_textures)),
+          m_fonts(std::move(other.m_fonts)),
+          m_renderer(other.m_renderer) {
+        // Note: Can't move m_renderer as it's a reference
+    }
+
+    game_resources& game_resources::operator=(game_resources&& other) noexcept {
+        if (this != &other) {
+            // Clean up current resources
+            textures_clear();
+            fonts_clear();
+
+            // Move resources (reference stays the same)
+            m_textures = std::move(other.m_textures);
+            m_fonts = std::move(other.m_fonts);
+            // m_renderer reference can't be reassigned
+        }
+        return *this;
     }
 
     game_sprite::uptr game_resources::sprite_create(std::string_view file_path) {
@@ -52,7 +74,7 @@ namespace engine {
     void game_resources::textures_clear() {
         for (auto& [key, texture] : m_textures) {
             SDL_DestroyTexture(texture);
-            SDL_Log("Unloaded texture: %s", key.c_str());
+            game_log("Unloaded texture: {}", key);
         }
 
         m_textures.clear();
@@ -61,7 +83,7 @@ namespace engine {
     void game_resources::fonts_clear() {
         for (auto& [key, font] : m_fonts) {
             TTF_CloseFont(font);
-            SDL_Log("Unloaded font: %s", key.c_str());
+            game_log("Unloaded font: {}", key);
         }
 
         m_fonts.clear();
@@ -69,6 +91,7 @@ namespace engine {
 
     SDL_Texture* game_resources::texture_get_or_load(std::string_view file_path) {
         if (is_texture_loaded(file_path) == true) {
+            game_log("Using cached texture: {}", file_path);
             return m_textures.at(file_path.data());
         }
 
@@ -79,7 +102,7 @@ namespace engine {
 
         m_textures[file_path.data()] = texture;
 
-        SDL_Log("Loaded texture: %s", file_path.data());
+        game_log("loaded texture: {}", file_path);
 
         return texture;
     }
@@ -88,8 +111,8 @@ namespace engine {
         auto it = m_textures.find(file_path.data());
         if (it != m_textures.end()) {
             SDL_DestroyTexture(it->second);
+            game_log("unloaded texture: {}", file_path);
             m_textures.erase(it);
-            SDL_Log("Unloaded texture: %s", file_path.data());
         }
     }
 
@@ -101,6 +124,7 @@ namespace engine {
         std::string unique_key = font_create_unique_key(font_path, font_size);
 
         if (is_font_loaded(unique_key) == true) {
+            game_log("Using cached font: {}", unique_key);
             return m_fonts.at(unique_key);
         }
 
@@ -111,7 +135,7 @@ namespace engine {
 
         m_fonts[unique_key] = font;
 
-        SDL_Log("Loaded font: %s (size: %f)", font_path.data(), font_size);
+        game_log("Loaded font: {} (size: {})", font_path, font_size);
 
         return font;
     }
@@ -120,6 +144,7 @@ namespace engine {
         auto it = m_fonts.find(unique_key.data());
         if (it != m_fonts.end()) {
             TTF_CloseFont(it->second);
+            game_log("Unloaded font: {}", unique_key);
             m_fonts.erase(it);
         }
     }

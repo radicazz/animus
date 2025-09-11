@@ -3,6 +3,8 @@
 #include "camera.hxx"
 #include "viewport.hxx"
 
+#include "../logger.hxx"
+
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3/SDL.h>
 #include <stdexcept>
@@ -17,20 +19,72 @@ namespace engine {
             throw std::runtime_error("Failed to create renderer");
         }
 
+        game_log("Renderer created successfully.");
+
         if (TTF_Init() == false) {
             throw std::runtime_error("Failed to initialize SDL_ttf.");
         }
+
+        game_log("SDL_ttf initialized successfully.");
 
         m_sdl_text_engine = TTF_CreateRendererTextEngine(m_sdl_renderer);
         if (m_sdl_text_engine == nullptr) {
             throw std::runtime_error("Failed to create TTF text engine.");
         }
+
+        game_log("TTF text engine created successfully.");
     }
 
     game_renderer::~game_renderer() {
-        SDL_DestroyRenderer(m_sdl_renderer);
-        TTF_DestroyRendererTextEngine(m_sdl_text_engine);
+        if (m_sdl_text_engine) {
+            TTF_DestroyRendererTextEngine(m_sdl_text_engine);
+            game_log("TTF text engine destroyed.");
+        }
+
+        if (m_sdl_renderer) {
+            SDL_DestroyRenderer(m_sdl_renderer);
+            game_log("Renderer destroyed.");
+        }
+
         TTF_Quit();
+        game_log("SDL_ttf quit.");
+    }
+
+    game_renderer::game_renderer(game_renderer&& other) noexcept
+        : m_sdl_renderer(other.m_sdl_renderer),
+          m_sdl_text_engine(other.m_sdl_text_engine),
+          m_camera(other.m_camera),
+          m_viewport(other.m_viewport) {
+        other.m_sdl_renderer = nullptr;
+        other.m_sdl_text_engine = nullptr;
+        other.m_camera = nullptr;
+        other.m_viewport = nullptr;
+    }
+
+    game_renderer& game_renderer::operator=(game_renderer&& other) noexcept {
+        if (this != &other) {
+            // Clean up current resources
+            if (m_sdl_text_engine) {
+                TTF_DestroyRendererTextEngine(m_sdl_text_engine);
+            }
+            if (m_sdl_renderer) {
+                SDL_DestroyRenderer(m_sdl_renderer);
+            }
+
+            // Move resources
+            m_sdl_renderer = other.m_sdl_renderer;
+            m_sdl_text_engine = other.m_sdl_text_engine;
+            m_camera = other.m_camera;
+            m_viewport = other.m_viewport;
+
+            // Reset other
+            other.m_sdl_renderer = nullptr;
+            other.m_sdl_text_engine = nullptr;
+            other.m_camera = nullptr;
+            other.m_viewport = nullptr;
+        }
+
+        return *this;
     }
 
     void game_renderer::frame_begin() {

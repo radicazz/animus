@@ -2,6 +2,7 @@
 
 #include <type_traits>
 
+#include "logger.hxx"
 #include "engine/version.hxx"
 #include "renderer/renderer.hxx"
 #include "renderer/camera.hxx"
@@ -134,14 +135,14 @@ namespace engine {
         void process_events();
 
     private:
+        game_info m_game;
         game_window m_window;
         game_renderer m_renderer;
-        game_camera m_camera;
-        game_viewport m_viewport;
         game_resources m_resources;
         game_input m_input;
         game_entities m_entities;
-        game_info m_game;
+        game_camera m_camera;
+        game_viewport m_viewport;
 
         /**
          * @brief Whether to keep the game loop running or not.

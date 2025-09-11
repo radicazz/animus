@@ -29,6 +29,13 @@ namespace engine {
         game_sprite(std::string_view file_path, SDL_Texture* texture);
         game_sprite(std::string_view file_path, SDL_Texture* texture, const glm::vec2& size);
 
+        // Rule of 5 - sprite doesn't own the texture, so defaults are fine
+        game_sprite(const game_sprite&) = default;
+        game_sprite& operator=(const game_sprite&) = default;
+        game_sprite(game_sprite&&) = default;
+        game_sprite& operator=(game_sprite&&) = default;
+        ~game_sprite() = default;
+
         [[nodiscard]] SDL_Texture* get_sdl_texture() const;
         [[nodiscard]] std::string_view get_file_path() const;
 
