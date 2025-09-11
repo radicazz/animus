@@ -6,12 +6,12 @@
 namespace engine {
     class game_renderer;
 
-    /**
-     * @brief Physics system that handles velocity integration and movement
-     */
     class system_physics {
     public:
         static void tick(entt::registry& registry, float delta_time);
+
+    private:
+        static void integrate_velocity(entt::registry& registry, float delta_time);
     };
 
     /**

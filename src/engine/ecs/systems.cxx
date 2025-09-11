@@ -9,68 +9,65 @@
 
 namespace engine {
     void system_physics::tick(entt::registry& registry, float delta_time) {
-        // First save previous state for interpolation next frame.
-        auto interp_view = registry.view<component_transform, component_interpolation>();
-        for (auto [entity, transform, interp] : interp_view.each()) {
-            interp.previous_position = transform.position;
-            interp.previous_rotation = transform.rotation;
-        }
+        integrate_velocity(registry, delta_time);
+    }
 
-        // Apply linear velocity.
-        auto linear_view = registry.view<component_transform, component_velocity_linear>();
-        for (auto [entity, transform, velocity] : linear_view.each()) {
-            glm::vec2 vel = velocity.value;
+    void system_physics::integrate_velocity(entt::registry& registry, float delta_time) {
+        auto view = registry.view<component_transform>();
 
-            // Apply drag
-            if (velocity.drag > 0.0f) {
-                float drag_factor = 1.0f - (velocity.drag * delta_time);
-                vel *= std::max(0.0f, drag_factor);
-                velocity.value = vel;
+        for (auto [entity, transform] : view.each()) {
+            // If interpolation component exists, store previous position and rotation for later.
+            if (auto* interpolation = registry.try_get<component_interpolation>(entity)) {
+                interpolation->previous_position = transform.position;
+                interpolation->previous_rotation = transform.rotation;
             }
 
-            // Apply max speed limit
-            if (velocity.max_speed > 0.0f) {
-                float speed = glm::length(vel);
-                if (speed > velocity.max_speed) {
-                    vel = (vel / speed) * velocity.max_speed;
-                    velocity.value = vel;
+            if (auto* velocity_linear = registry.try_get<component_velocity_linear>(entity)) {
+                glm::vec2 velocity = velocity_linear->value;
+
+                if (velocity_linear->drag > 0.0f) {
+                    const float drag_factor = 1.0f - (velocity_linear->drag * delta_time);
+                    velocity *= std::max(0.0f, drag_factor);
+                    velocity_linear->value = velocity;
                 }
-            }
 
-            // Apply velocity to position
-            transform.position += vel * delta_time;
-        }
-
-        // Apply angular velocity
-        auto angular_view = registry.view<component_transform, component_velocity_angular>();
-        for (auto [entity, transform, velocity] : angular_view.each()) {
-            float vel = velocity.value;
-
-            // Apply drag
-            if (velocity.drag > 0.0f) {
-                float drag_factor = 1.0f - (velocity.drag * delta_time);
-                vel *= std::max(0.0f, drag_factor);
-                velocity.value = vel;
-            }
-
-            // Apply max speed limit
-            if (velocity.max_speed > 0.0f) {
-                if (std::abs(vel) > velocity.max_speed) {
-                    vel = std::copysign(velocity.max_speed, vel);
-                    velocity.value = vel;
+                if (velocity_linear->max_speed > 0.0f) {
+                    const float speed = glm::length(velocity);
+                    if (speed > velocity_linear->max_speed) {
+                        velocity = (velocity / speed) * velocity_linear->max_speed;
+                        velocity_linear->value = velocity;
+                    }
                 }
+
+                transform.position += velocity * delta_time;
             }
 
-            // Apply velocity to rotation
-            transform.rotation += vel * delta_time;
+            if (auto* angular_velocity = registry.try_get<component_velocity_angular>(entity)) {
+                float velocity = angular_velocity->value;
 
-            // Normalize rotation
-            while (transform.rotation >= 360.0f) {
-                transform.rotation -= 360.0f;
-            }
+                if (angular_velocity->drag > 0.0f) {
+                    const float drag_factor = 1.0f - (angular_velocity->drag * delta_time);
+                    velocity *= std::max(0.0f, drag_factor);
+                    angular_velocity->value = velocity;
+                }
 
-            while (transform.rotation < 0.0f) {
-                transform.rotation += 360.0f;
+                if (angular_velocity->max_speed > 0.0f) {
+                    if (std::abs(velocity) > angular_velocity->max_speed) {
+                        velocity = std::copysign(angular_velocity->max_speed, velocity);
+                        angular_velocity->value = velocity;
+                    }
+                }
+
+                transform.rotation += velocity * delta_time;
+
+                // Normalize rotation.
+                while (transform.rotation >= 360.0f) {
+                    transform.rotation -= 360.0f;
+                }
+
+                while (transform.rotation < 0.0f) {
+                    transform.rotation += 360.0f;
+                }
             }
         }
     }
