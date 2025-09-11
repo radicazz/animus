@@ -19,7 +19,7 @@ static void game_run() {
     game.run();
 }
 
-int main(int argc, char* argv[]) {
+int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     try {
         game_run();
     } catch (const std::exception& e) {

@@ -46,7 +46,6 @@ void game_on_frame(engine::game_engine* engine, const float frame_interval) {
     engine::game_camera& camera = engine->get_camera();
     engine::game_viewport& viewport = engine->get_viewport();
     engine::game_entities& entities = engine->get_entities();
-    engine::game_resources& resources = engine->get_resources();
 
     // Toggle camera mode with the 'C' key.
     if (input.is_key_pressed(engine::input_key::c) == true) {

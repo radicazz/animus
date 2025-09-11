@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include "logger.hxx"
+
 #include "engine/version.hxx"
 #include "renderer/renderer.hxx"
 #include "renderer/camera.hxx"

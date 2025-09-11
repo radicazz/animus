@@ -34,10 +34,9 @@ namespace engine {
     }
 
     template <log_level Level, typename... Args>
-    void game_log(std::string_view format_str, Args&&... args) {
+    void game_log(std::string_view format_str, [[maybe_unused]] Args&&... args) {
         if constexpr (should_compile_log_level(Level) == true) {
             const std::string message = std::vformat(format_str, std::make_format_args(args...));
-
             switch (Level) {
                 case log_level::info:
                     SDL_Log("[info] %s", message.c_str());

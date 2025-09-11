@@ -31,6 +31,10 @@ namespace engine {
         m_renderer.set_viewport(&m_viewport);
 
         try_invoke_callback(m_game.on_create, this);
+
+        game_log<log_level::info>("Engine initialized (version {})", version::full_string);
+        game_log<log_level::info>("Engine tick rate set to {} ticks/second ({}s interval)",
+                                  get_tick_rate(), get_tick_interval());
     }
 
     game_engine::~game_engine() {
@@ -52,7 +56,7 @@ namespace engine {
 
             process_events();
 
-            while (time_since_last_tick >= m_tick_interval) {
+            while (time_since_last_tick >= m_tick_interval) [[likely]] {
                 try_invoke_callback(m_game.on_tick, this, m_tick_interval);
                 time_since_last_tick -= m_tick_interval;
             }
