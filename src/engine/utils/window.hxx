@@ -26,6 +26,8 @@ namespace engine {
 
         [[nodiscard]] glm::ivec2 get_pixel_size() const;
 
+        void set_icon(std::string_view icon_path);
+
     private:
         SDL_Window* m_window;
     };

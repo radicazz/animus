@@ -1,6 +1,8 @@
 #include "window.hxx"
 #include "../logger.hxx"
 
+#include <SDL3_image/SDL_image.h>
+
 #include <stdexcept>
 
 namespace engine {
@@ -69,5 +71,31 @@ namespace engine {
         glm::ivec2 size;
         SDL_GetWindowSizeInPixels(m_window, &size.x, &size.y);
         return size;
+    }
+
+    void game_window::set_icon(std::string_view icon_path) {
+        const std::vector<std::string> icon_paths = {
+            std::string(icon_path) + "_48.png",  // Preferred size
+            std::string(icon_path) + "_32.png",  // Standard size
+            std::string(icon_path) + "_64.png",  // High DPI
+            std::string(icon_path) + ".png",     // Fallback
+            std::string(icon_path) + ".ico"      // Windows fallback
+        };
+
+        for (const auto& path : icon_paths) {
+            SDL_Surface* surface = IMG_Load(path.c_str());
+            if (surface == nullptr) {
+                continue;
+            }
+
+            SDL_SetWindowIcon(m_window, surface);
+            SDL_DestroySurface(surface);
+
+            game_log<log_level::info>("Window icon set: {}", path);
+
+            return;
+        }
+
+        game_log<log_level::warning>("Failed to load any icon for path base: {}", icon_path);
     }
 }  // namespace engine
