@@ -48,44 +48,22 @@ void game_on_frame(engine::game_engine* engine, const float frame_interval) {
     engine::game_entities& entities = engine->get_entities();
 
     // Toggle camera mode with the 'C' key.
-    if (input.is_key_pressed(engine::input_key::c) == true) {
+    if (input.is_key_pressed(engine::game_input_key::c) == true) {
         state.is_free_camera = !state.is_free_camera;
     }
 
     // Zoom in and out with O and P keys.
-    if (input.is_key_held(engine::input_key::o) == true) {
+    if (input.is_key_held(engine::game_input_key::o) == true) {
         camera.zoom_by(1.0f - frame_interval);
     }
 
-    if (input.is_key_held(engine::input_key::p) == true) {
+    if (input.is_key_held(engine::game_input_key::p) == true) {
         camera.zoom_by(1.0f + frame_interval);
     }
 
-    // Access and modify the player's velocity based on WASD input.
-    if (auto* velocity = entities.try_get<engine::component_velocity_linear>(state.player);
-        velocity != nullptr) {
-        constexpr float acceleration = 300.0f;
-
-        glm::vec2 movement_input = {0.0f, 0.0f};
-
-        if (input.is_key_held(engine::input_key::a) == true) {
-            movement_input.x -= 1.0f;
-        }
-
-        if (input.is_key_held(engine::input_key::d) == true) {
-            movement_input.x += 1.0f;
-        }
-
-        if (input.is_key_held(engine::input_key::w) == true) {
-            movement_input.y -= 1.0f;
-        }
-
-        if (input.is_key_held(engine::input_key::s) == true) {
-            movement_input.y += 1.0f;
-        }
-
-        velocity->value += movement_input * acceleration * frame_interval;
-    }
+    constexpr float player_acceleration = 500.f;
+    entities.add_impulse_linear(state.player,
+                                input.get_movement_wasd() * player_acceleration * frame_interval);
 
     if (state.is_free_camera == false) {
         const glm::vec2 target_position =
@@ -93,35 +71,14 @@ void game_on_frame(engine::game_engine* engine, const float frame_interval) {
 
         camera.follow_target(target_position);
     } else {
-        // Free camera mode: Move camera with arrow keys.
-        glm::vec2 camera_movement = {0.0f, 0.0f};
-
-        if (input.is_key_held(engine::input_key::arrow_up) == true) {
-            camera_movement.y -= 1.0f;
-        }
-
-        if (input.is_key_held(engine::input_key::arrow_down) == true) {
-            camera_movement.y += 1.0f;
-        }
-
-        if (input.is_key_held(engine::input_key::arrow_left) == true) {
-            camera_movement.x -= 1.0f;
-        }
-
-        if (input.is_key_held(engine::input_key::arrow_right) == true) {
-            camera_movement.x += 1.0f;
-        }
-
-        if (camera_movement.x != 0.0f || camera_movement.y != 0.0f) {
-            camera_movement *= state.free_camera_speed * frame_interval;
-            camera.move_position(camera_movement);
-        }
+        camera.move_position(input.get_movement_arrows() * state.free_camera_speed *
+                             frame_interval);
     }
 
-    if (input.is_key_pressed(engine::input_key::mouse_left) == true) {
+    if (input.is_key_pressed(engine::game_input_key::mouse_left) == true) {
         // Convert mouse position to world space.
         const glm::vec2 mouse_click_position =
-            viewport.screen_to_world(camera, input.get_mouse_screen_position());
+            viewport.screen_to_world(camera, input.get_mouse_position());
 
         // Move the asteroid to where we clicked.
         entities.set_transform_position(state.asteroid, mouse_click_position);

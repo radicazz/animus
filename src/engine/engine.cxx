@@ -80,7 +80,7 @@ namespace engine {
                 m_is_running = false;
             }
 
-            m_input.process_event(event);
+            m_input.process_sdl_event(event);
         }
     }
 }  // namespace engine
