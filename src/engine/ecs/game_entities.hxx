@@ -72,17 +72,48 @@ namespace engine {
         void set_transform_position(entt::entity entity, const glm::vec2& position);
         glm::vec2 get_transform_position(entt::entity entity) const;
 
-        glm::vec2 get_interpolated_position(entt::entity entity, float fraction_to_next_tick) const;
-        float get_interpolated_rotation(entt::entity entity, float fraction_to_next_tick) const;
+        [[nodiscard]] glm::vec2 get_interpolated_position(entt::entity entity,
+                                                          float fraction_to_next_tick) const;
+        [[nodiscard]] float get_interpolated_rotation(entt::entity entity,
+                                                      float fraction_to_next_tick) const;
 
         void set_transform_scale(entt::entity entity, const glm::vec2& new_scale);
-        glm::vec2 get_transform_scale(entt::entity entity);
+        [[nodiscard]] glm::vec2 get_transform_scale(entt::entity entity);
+
+        /**
+         * @brief Get the forward vector (unit vector) based on the entity's rotation.
+         * @param entity The entity to get the forward vector for.
+         * @return The forward vector as a glm::vec2.
+         * @note Default forward is (0, 1) (+Y) when rotation is 0 degrees.
+         */
+        [[nodiscard]] glm::vec2 get_vector_forward(entt::entity entity) const;
+
+        /**
+         * @brief Get the right vector (unit vector) based on the entity's rotation.
+         * @param entity The entity to get the right vector for.
+         * @return The right vector as a glm::vec2.
+         * @note Default right is (1, 0) (+X) when rotation is 0 degrees.
+         */
+        [[nodiscard]] glm::vec2 get_vector_right(entt::entity entity) const;
+
+        void add_impulse_forward(entt::entity entity, float magnitude);
+        void add_impulse_backward(entt::entity entity, float magnitude);
+        void add_impulse_right(entt::entity entity, float magnitude);
+        void add_impulse_left(entt::entity entity, float magnitude);
+
+        void add_impulse_direction(entt::entity entity, float angle_degrees, float magnitude);
+        void add_impulse_relative(entt::entity entity, const glm::vec2& relative_direction,
+                                  float magnitude);
 
         void set_velocity_linear(entt::entity entity, const glm::vec2& velocity);
-        void add_impulse_linear(entt::entity entity, const glm::vec2& impulse);
+        void add_impulse_velocity_linear(entt::entity entity, const glm::vec2& impulse);
+        void set_velocity_linear_drag(entt::entity entity, float linear_drag);
+        void set_velocity_linear_max(entt::entity entity, float max_speed);
 
         void set_velocity_angular(entt::entity entity, float angular_velocity);
-        void add_impulse_angular(entt::entity entity, float angular_impulse);
+        void add_impulse_velocity_angular(entt::entity entity, float angular_impulse);
+        void set_velocity_angular_drag(entt::entity entity, float angular_drag);
+        void set_velocity_angular_max(entt::entity entity, float max_angular_speed);
 
         void set_renderable_visible(entt::entity entity, bool is_visible);
         void set_renderable_layer(entt::entity entity, int layer);

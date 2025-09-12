@@ -95,15 +95,93 @@ namespace engine {
         }
     }
 
+    glm::vec2 game_entities::get_transform_scale(entt::entity entity) {
+        if (const auto* transform = m_registry.try_get<component_transform>(entity); transform) {
+            return transform->scale;
+        }
+
+        return glm::vec2{1.0f, 1.0f};
+    }
+
+    glm::vec2 game_entities::get_vector_forward(entt::entity entity) const {
+        if (const auto* transform = m_registry.try_get<component_transform>(entity); transform) {
+            float radians = glm::radians(transform->rotation + 90.f);
+            return glm::vec2{glm::cos(radians), glm::sin(radians)};
+        }
+
+        return glm::vec2{0.0f, 1.0f};
+    }
+
+    glm::vec2 game_entities::get_vector_right(entt::entity entity) const {
+        if (const auto* transform = m_registry.try_get<component_transform>(entity); transform) {
+            float radians = glm::radians(transform->rotation);
+            return glm::vec2{glm::cos(radians), glm::sin(radians)};
+        }
+
+        return glm::vec2{1.0f, 0.0f};
+    }
+
+    void game_entities::add_impulse_forward(entt::entity entity, float magnitude) {
+        auto forward = get_vector_forward(entity);
+        add_impulse_velocity_linear(entity, forward * magnitude);
+    }
+
+    void game_entities::add_impulse_backward(entt::entity entity, float magnitude) {
+        add_impulse_forward(entity, -magnitude);
+    }
+
+    void game_entities::add_impulse_right(entt::entity entity, float magnitude) {
+        auto right = get_vector_right(entity);
+        add_impulse_velocity_linear(entity, right * magnitude);
+    }
+
+    void game_entities::add_impulse_left(entt::entity entity, float magnitude) {
+        add_impulse_right(entity, -magnitude);
+    }
+
+    void game_entities::add_impulse_direction(entt::entity entity, float angle_degrees,
+                                              float magnitude) {
+        // Convert angle to radians and create a direction vector
+        const float radians = glm::radians(angle_degrees);
+        const glm::vec2 direction = {std::cos(radians), std::sin(radians)};
+        add_impulse_velocity_linear(entity, direction * magnitude);
+    }
+
+    void game_entities::add_impulse_relative(entt::entity entity,
+                                             const glm::vec2& relative_direction, float magnitude) {
+        if (const auto* transform = m_registry.try_get<component_transform>(entity); transform) {
+            // Rotate the relative direction by the entity's rotation
+            const float radians = glm::radians(transform->rotation);
+            glm::vec2 rotated_direction = {
+                relative_direction.x * glm::cos(radians) - relative_direction.y * glm::sin(radians),
+                relative_direction.x * glm::sin(radians) +
+                    relative_direction.y * glm::cos(radians)};
+            rotated_direction = glm::normalize(rotated_direction);
+            add_impulse_velocity_linear(entity, rotated_direction * magnitude);
+        }
+    }
+
     void game_entities::set_velocity_linear(entt::entity entity, const glm::vec2& velocity) {
         if (auto* vel = m_registry.try_get<component_velocity_linear>(entity); vel) {
             vel->value = velocity;
         }
     }
 
-    void game_entities::add_impulse_linear(entt::entity entity, const glm::vec2& impulse) {
+    void game_entities::add_impulse_velocity_linear(entt::entity entity, const glm::vec2& impulse) {
         if (auto* vel = m_registry.try_get<component_velocity_linear>(entity); vel) {
             vel->value += impulse;
+        }
+    }
+
+    void game_entities::set_velocity_linear_drag(entt::entity entity, float linear_drag) {
+        if (auto* vel = m_registry.try_get<component_velocity_linear>(entity); vel) {
+            vel->drag = linear_drag;
+        }
+    }
+
+    void game_entities::set_velocity_linear_max(entt::entity entity, float max_speed) {
+        if (auto* vel = m_registry.try_get<component_velocity_linear>(entity); vel) {
+            vel->max_speed = max_speed;
         }
     }
 
@@ -113,9 +191,21 @@ namespace engine {
         }
     }
 
-    void game_entities::add_impulse_angular(entt::entity entity, float angular_impulse) {
+    void game_entities::add_impulse_velocity_angular(entt::entity entity, float angular_impulse) {
         if (auto* vel = m_registry.try_get<component_velocity_angular>(entity); vel) {
             vel->value += angular_impulse;
+        }
+    }
+
+    void game_entities::set_velocity_angular_drag(entt::entity entity, float angular_drag) {
+        if (auto* vel = m_registry.try_get<component_velocity_angular>(entity); vel) {
+            vel->drag = angular_drag;
+        }
+    }
+
+    void game_entities::set_velocity_angular_max(entt::entity entity, float max_angular_speed) {
+        if (auto* vel = m_registry.try_get<component_velocity_angular>(entity); vel) {
+            vel->max_speed = max_angular_speed;
         }
     }
 

@@ -6,9 +6,15 @@ void game_on_create(engine::game_engine* engine) {
     engine::game_entities& entities = engine->get_entities();
 
     // Create player sprite as resource-managed sprite
-    resources.sprite_get_or_create("player_sprite", "assets/sprites/player/default.png");
+    auto* player_sprite =
+        resources.sprite_get_or_create("player_sprite", "assets/sprites/player/default.png");
+    player_sprite->set_origin({16, 24});
     state.player = entities.sprite_create_interpolated("player_sprite");
     entities.set_transform_position(state.player, {200, 200});
+    entities.set_velocity_linear_drag(state.player, 0.3f);
+    entities.set_velocity_linear_max(state.player, 500.f);
+    entities.set_velocity_angular_drag(state.player, 0.3f);
+    entities.set_velocity_angular_max(state.player, 360.f);
 
     // Create player label as resource-managed text
     auto* player_label = resources.text_dynamic_get_or_create("player_label", "player",
@@ -61,9 +67,19 @@ void game_on_frame(engine::game_engine* engine, const float frame_interval) {
         camera.zoom_by(1.0f + frame_interval);
     }
 
-    constexpr float player_acceleration = 500.f;
-    entities.add_impulse_linear(state.player,
-                                input.get_movement_wasd() * player_acceleration * frame_interval);
+    constexpr float player_acceleration = 250.f;
+
+    const glm::vec2 movement_input = input.get_movement_wasd();
+
+    if (movement_input.x != 0.0f) {
+        entities.add_impulse_right(state.player,
+                                   movement_input.x * player_acceleration * frame_interval);
+    }
+
+    if (movement_input.y != 0.0f) {
+        entities.add_impulse_forward(state.player,
+                                     movement_input.y * player_acceleration * frame_interval);
+    }
 
     if (state.is_free_camera == false) {
         const glm::vec2 target_position =
