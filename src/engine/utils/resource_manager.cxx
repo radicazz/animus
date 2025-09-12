@@ -204,9 +204,8 @@ namespace engine {
             throw std::runtime_error(std::format("Failed to create dynamic text base: {}", key));
         }
 
-        auto static_text = std::make_unique<game_text_static>(sdl_text);
-        auto text_obj = std::make_unique<game_text_dynamic>(
-            std::string(initial_text), std::move(static_text), m_renderer.get_sdl_renderer(), font);
+        auto text_obj = std::make_unique<game_text_dynamic>(std::string(initial_text), sdl_text,
+                                                            m_renderer.get_sdl_renderer(), font);
         game_text_dynamic* ptr = text_obj.get();
         m_dynamic_texts[std::string(key)] = std::move(text_obj);
 

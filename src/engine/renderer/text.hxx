@@ -114,8 +114,8 @@ namespace engine {
         using uptr = std::unique_ptr<game_text_dynamic>;
 
     public:
-        game_text_dynamic(std::string_view content, game_text_static::uptr static_text,
-                          SDL_Renderer* sdl_renderer, TTF_Font* font);
+        game_text_dynamic(std::string_view content, TTF_Text* text, SDL_Renderer* sdl_renderer,
+                          TTF_Font* font);
         ~game_text_dynamic();
 
         game_text_dynamic(const game_text_dynamic&) = delete;
@@ -182,7 +182,7 @@ namespace engine {
         SDL_Texture* create_texture_from_surface();
 
     private:
-        game_text_static::uptr m_static_text;
+        game_text_static m_static_text;
 
         SDL_Renderer* m_sdl_renderer;
         TTF_Font* m_sdl_font;
@@ -202,16 +202,12 @@ namespace engine {
         set_text_raw(formatted_text);
     }
 
-    inline const game_text_static* game_text_dynamic::get_static_text() const {
-        return m_static_text.get();
-    }
-
     inline game_color game_text_dynamic::get_color() const {
-        return m_static_text->get_color();
+        return m_static_text.get_color();
     }
 
     inline glm::vec2 game_text_dynamic::get_size() const {
-        return m_static_text->get_size();
+        return m_static_text.get_size();
     }
 
     inline glm::vec2 game_text_dynamic::get_transformed_size() const {
@@ -219,7 +215,7 @@ namespace engine {
     }
 
     inline glm::vec2 game_text_dynamic::get_origin() const {
-        return m_static_text->get_origin();
+        return m_static_text.get_origin();
     }
 
     inline glm::vec2 game_text_dynamic::get_scale() const {
@@ -243,16 +239,16 @@ namespace engine {
     }
 
     inline bool game_text_dynamic::is_valid() const {
-        return m_static_text != nullptr && m_static_text->is_valid() == true &&
-               m_sdl_renderer != nullptr && m_sdl_font != nullptr;
+        return m_static_text.is_valid() == true && m_sdl_renderer != nullptr &&
+               m_sdl_font != nullptr;
     }
 
     inline void game_text_dynamic::set_origin(const glm::vec2& new_origin) {
-        m_static_text->set_origin(new_origin);
+        m_static_text.set_origin(new_origin);
     }
 
     inline void game_text_dynamic::set_origin_centered() {
-        m_static_text->set_origin_centered();
+        m_static_text.set_origin_centered();
     }
 
     inline void game_text_dynamic::mark_texture_dirty() {

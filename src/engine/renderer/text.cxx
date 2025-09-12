@@ -55,10 +55,9 @@ namespace engine {
         TTF_SetTextColor(m_sdl_text, new_color.r, new_color.g, new_color.b, new_color.a);
     }
 
-    game_text_dynamic::game_text_dynamic(std::string_view content,
-                                         std::unique_ptr<game_text_static> static_text,
+    game_text_dynamic::game_text_dynamic(std::string_view content, TTF_Text* text,
                                          SDL_Renderer* sdl_renderer, TTF_Font* font)
-        : m_static_text(std::move(static_text)),
+        : m_static_text(text),
           m_sdl_renderer(sdl_renderer),
           m_sdl_font(font),
           m_cached_texture(nullptr),
@@ -66,20 +65,16 @@ namespace engine {
           m_text_content(content),
           m_scale(1.0f, 1.0f),
           m_rotation_degrees(0.0f) {
-        if (m_static_text == nullptr) {
-            throw std::invalid_argument("Invalid static text object");
-        }
-
         if (m_text_content.empty() == true) {
-            throw std::invalid_argument("Invalid text content");
+            throw std::invalid_argument("Invalid text content.");
         }
 
         if (m_sdl_renderer == nullptr) {
-            throw std::invalid_argument("Invalid renderer");
+            throw std::invalid_argument("Invalid renderer.");
         }
 
         if (m_sdl_font == nullptr) {
-            throw std::invalid_argument("Invalid font");
+            throw std::invalid_argument("Invalid font.");
         }
     }
 
@@ -97,12 +92,12 @@ namespace engine {
 
     void game_text_dynamic::set_text_raw(std::string_view new_text) {
         m_text_content = new_text;
-        m_static_text->set_text_raw(new_text);
+        m_static_text.set_text_raw(new_text);
         mark_texture_dirty();
     }
 
     void game_text_dynamic::set_color(const game_color& new_color) {
-        m_static_text->set_color(new_color);
+        m_static_text.set_color(new_color);
         mark_texture_dirty();
     }
 
@@ -125,7 +120,7 @@ namespace engine {
     SDL_Texture* game_text_dynamic::create_texture_from_surface() {
         SDL_Surface* surface =
             TTF_RenderText_Blended(m_sdl_font, m_text_content.c_str(), m_text_content.size(),
-                                   m_static_text->get_color().to_sdl_color());
+                                   m_static_text.get_color().to_sdl_color());
         if (surface == nullptr) {
             return nullptr;
         }
