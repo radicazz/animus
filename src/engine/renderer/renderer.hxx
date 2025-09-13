@@ -3,6 +3,10 @@
 #include "sprite.hxx"
 #include "text.hxx"
 
+#include <unordered_map>
+#include <string_view>
+#include <string>
+
 struct TTF_TextEngine;
 
 namespace engine {
@@ -26,14 +30,27 @@ namespace engine {
         [[nodiscard]] SDL_Renderer* get_sdl_renderer() const;
         [[nodiscard]] TTF_TextEngine* get_sdl_text_engine() const;
 
-        void frame_begin();
-        void frame_end();
+        void draw_begin();
+        void draw_end();
 
         void set_camera(const game_camera* camera);
         [[nodiscard]] const game_camera* get_camera() const;
 
+        // --- Legacy single viewport access (points into registry) ---
         void set_viewport(const game_viewport* viewport);
         [[nodiscard]] const game_viewport* get_viewport() const;
+
+        // --- Multi-viewport API ---
+        // Create or fetch viewport by name; if creating, specify normalized rect.
+        game_viewport& viewport_get_or_create(std::string_view name,
+                                              const glm::vec2& pos_norm = {0.f, 0.f},
+                                              const glm::vec2& size_norm = {1.f, 1.f});
+        game_viewport* viewport_get(std::string_view name);
+        bool viewport_remove(std::string_view name);
+        [[nodiscard]] const std::unordered_map<std::string, game_viewport>& viewports() const {
+            return m_viewports;
+        }
+        [[nodiscard]] game_viewport* viewport_main();  // convenience "main"
 
         void sprite_draw_world(const game_sprite* sprite, const glm::vec2& world_position);
         void sprite_draw_screen(const game_sprite* sprite, const glm::vec2& screen_position);
@@ -49,11 +66,14 @@ namespace engine {
          */
         [[nodiscard]] glm::vec2 get_output_size() const;
 
+        // Future: expose iteration rendering hook if needed
+
     private:
         SDL_Renderer* m_sdl_renderer;
         TTF_TextEngine* m_sdl_text_engine;
         const game_camera* m_camera;
         const game_viewport* m_viewport;
+        std::unordered_map<std::string, game_viewport> m_viewports;  // name -> viewport
     };
 
     inline SDL_Renderer* game_renderer::get_sdl_renderer() const {

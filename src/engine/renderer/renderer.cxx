@@ -82,19 +82,18 @@ namespace engine {
         return *this;
     }
 
-    void game_renderer::frame_begin() {
-        // Apply viewport if present
+    void game_renderer::draw_begin() {
         if (m_viewport != nullptr) {
-            m_viewport->apply_to_sdl(m_sdl_renderer);
+            m_viewport->apply_to_sdl(*this);
         } else {
-            SDL_SetRenderViewport(m_sdl_renderer, nullptr);  // full output
+            SDL_SetRenderViewport(m_sdl_renderer, nullptr);
         }
 
         SDL_SetRenderDrawColor(m_sdl_renderer, 0, 0, 0, 255);
         SDL_RenderClear(m_sdl_renderer);
     }
 
-    void game_renderer::frame_end() {
+    void game_renderer::draw_end() {
         SDL_RenderPresent(m_sdl_renderer);
     }
 
@@ -249,6 +248,49 @@ namespace engine {
         int w = 0, h = 0;
         SDL_GetRenderOutputSize(m_sdl_renderer, &w, &h);
         return {static_cast<float>(w), static_cast<float>(h)};
+    }
+
+    // Multi-viewport API implementation
+    game_viewport& game_renderer::viewport_get_or_create(std::string_view name,
+                                                         const glm::vec2& pos_norm,
+                                                         const glm::vec2& size_norm) {
+        auto it = m_viewports.find(std::string(name));
+        if (it != m_viewports.end()) {
+            return it->second;
+        }
+        game_viewport vp{size_norm};
+        vp.set_normalized_position(pos_norm);
+        auto [insert_it, _] = m_viewports.emplace(std::string(name), vp);
+        // Maintain legacy pointer if first viewport or named "main" and none selected yet
+        if (m_viewport == nullptr || name == "main") {
+            m_viewport = &insert_it->second;
+        }
+        return insert_it->second;
+    }
+
+    game_viewport* game_renderer::viewport_get(std::string_view name) {
+        auto it = m_viewports.find(std::string(name));
+        if (it == m_viewports.end())
+            return nullptr;
+        return &it->second;
+    }
+
+    bool game_renderer::viewport_remove(std::string_view name) {
+        auto it = m_viewports.find(std::string(name));
+        if (it == m_viewports.end())
+            return false;
+        if (&it->second == m_viewport) {
+            m_viewport = nullptr;  // legacy pointer invalidated
+        }
+        m_viewports.erase(it);
+        return true;
+    }
+
+    game_viewport* game_renderer::viewport_main() {
+        auto it = m_viewports.find("main");
+        if (it == m_viewports.end())
+            return nullptr;
+        return &it->second;
     }
 
 }  // namespace engine

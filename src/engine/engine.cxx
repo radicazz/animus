@@ -19,7 +19,7 @@ namespace engine {
           m_input(),
           m_entities(),
           m_camera({0.f, 0.f}, 1.f),
-          m_viewport(size),
+          m_viewport({1.f, 1.f}),  // Full window coverage in normalized coords
           m_is_running(true),
           m_tick_interval(-1.f),
           m_fraction_to_next_tick(-1.f),
@@ -65,9 +65,9 @@ namespace engine {
 
             try_invoke_callback(m_game.on_frame, this, m_frame_interval);
 
-            m_renderer.frame_begin();
+            m_renderer.draw_begin();
             try_invoke_callback(m_game.on_draw, this, m_fraction_to_next_tick);
-            m_renderer.frame_end();
+            m_renderer.draw_end();
         }
     }
 

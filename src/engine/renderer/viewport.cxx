@@ -1,18 +1,49 @@
 #include "viewport.hxx"
 #include "camera.hxx"
+#include "renderer.hxx"
+
+#include "../logger.hxx"
 
 #include <SDL3/SDL.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 
 namespace engine {
-    void game_viewport::apply_to_sdl(SDL_Renderer* sdl_renderer) const {
-        if (sdl_renderer == nullptr) {
-            return;
+    game_viewport::game_viewport(const glm::vec2& normalized_size)
+        : m_cached_position_pixels(), m_cached_size_pixels() {
+        if (normalized_size.x > 1.f || normalized_size.x < 0.f) {
+            game_log<log_level::warning>("Viewport size x component out of range [0.f, 1.f]: {}",
+                                         normalized_size.x);
         }
 
-        SDL_Rect rect{m_position_pixels.x, m_position_pixels.y, m_size_pixels.x, m_size_pixels.y};
-        SDL_SetRenderViewport(sdl_renderer, &rect);
+        if (normalized_size.y > 1.f || normalized_size.y < 0.f) {
+            game_log<log_level::warning>("Viewport size y component out of range [0.f, 1.f]: {}",
+                                         normalized_size.y);
+        }
+
+        set_normalized_rect({0.f, 0.f}, normalized_size);
+    }
+
+    void game_viewport::set_normalized_rect(const glm::vec2& new_position,
+                                            const glm::vec2& new_size) {
+        set_normalized_position(new_position);
+        set_normalized_size(new_size);
+    }
+
+    void game_viewport::apply_to_sdl(game_renderer& renderer) const {
+        const glm::vec2 output_size = renderer.get_output_size();
+
+        m_cached_position_pixels = glm::floor(m_position * output_size);
+        m_cached_size_pixels = glm::floor(m_size * output_size);
+
+        SDL_Rect rect{static_cast<int>(m_cached_position_pixels.x),
+                      static_cast<int>(m_cached_position_pixels.y),
+                      static_cast<int>(m_cached_size_pixels.x),
+                      static_cast<int>(m_cached_size_pixels.y)};
+
+        if (SDL_SetRenderViewport(renderer.get_sdl_renderer(), &rect) == false) {
+            game_log<log_level::error>("Failed to set renderer viewport.");
+        }
     }
 
     glm::mat3 game_viewport::get_view_matrix(const game_camera& camera) const {
@@ -28,7 +59,7 @@ namespace engine {
 
         // Translation
         // Center camera in the viewport: origin at viewport center
-        const glm::vec2 screen_center = m_position_pixels + m_size_pixels * 0.5f;
+        const glm::vec2 screen_center = m_cached_position_pixels + m_cached_size_pixels * 0.5f;
         view[2][0] = -camera.get_position().x * zoom + screen_center.x;
         view[2][1] = -camera.get_position().y * zoom + screen_center.y;
 
@@ -44,14 +75,14 @@ namespace engine {
 
     glm::vec2 game_viewport::screen_to_world(const game_camera& camera,
                                              const glm::vec2& screen_pos) const {
-        const glm::vec2 screen_center = m_position_pixels + m_size_pixels * 0.5f;
+        const glm::vec2 screen_center = m_cached_position_pixels + m_cached_size_pixels * 0.5f;
         const glm::vec2 centered = screen_pos - screen_center;
         return camera.get_position() + centered / camera.get_zoom();
     }
 
     std::tuple<glm::vec2, glm::vec2> game_viewport::get_visible_area_world(
         const game_camera& camera) const {
-        const glm::vec2 half_viewport_world = (m_size_pixels * 0.5f) / camera.get_zoom();
+        const glm::vec2 half_viewport_world = (m_cached_size_pixels * 0.5f) / camera.get_zoom();
         const glm::vec2 cam = camera.get_position();
 
         const float min_x = cam.x - half_viewport_world.x;
@@ -77,8 +108,7 @@ namespace engine {
 
     void game_viewport::clamp_camera_to_bounds(game_camera& camera) const {
         // If the camera has bounds, clamp against half visible size in world units
-        const glm::vec2 half_viewport_world = (m_size_pixels * 0.5f) / camera.get_zoom();
+        const glm::vec2 half_viewport_world = (m_cached_size_pixels * 0.5f) / camera.get_zoom();
         camera.clamp_to_physical_bounds(half_viewport_world);
     }
-
 }  // namespace engine
