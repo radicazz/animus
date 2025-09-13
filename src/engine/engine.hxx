@@ -1,9 +1,14 @@
+/**
+ * @file engine.hxx
+ * @brief Main game engine header file.
+ *
+ * this file defines the `engine::game_engine` class and its associated types and functions that
+ * manage the core game loop, window, rendering, input, resources, and entities.
+ */
+
 #pragma once
 
-#include <type_traits>
-
 #include "logger.hxx"
-
 #include "engine/version.hxx"
 #include "renderer/renderer.hxx"
 #include "renderer/camera.hxx"
@@ -16,7 +21,7 @@
 namespace engine {
     /**
      * @brief Check if the current build is a debug build.
-     * @return consteval bool True if this is a debug build, false otherwise.
+     * @return True if this is a debug build, false otherwise.
      */
     consteval bool is_debug_build() {
 #ifdef NDEBUG
@@ -29,46 +34,114 @@ namespace engine {
     class game_engine;
 
     /**
-     * @brief Callback functions for the game engine.
+     * @brief State pointer and callback functions for the game engine.
      *
      * These functions are called at various points in the game loop. Your game must implement these
      * functions to hook into the engine's lifecycle. Each function provides an
-     * `engine::game_engine` pointer as its first argument, allowing access to the engine's
-     * functionality.
+     * `engine::game_engine` pointer as its first argument, allowing the game to access the
+     * engine's functionality.
      *
      * @note All callbacks are optional and can be set to `nullptr` if not needed.
      */
     struct game_info {
+        /**
+         * @brief User-defined state data for the game.
+         */
         void* state = nullptr;
 
         /**
-         * @brief Called in the engine's constructor after initialization.
+         * @brief Called in the engine's constructor after components are initialized.
          */
         void (*on_create)(game_engine*) = nullptr;
 
         /**
-         * @brief Called in the engine's destructor.
+         * @brief Called in the engine's destructor before components are destroyed.
          */
         void (*on_destroy)(game_engine*) = nullptr;
 
         /**
-         * @brief Called at a fixed tick rate for game logic updates.
+         * @brief Called every fixed update (tick) at a fixed interval.
+         * @param tick_interval The fixed time interval between ticks in seconds.
+         * @note The default tick rate is 32 ticks per second. Use `game_engine::set_tick_rate` to
+         * set a custom tick rate.
          */
         void (*on_tick)(game_engine*, float tick_interval) = nullptr;
 
         /**
          * @brief Called every frame before rendering.
+         * @param frame_interval The time spent between the last two frames in seconds.
+         * @note This function is called at a variable rate depending on the performance of the
+         * game.
          */
         void (*on_frame)(game_engine*, float frame_interval) = nullptr;
 
         /**
          * @brief Called every frame during rendering.
+         * @param fraction_to_next_tick A value between 0.0 and 1.0 representing the progress
+         *        of the current frame towards the next tick.
+         * @note This function is called after `on_frame` and is where all rendering should be done.
          */
-        void (*on_draw)(game_engine*, float progress_to_next_tick) = nullptr;
+        void (*on_draw)(game_engine*, float fraction_to_next_tick) = nullptr;
     };
 
+    /**
+     * @brief The primary game engine class.
+     *
+     * This class manages the main game loop, window, rendering, input, resources, and entities.
+     * It provides access to all core engine functionality and serves as the primary interface
+     * between your game and the engine.
+     *
+     * @code
+     * #include <SDL/SDL_main.h>
+     * #include "engine/engine.hxx"
+     *
+     * struct example_game_state {
+     *    int frame_count;
+     * };
+     *
+     * void example_game_frame(engine::game_engine* engine, float frame_interval) {
+     *   auto& state = engine->get_state<example_game_state>();
+     *
+     *   // Update your game state here.
+     *   state.frame_count++;
+     * }
+     *
+     * int main(int argc, char* argv[]) {
+     *   try {
+     *      example_game_state state;
+     *      state.frame_count = 0;
+     *
+     *      engine::game_info info = {
+     *       .state = &state,
+     *       .on_create = nullptr,
+     *       .on_destroy = nullptr,
+     *       .on_tick = nullptr,
+     *       .on_frame = example_game_frame,
+     *       .on_draw = nullptr
+     *      };
+     *
+     *      engine::game_engine game(info, "Example Game", { 800, 600 });
+     *
+     *      //  Run the game.
+     *      game.run();
+     *   } catch (const std::exception& error) {
+     *      // Handle initialization errors.
+     *  }
+     *
+     *    return 0;
+     * }
+     * @endcode
+     */
     class game_engine {
     public:
+        game_engine() = delete;
+
+        /**
+         * @brief Construct a new game engine object.
+         * @param info Your game state and its callbacks.
+         * @param title The initial title of the game window.
+         * @param size The initial size of the game window.
+         */
         game_engine(const game_info& info, std::string_view title, const glm::ivec2& size);
         ~game_engine();
 
@@ -79,7 +152,7 @@ namespace engine {
 
         /**
          * @brief Start running the game loop.
-         * @note This function will block until the game is quit as it runs a while loop.
+         * @note This function will block until the game quits.
          */
         void run();
 
@@ -93,27 +166,18 @@ namespace engine {
 
         /**
          * @brief Get a pointer to your game's data.
-         *
-         * The game communicates with the engine through callbacks. The engine
-         * callbacks provide access to the engine's data.
-         *
-         * Provide a pointer to your game's data in the constructor to access it through the engine
-         * in your callbacks.
-         *
-         * @tparam T The class that represents your game's state.
-         * @return A pointer to your game's data, casted to your game's type.
+         * @tparam T The type of your game's state data. Must be a class type.
+         * @return Reference to your game's state data as type T.
          *
          * @code
          * struct my_game_state {
          *     int score;
-         *     glm::vec2 player_position;
          * };
          *
          * void on_create(engine::game_engine* engine) {
          *    // Access your game's state through the engine.
          *     auto& state = engine->get_state<my_game_state>();
          *     state.score = 0;
-         *     state.player_position = { 0.0f, 0.0f };
          * }
          * @endcode
          */
@@ -122,7 +186,7 @@ namespace engine {
         [[nodiscard]] T& get_state();
 
         static constexpr float tick_rate_to_interval(float tick_rate_seconds);
-        static constexpr float tick_interval_to_rate(float time_seconds);
+        static constexpr float tick_interval_to_rate(float tick_interval_seconds);
 
         [[nodiscard]] float get_tick_rate();
         void set_tick_rate(float tick_rate_seconds);
@@ -205,8 +269,8 @@ namespace engine {
         return 1.0f / ticks_per_second;
     }
 
-    constexpr float game_engine::tick_interval_to_rate(const float time_seconds) {
-        return 1.0f / time_seconds;
+    constexpr float game_engine::tick_interval_to_rate(const float tick_interval_seconds) {
+        return 1.0f / tick_interval_seconds;
     }
 
     inline float game_engine::get_tick_rate() {
