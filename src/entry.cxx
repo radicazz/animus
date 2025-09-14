@@ -15,7 +15,7 @@ static void game_run() {
                               .on_draw = game_on_draw};
 
     // Create the game and its resources
-    engine::game_engine game(info, "Incarnate Demo", {1000, 700});
+    engine::game_engine game(info, engine::version::project_name, {1000, 700});
     game.run();
 }
 

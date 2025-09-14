@@ -1,83 +1,65 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Enable modern CMake policies
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW) # Use timestamps from archives
-endif()
-
 project(
-    incarnate
+    "animus"
     VERSION 0.1.0
-    DESCRIPTION "An epic 2D game engine."
+    DESCRIPTION "A top-down 2D game engine designed for the soul."
     LANGUAGES CXX
 )
 
-# Set default build type if not specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# In-source builds are ugly.
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
 endif()
 
-# Add configuration-specific output directories
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# Generate version header from template
 configure_file(
     "${CMAKE_SOURCE_DIR}/src/engine/version.hxx.in"
     "${CMAKE_BINARY_DIR}/generated/engine/version.hxx"
     @ONLY
 )
 
-# Add submodules.
+# Add our Git submodules.
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_image EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_ttf EXCLUDE_FROM_ALL)
 
-# Create incarnate executable
-add_executable(incarnate)
+add_executable(${PROJECT_NAME})
 
-# Set target properties
-set_target_properties(incarnate PROPERTIES
+set_target_properties(
+    ${PROJECT_NAME} PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
-    OUTPUT_NAME "incarnate"
+    OUTPUT_NAME ${PROJECT_NAME}
 )
 
 # On Windows, set the executable to be a GUI application.
 if(WIN32)
-    set_target_properties(incarnate PROPERTIES
+    set_target_properties(${PROJECT_NAME} PROPERTIES
         WIN32_EXECUTABLE TRUE
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
     )
 endif()
 
-# Glob game & engine source files.
-# TODO: Better way to do this?
-file(GLOB_RECURSE INCARNATE_SOURCES
-    CONFIGURE_DEPENDS
-    "src/*.cxx" "src/*.hxx"
-)
+file(GLOB_RECURSE PROJECT_SOURCE_FILES CONFIGURE_DEPENDS "src/*.cxx" "src/*.hxx")
 
 # Add the sources to the executable.
-target_sources(incarnate PRIVATE ${INCARNATE_SOURCES})
+target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_FILES})
 
 # Organize source files in IDE
-source_group(TREE "${CMAKE_SOURCE_DIR}/src" FILES ${INCARNATE_SOURCES})
-
-# Modern compile features.
-target_compile_features(incarnate PRIVATE cxx_std_20)
+source_group(TREE "${CMAKE_SOURCE_DIR}/src" FILES ${PROJECT_SOURCE_FILES})
 
 # Enhanced compiler-specific warnings and optimizations
-target_compile_options(incarnate PRIVATE
+target_compile_options(${PROJECT_NAME} PRIVATE
 
     # MSVC
     $<$<CXX_COMPILER_ID:MSVC>:
@@ -111,7 +93,7 @@ target_compile_options(incarnate PRIVATE
 )
 
 # Debug/Release specific settings
-target_compile_definitions(incarnate PRIVATE
+target_compile_definitions(${PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:
     INC_DEBUG_BUILD=1
     DEBUG
@@ -129,8 +111,7 @@ target_compile_definitions(incarnate PRIVATE
 
 # Link libraries with proper visibility
 target_link_libraries(
-    incarnate
-    PRIVATE
+    ${PROJECT_NAME} PRIVATE
     SDL3::SDL3
     SDL3_image::SDL3_image
     SDL3_ttf::SDL3_ttf
@@ -138,8 +119,7 @@ target_link_libraries(
 
 # Include directories - prefer target-based approach when possible
 target_include_directories(
-    incarnate
-    PRIVATE
+    ${PROJECT_NAME} PRIVATE
     "${CMAKE_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/external/glm"
     "${CMAKE_SOURCE_DIR}/external/entt/single_include"
@@ -148,23 +128,23 @@ target_include_directories(
 
 # DLL copying with better platform handling
 if(WIN32)
-    set(INCARNATE_DEPENDENCY_DLLS
+    set(PROJECT_DEPENDENCY_DLLS
         $<TARGET_FILE:SDL3::SDL3-shared>
         $<TARGET_FILE:SDL3_image::SDL3_image-shared>
         $<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared>
     )
 
-    add_custom_command(TARGET incarnate POST_BUILD
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${INCARNATE_DEPENDENCY_DLLS}
-        $<TARGET_FILE_DIR:incarnate>
+        ${PROJECT_DEPENDENCY_DLLS}
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
         COMMENT "Copying DLLs to output directory"
     )
 endif()
 
 # Runtime library paths for Unix systems
 if(UNIX)
-    set_target_properties(incarnate PROPERTIES
+    set_target_properties(${PROJECT_NAME} PROPERTIES
         BUILD_RPATH "$ORIGIN"
         INSTALL_RPATH "$ORIGIN"
     )
@@ -172,9 +152,9 @@ endif()
 
 # Cross-platform asset copying with better handling
 set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
-set(ASSETS_DEST_DIR "$<TARGET_FILE_DIR:incarnate>/assets")
+set(ASSETS_DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets")
 
-add_custom_command(TARGET incarnate POST_BUILD
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     "${ASSETS_SOURCE_DIR}"
     "${ASSETS_DEST_DIR}"
@@ -183,14 +163,14 @@ add_custom_command(TARGET incarnate POST_BUILD
 )
 
 # Ensure assets directory exists
-add_custom_command(TARGET incarnate PRE_BUILD
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${ASSETS_DEST_DIR}"
     COMMENT "Creating assets directory"
     VERBATIM
 )
 
 # Enhanced install rules with proper component support
-install(TARGETS incarnate
+install(TARGETS ${PROJECT_NAME}
     RUNTIME
     DESTINATION bin
     COMPONENT Runtime
@@ -205,61 +185,19 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/assets"
 
 # Install runtime dependencies on Windows
 if(WIN32)
-    install(FILES ${INCARNATE_DEPENDENCY_DLLS}
+    install(FILES ${PROJECT_DEPENDENCY_DLLS}
         DESTINATION bin
         COMPONENT Runtime
     )
 endif()
 
-# Enhanced packaging with more metadata
-include(CPack)
-set(CPACK_PACKAGE_NAME "Incarnate")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_DESCRIPTION "${PROJECT_DESCRIPTION}")
-set(CPACK_PACKAGE_VENDOR "radicazz")
-set(CPACK_PACKAGE_CONTACT "https://github.com/radicazz/incarnate")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_PACKAGE_EXECUTABLES "incarnate" "Incarnate Game Engine")
-
-# Platform-specific packaging
-if(WIN32)
-    set(CPACK_GENERATOR "ZIP;NSIS")
-    set(CPACK_NSIS_DISPLAY_NAME "Incarnate Game Engine")
-    set(CPACK_NSIS_PACKAGE_NAME "Incarnate")
-elseif(APPLE)
-    set(CPACK_GENERATOR "ZIP;DragNDrop")
-    set(CPACK_DMG_FORMAT "UDBZ")
-else()
-    set(CPACK_GENERATOR "TGZ;DEB")
-    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "radicazz")
-    set(CPACK_DEBIAN_PACKAGE_SECTION "games")
-endif()
-
-# Component-based packaging
-set(CPACK_COMPONENTS_ALL Runtime Assets)
-set(CPACK_COMPONENT_RUNTIME_DISPLAY_NAME "Incarnate Engine")
-set(CPACK_COMPONENT_RUNTIME_DESCRIPTION "Core game engine executable")
-set(CPACK_COMPONENT_ASSETS_DISPLAY_NAME "Game Assets")
-set(CPACK_COMPONENT_ASSETS_DESCRIPTION "Sprites, fonts, and other game assets")
-
-# Optional: Add development tools and options
-option(INCARNATE_ENABLE_TESTING "Enable unit testing" OFF)
-option(INCARNATE_ENABLE_DOCS "Enable documentation generation" OFF)
-option(INCARNATE_STATIC_ANALYSIS "Enable static analysis tools" OFF)
-
-# Testing support
-if(INCARNATE_ENABLE_TESTING)
-    enable_testing()
-
-    # Could add test subdirectory here if tests are implemented
-endif()
+option(PROJECT_ENABLE_DOCS "Enable documentation generation" OFF)
 
 # Documentation support
-if(INCARNATE_ENABLE_DOCS)
+if(PROJECT_ENABLE_DOCS)
     find_package(Doxygen REQUIRED)
 
     if(DOXYGEN_FOUND)
-        # Configure Doxyfile with project variables
         configure_file(
             "${CMAKE_SOURCE_DIR}/Doxyfile"
             "${CMAKE_BINARY_DIR}/Doxyfile"
@@ -297,13 +235,10 @@ if(INCARNATE_ENABLE_DOCS)
     endif()
 endif()
 
-# Print configuration summary
-message(STATUS "=== Incarnate Build Configuration ===")
+message(STATUS "=== ${PROJECT_NAME} Build Configuration ===")
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "C++ Standard: C++${CMAKE_CXX_STANDARD}")
 message(STATUS "Install Prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Testing: ${INCARNATE_ENABLE_TESTING}")
-message(STATUS "Documentation: ${INCARNATE_ENABLE_DOCS}")
-message(STATUS "Static Analysis: ${INCARNATE_STATIC_ANALYSIS}")
+message(STATUS "Documentation: ${PROJECT_ENABLE_DOCS}")
 message(STATUS "======================================")
