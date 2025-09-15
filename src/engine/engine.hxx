@@ -16,7 +16,7 @@
 #include "utils/window.hxx"
 #include "utils/resources.hxx"
 #include "utils/input.hxx"
-#include "ecs/game_entities.hxx"
+#include "ecs/entities.hxx"
 
 namespace engine {
     /**

@@ -1,4 +1,5 @@
-#include "game_entities.hxx"
+#include "entities.hxx"
+
 #include "../engine.hxx"
 
 namespace engine {

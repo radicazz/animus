@@ -1,3 +1,8 @@
+/**
+ * @file entities.hxx
+ * @brief Header file for ECS wrapper that manages its own registry.
+ */
+
 #pragma once
 
 #include <string_view>
