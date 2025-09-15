@@ -14,7 +14,7 @@
 #include "renderer/camera.hxx"
 #include "renderer/viewport.hxx"
 #include "utils/window.hxx"
-#include "utils/resource_manager.hxx"
+#include "utils/resources.hxx"
 #include "utils/input.hxx"
 #include "ecs/game_entities.hxx"
 

@@ -1,8 +1,12 @@
+/**
+ * @file resources.hxx
+ * @brief Engine resource manager header file.
+ */
+
 #pragma once
 
 #include <unordered_map>
 #include <string>
-#include <string_view>
 #include <memory>
 
 #include "../renderer/sprite.hxx"
@@ -12,31 +16,24 @@ namespace engine {
     class game_renderer;
 
     /**
-     * @brief Manages the loading and unloading of game resources for the engine.
-     *
-     * This class handles loading, caching, and unloading of textures and fonts used in a game. It
-     * holds an internal list of loaded resources to avoid redundant loading and provides methods to
-     * create sprites and text objects. When creating a sprite or a font, the manager will check if
-     * the resource is already loaded and reuse it if available. The manager also provides methods
-     * to unload specific resources or clear all loaded resources manually.
+     * @brief Manages the loading, caching and unloading of game resources.
      */
     class game_resources {
     public:
         explicit game_resources(game_renderer& renderer);
         ~game_resources();
 
-        // Resource management - disable copy, enable move
         game_resources(const game_resources&) = delete;
         game_resources& operator=(const game_resources&) = delete;
         game_resources(game_resources&& other) noexcept;
         game_resources& operator=(game_resources&& other) noexcept;
 
-        // Sprite resource management - cached sprites
         game_sprite* sprite_get_or_create(std::string_view key, std::string_view file_path);
         game_sprite* sprite_get(std::string_view key);
         void sprite_destroy(std::string_view key);
 
-        game_text_static* text_static_get_or_create(std::string_view key, std::string_view text,
+        game_text_static* text_static_get_or_create(std::string_view key,
+                                                    std::string_view initial_text,
                                                     std::string_view font_path, float font_size);
         game_text_static* text_static_get(std::string_view key);
         void text_static_destroy(std::string_view key);

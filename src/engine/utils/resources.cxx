@@ -1,4 +1,4 @@
-#include "resource_manager.hxx"
+#include "resources.hxx"
 
 #include "../logger.hxx"
 #include "../renderer/renderer.hxx"

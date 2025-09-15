@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 #include "../engine.hxx"
-#include "../utils/resource_manager.hxx"
+#include "../utils/resources.hxx"
 
 #include <algorithm>
 #include <vector>
