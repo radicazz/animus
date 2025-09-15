@@ -15,7 +15,7 @@
 #include "renderer/viewport.hxx"
 #include "utils/window.hxx"
 #include "utils/resource_manager.hxx"
-#include "utils/input_system.hxx"
+#include "utils/input.hxx"
 #include "ecs/game_entities.hxx"
 
 namespace engine {
