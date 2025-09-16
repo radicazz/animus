@@ -52,7 +52,6 @@ namespace engine {
                                                       std::string_view file_path) {
         auto it = m_sprites.find(std::string(key));
         if (it != m_sprites.end()) {
-            game_log<log_level::verbose>("Using cached sprite: {}", key);
             return it->second.get();
         }
 
@@ -61,7 +60,8 @@ namespace engine {
         auto* sprite_ptr = sprite.get();
         m_sprites[std::string(key)] = std::move(sprite);
 
-        game_log<log_level::verbose>("Created sprite resource: {}", key);
+        log_info("Created sprite: {}", key);
+
         return sprite_ptr;
     }
 
@@ -73,7 +73,7 @@ namespace engine {
     void game_resources::sprite_destroy(std::string_view key) {
         auto it = m_sprites.find(std::string(key));
         if (it != m_sprites.end()) {
-            game_log<log_level::verbose>("Destroyed sprite: {}", key);
+            log_info("Destroyed sprite: {}", key);
             m_sprites.erase(it);
         }
     }
@@ -81,7 +81,7 @@ namespace engine {
     void game_resources::textures_clear() {
         for (auto& [key, texture] : m_textures) {
             SDL_DestroyTexture(texture);
-            game_log<log_level::verbose>("Unloaded texture: {}", key);
+            log_info("Destroyed texture: {}", key);
         }
 
         m_textures.clear();
@@ -90,7 +90,7 @@ namespace engine {
     void game_resources::fonts_clear() {
         for (auto& [key, font] : m_fonts) {
             TTF_CloseFont(font);
-            game_log<log_level::verbose>("Unloaded font: {}", key);
+            log_info("Destroyed font: {}", key);
         }
 
         m_fonts.clear();
@@ -98,7 +98,6 @@ namespace engine {
 
     SDL_Texture* game_resources::texture_get_or_create(std::string_view file_path) {
         if (is_texture_loaded(file_path) == true) {
-            game_log<log_level::verbose>("Using cached texture: {}", file_path);
             return m_textures.at(file_path.data());
         }
 
@@ -109,7 +108,7 @@ namespace engine {
 
         m_textures[file_path.data()] = texture;
 
-        game_log<log_level::info>("Loaded texture: {}", file_path);
+        log_info("Loaded texture: {}", file_path);
 
         return texture;
     }
@@ -118,7 +117,7 @@ namespace engine {
         auto it = m_textures.find(file_path.data());
         if (it != m_textures.end()) {
             SDL_DestroyTexture(it->second);
-            game_log<log_level::verbose>("U texture: {}", file_path);
+            log_info("Unloaded texture: {}", file_path);
             m_textures.erase(it);
         }
     }
@@ -131,7 +130,7 @@ namespace engine {
         std::string unique_key = get_font_unique_key(font_path, font_size);
 
         if (is_font_loaded(unique_key) == true) {
-            game_log<log_level::verbose>("Using cached font: {}", unique_key);
+            log_info("Using cached font: {}", unique_key);
             return m_fonts.at(unique_key);
         }
 
@@ -142,7 +141,7 @@ namespace engine {
 
         m_fonts[unique_key] = font;
 
-        game_log<log_level::info>("Loaded font: {} (size: {})", font_path, font_size);
+        log_info("Loaded font: {} (size: {})", font_path, font_size);
 
         return font;
     }
@@ -151,7 +150,7 @@ namespace engine {
         auto it = m_fonts.find(unique_key.data());
         if (it != m_fonts.end()) {
             TTF_CloseFont(it->second);
-            game_log<log_level::verbose>("Unloaded font: {}", unique_key);
+            log_info("Unloaded font: {}", unique_key);
             m_fonts.erase(it);
         }
     }
@@ -185,7 +184,7 @@ namespace engine {
         game_text_static* ptr = text_obj.get();
         m_static_texts[std::string(key)] = std::move(text_obj);
 
-        game_log<log_level::verbose>("Created static text resource: {}", key);
+        log_info("Created static text resource: {}", key);
         return ptr;
     }
     game_text_dynamic* game_resources::text_dynamic_get_or_create(std::string_view key,
@@ -209,7 +208,7 @@ namespace engine {
         game_text_dynamic* ptr = text_obj.get();
         m_dynamic_texts[std::string(key)] = std::move(text_obj);
 
-        game_log<log_level::verbose>("Created dynamic text resource: {}", key);
+        log_info("Created dynamic text resource: {}", key);
         return ptr;
     }
 
@@ -226,7 +225,7 @@ namespace engine {
     void game_resources::text_static_destroy(std::string_view key) {
         auto it = m_static_texts.find(std::string(key));
         if (it != m_static_texts.end()) {
-            game_log<log_level::verbose>("Unloaded static text: {}", key);
+            log_info("Unloaded static text: {}", key);
             m_static_texts.erase(it);
         }
     }
@@ -234,21 +233,21 @@ namespace engine {
     void game_resources::text_dynamic_destroy(std::string_view key) {
         auto it = m_dynamic_texts.find(std::string(key));
         if (it != m_dynamic_texts.end()) {
-            game_log<log_level::verbose>("Unloaded dynamic text: {}", key);
+            log_info("Unloaded dynamic text: {}", key);
             m_dynamic_texts.erase(it);
         }
     }
 
     void game_resources::sprites_clear() {
-        game_log<log_level::info>("Unloading {} sprite resources.", m_sprites.size());
+        log_info("Unloading {} sprite resources.", m_sprites.size());
         m_sprites.clear();
     }
 
     void game_resources::texts_clear() {
-        game_log<log_level::info>("Unloading {} static text resources.", m_static_texts.size());
+        log_info("Unloading {} static text resources.", m_static_texts.size());
         m_static_texts.clear();
 
-        game_log<log_level::info>("Unloading {} dynamic text resources.", m_dynamic_texts.size());
+        log_info("Unloading {} dynamic text resources.", m_dynamic_texts.size());
         m_dynamic_texts.clear();
     }
 }  // namespace engine

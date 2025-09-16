@@ -16,33 +16,36 @@ namespace engine {
           m_camera(nullptr),
           m_viewport(nullptr) {
         if (m_sdl_renderer = SDL_CreateRenderer(window, nullptr); m_sdl_renderer == nullptr) {
+            TTF_Quit();
+            SDL_Quit();
             throw std::runtime_error("Failed to create renderer");
         }
 
-        if (TTF_Init() == false) {
-            throw std::runtime_error("Failed to initialize SDL_ttf.");
-        }
+        log_info("Renderer created: {}", SDL_GetRendererName(m_sdl_renderer));
 
         m_sdl_text_engine = TTF_CreateRendererTextEngine(m_sdl_renderer);
         if (m_sdl_text_engine == nullptr) {
+            SDL_DestroyRenderer(m_sdl_renderer);
+
+            TTF_Quit();
+            SDL_Quit();
+
             throw std::runtime_error("Failed to create TTF text engine.");
         }
 
-        game_log<log_level::info>("Renderer created: {}", SDL_GetRendererName(m_sdl_renderer));
+        log_info("TTF text engine created successfully.");
     }
 
     game_renderer::~game_renderer() {
-        if (m_sdl_text_engine) {
+        if (m_sdl_text_engine != nullptr) {
             TTF_DestroyRendererTextEngine(m_sdl_text_engine);
+            log_info("TTF text engine destroyed.");
         }
 
-        if (m_sdl_renderer) {
+        if (m_sdl_renderer != nullptr) {
             SDL_DestroyRenderer(m_sdl_renderer);
+            log_info("SDL Renderer destroyed.");
         }
-
-        game_log<log_level::info>("Renderer destroyed");
-
-        TTF_Quit();
     }
 
     game_renderer::game_renderer(game_renderer&& other) noexcept

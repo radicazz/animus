@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(
-    "animus"
+    helipad
     VERSION 0.1.0
-    DESCRIPTION "A top-down 2D game engine designed for the soul."
+    DESCRIPTION "A top-down 2D game engine."
     LANGUAGES CXX
 )
 
@@ -32,17 +32,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-configure_file(
-    "${CMAKE_SOURCE_DIR}/src/engine/version.hxx.in"
-    "${CMAKE_BINARY_DIR}/generated/engine/version.hxx"
-    @ONLY
-)
+# Add the SDL submodules.
+add_subdirectory("external/SDL" EXCLUDE_FROM_ALL)
+add_subdirectory("external/SDL_image" EXCLUDE_FROM_ALL)
+add_subdirectory("external/SDL_ttf" EXCLUDE_FROM_ALL)
 
-# Add our Git submodules.
-add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
-add_subdirectory(external/SDL_image EXCLUDE_FROM_ALL)
-add_subdirectory(external/SDL_ttf EXCLUDE_FROM_ALL)
-
+# Create the executable.
 add_executable(${PROJECT_NAME})
 
 set_target_properties(
@@ -62,9 +57,41 @@ if(WIN32)
     )
 endif()
 
-file(GLOB_RECURSE ANIMUS_SOURCE_FILES CONFIGURE_DEPENDS "src/*.cxx" "src/*.hxx")
-target_sources(${PROJECT_NAME} PRIVATE ${ANIMUS_SOURCE_FILES})
-source_group(TREE "${CMAKE_SOURCE_DIR}/src" FILES ${ANIMUS_SOURCE_FILES})
+string(TIMESTAMP ENGINE_BUILD_DATE "%Y-%m-%d" UTC)
+string(TIMESTAMP ENGINE_BUILD_TIME "%H:%M:%S" UTC)
+
+function(util_to_cpp_bool VARIABLE_NAME)
+    if(${VARIABLE_NAME})
+        set(${VARIABLE_NAME} "true" PARENT_SCOPE)
+    else()
+        set(${VARIABLE_NAME} "false" PARENT_SCOPE)
+    endif()
+endfunction()
+
+option(ENGINE_LOG_INFO "Compile info logging" ON)
+option(ENGINE_LOG_WARNING "Compile warning logging" ON)
+option(ENGINE_LOG_ERROR "Compile error logging" ON)
+
+util_to_cpp_bool(ENGINE_LOG_INFO)
+util_to_cpp_bool(ENGINE_LOG_WARNING)
+util_to_cpp_bool(ENGINE_LOG_ERROR)
+
+set(ENGINE_IS_DEBUG "false")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(ENGINE_IS_DEBUG "true")
+endif()
+
+set(ENGINE_TEMPLATE_NAME "config")
+configure_file(
+    "${CMAKE_SOURCE_DIR}/src/engine/${ENGINE_TEMPLATE_NAME}.hxx.in"
+    "${CMAKE_BINARY_DIR}/generated/${ENGINE_TEMPLATE_NAME}.hxx"
+    @ONLY
+)
+
+file(GLOB_RECURSE ENGINE_SOURCE_FILES CONFIGURE_DEPENDS "src/*.cxx")
+target_sources(${PROJECT_NAME} PRIVATE ${ENGINE_SOURCE_FILES})
+source_group(TREE "${CMAKE_SOURCE_DIR}/src" FILES ${ENGINE_SOURCE_FILES})
 
 target_compile_options(
     ${PROJECT_NAME} PRIVATE
@@ -129,11 +156,11 @@ target_include_directories(
     "${CMAKE_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/external/glm"
     "${CMAKE_SOURCE_DIR}/external/entt/single_include"
-    "${CMAKE_BINARY_DIR}/generated" # For generated headers. (version.hxx)
+    "${CMAKE_BINARY_DIR}/generated" # For generated headers (settings.hxx)
 )
 
 if(WIN32)
-    set(ANIMUS_DEPENDENCY_DLLS
+    set(ENGINE_WIN32_DLLS
         $<TARGET_FILE:SDL3::SDL3-shared>
         $<TARGET_FILE:SDL3_image::SDL3_image-shared>
         $<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared>
@@ -142,7 +169,7 @@ if(WIN32)
     add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${ANIMUS_DEPENDENCY_DLLS}
+        ${ENGINE_WIN32_DLLS}
         $<TARGET_FILE_DIR:${PROJECT_NAME}>
         COMMENT "Copying DLLs to output directory"
     )
@@ -157,15 +184,15 @@ if(UNIX)
 endif()
 
 # Cross-platform asset copying.
-set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
-set(ASSETS_DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets")
+set(ENGINE_ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
+set(ENGINE_ASSETS_DESTINATION_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets")
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-    "${ASSETS_SOURCE_DIR}"
-    "${ASSETS_DEST_DIR}"
-    COMMENT "Copying game assets to ${ASSETS_DEST_DIR}"
+    "${ENGINE_ASSETS_SOURCE_DIR}"
+    "${ENGINE_ASSETS_DESTINATION_DIR}"
+    COMMENT "Copying game assets to ${ENGINE_ASSETS_DESTINATION_DIR}"
     VERBATIM
 )
 
@@ -182,19 +209,20 @@ install(
     COMPONENT Assets
     PATTERN "*.tmp" EXCLUDE
     PATTERN ".git*" EXCLUDE
+    PATTERN "*.md" EXCLUDE
 )
 
 if(WIN32)
     install(
-        FILES ${ANIMUS_DEPENDENCY_DLLS}
+        FILES ${ENGINE_WIN32_DLLS}
         DESTINATION bin
         COMPONENT Runtime
     )
 endif()
 
-option(ANIMUS_ENABLE_DOCS "Enable documentation generation" OFF)
+option(ENGINE_BUILD_DOCS "Enable documentation generation" OFF)
 
-if(ANIMUS_ENABLE_DOCS)
+if(ENGINE_BUILD_DOCS)
     find_package(Doxygen REQUIRED)
 
     if(DOXYGEN_FOUND)
@@ -238,6 +266,10 @@ message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Install Prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Using Ccache: ${CCACHE_PROGRAM}")
-message(STATUS "===== Custom Options =====")
-message(STATUS "Generate Documentation: ${ANIMUS_ENABLE_DOCS}")
+message(STATUS "===== Documentation =====")
+message(STATUS "Generate Documentation: ${ENGINE_BUILD_DOCS}")
+message(STATUS "===== Logging Settings =====")
+message(STATUS "Info Logging: ${ENGINE_LOG_INFO}")
+message(STATUS "Warning Logging: ${ENGINE_LOG_WARNING}")
+message(STATUS "Error Logging: ${ENGINE_LOG_ERROR}")
 message(STATUS "======================================")

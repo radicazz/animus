@@ -1,10 +1,10 @@
-# animus/external
+# helipad/external
 
 This directory contains all the third-party dependencies used by the project.
 
 ## About
 
-All of the third-party dependencies are included as [Git](https://git-scm.com/) submodules within this directory. Managing these dependencies as submodules means that they will automatically be compiled and linked for the platform they are being built on, ensuring cross-platform compatibility.
+All of these are included as [Git](https://git-scm.com/) submodules within this directory. This means that they will automatically be compiled and linked for the platform they are being built on, ensuring cross-platform compatibility.
 
 ## Dependencies
 

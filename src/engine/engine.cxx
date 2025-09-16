@@ -1,6 +1,8 @@
 #include "engine.hxx"
+
 #include "logger.hxx"
 
+#include <SDL3_ttf/SDL_ttf.h>
 #include <stdexcept>
 
 namespace engine {
@@ -12,7 +14,9 @@ namespace engine {
     }
 
     game_engine::game_engine(const game_info& info, std::string_view title, const glm::ivec2& size)
-        : m_game(info),
+        : m_wrapper(),
+          m_is_running(true),
+          m_game(info),
           m_window(title, size, game_window_type::resizable),
           m_renderer(m_window.get_sdl_window()),
           m_resources(m_renderer),
@@ -20,7 +24,6 @@ namespace engine {
           m_entities(),
           m_camera({0.f, 0.f}, 1.f),
           m_viewport({1.f, 1.f}),  // Full window coverage in normalized coords
-          m_is_running(true),
           m_tick_interval(-1.f),
           m_fraction_to_next_tick(-1.f),
           m_frame_interval(-1.f) {
@@ -32,9 +35,9 @@ namespace engine {
 
         try_invoke_callback(m_game.on_create, this);
 
-        game_log<log_level::info>("Engine initialized (version {})", version::full_string);
-        game_log<log_level::info>("Engine tick rate set to {} ticks/second ({}s interval)",
-                                  get_tick_rate(), get_tick_interval());
+        if (m_game.state == nullptr) {
+            log_warning("Game state is null. Did you forget to set it in game_info?");
+        }
     }
 
     game_engine::~game_engine() {
@@ -82,5 +85,33 @@ namespace engine {
 
             m_input.process_sdl_event(event);
         }
+    }
+
+    game_engine::engine_wrapper::engine_wrapper() {
+        log_info("\n");
+        log_info("Project '{}' (v{} {}) starting up...", project_name, version::full, build_type);
+
+        if (SDL_Init(SDL_INIT_VIDEO) == false) {
+            throw std::runtime_error("Failed to initialize SDL.");
+        }
+
+        log_info("SDL initialized successfully: v{}.{}.{}", SDL_MAJOR_VERSION, SDL_MINOR_VERSION,
+                 SDL_MICRO_VERSION);
+
+        if (TTF_Init() == false) {
+            SDL_Quit();
+            throw std::runtime_error("Failed to initialize SDL_ttf.");
+        }
+
+        log_info("TTF initialized successfully: v{}.{}.{}", SDL_TTF_MAJOR_VERSION,
+                 SDL_TTF_MINOR_VERSION, SDL_TTF_MICRO_VERSION);
+    }
+
+    game_engine::engine_wrapper::~engine_wrapper() {
+        TTF_Quit();
+        log_info("TTF shut down.");
+
+        SDL_Quit();
+        log_info("SDL shut down.");
     }
 }  // namespace engine

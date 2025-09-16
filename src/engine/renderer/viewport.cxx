@@ -12,13 +12,11 @@ namespace engine {
     game_viewport::game_viewport(const glm::vec2& normalized_size)
         : m_cached_position_pixels(), m_cached_size_pixels() {
         if (normalized_size.x > 1.f || normalized_size.x < 0.f) {
-            game_log<log_level::warning>("Viewport size x component out of range [0.f, 1.f]: {}",
-                                         normalized_size.x);
+            log_warning("Viewport size x component out of range [0.f, 1.f]: {}", normalized_size.x);
         }
 
         if (normalized_size.y > 1.f || normalized_size.y < 0.f) {
-            game_log<log_level::warning>("Viewport size y component out of range [0.f, 1.f]: {}",
-                                         normalized_size.y);
+            log_warning("Viewport size y component out of range [0.f, 1.f]: {}", normalized_size.y);
         }
 
         set_normalized_rect({0.f, 0.f}, normalized_size);
@@ -42,7 +40,7 @@ namespace engine {
                       static_cast<int>(m_cached_size_pixels.y)};
 
         if (SDL_SetRenderViewport(renderer.get_sdl_renderer(), &rect) == false) {
-            game_log<log_level::error>("Failed to set renderer viewport.");
+            log_error("Failed to set renderer viewport.");
         }
     }
 

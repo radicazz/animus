@@ -9,7 +9,7 @@
 #pragma once
 
 #include "logger.hxx"
-#include "engine/version.hxx"
+
 #include "renderer/renderer.hxx"
 #include "renderer/camera.hxx"
 #include "renderer/viewport.hxx"
@@ -19,18 +19,6 @@
 #include "ecs/entities.hxx"
 
 namespace engine {
-    /**
-     * @brief Check if the current build is a debug build.
-     * @return True if this is a debug build, false otherwise.
-     */
-    consteval bool is_debug_build() {
-#ifdef NDEBUG
-        return false;
-#else
-        return true;
-#endif
-    }
-
     class game_engine;
 
     /**
@@ -200,6 +188,17 @@ namespace engine {
         void process_events();
 
     private:
+        struct engine_wrapper {
+            engine_wrapper();
+            ~engine_wrapper();
+        } m_wrapper;
+
+        /**
+         * @brief Whether to keep the game loop running or not.
+         * @note Setting this to false will exit the game loop and end the program.
+         */
+        bool m_is_running;
+
         game_info m_game;
         game_window m_window;
         game_renderer m_renderer;
@@ -208,12 +207,6 @@ namespace engine {
         game_entities m_entities;
         game_camera m_camera;
         game_viewport m_viewport;
-
-        /**
-         * @brief Whether to keep the game loop running or not.
-         * @note Setting this to false will exit the game loop and end the program.
-         */
-        bool m_is_running;
 
         /**
          * @brief The amount of time between each fixed update (tick).

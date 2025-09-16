@@ -1,10 +1,10 @@
-# animus
+# helipad
 
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![SDL3](https://img.shields.io/badge/SDL-3.0-green.svg)](https://github.com/libsdl-org/SDL)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-orange.svg)](LICENSE.txt)
 
-A light-weight, modular and easy-to-use top-down 2D game engine built to explore the complexities of game development.
+A light-weight, modular and easy-to-use top-down 2D game engine built from a different perspective.
 
 ## Features
 
@@ -12,13 +12,13 @@ A light-weight, modular and easy-to-use top-down 2D game engine built to explore
 
 - Cross-platform support for Windows, Linux, and macOS.
 - Modular architecture with a focus on extensibility and maintainability.
-- Resource management system for handling assets like textures, sprites and fonts.
-- Entity-Component-System (ECS) for flexible game object management.
+- Resource management system for efficient handling of assets like textures, sprites and fonts.
+- Entity-Component-System (ECS) integration for flexible game object management.
 - Sprite & text rendering with support for rotations, scaling and more.
 
 ## Getting Started
 
-Third-party libraries are stored in the [`external/`](external/) directory and managed as git submodules.
+Third-party libraries are stored in the [`external/`](external/) directory.
 
 ### Requirements
 
@@ -34,15 +34,15 @@ Before you can build and run the examples, make sure you have the following tool
 And optionally:
 
 - **[Ccache](https://ccache.dev/)** - A compiler cache to speed up recompilation.
-- **[Doxygen](https://www.doxygen.nl/index.html)** - Documentation generator.
+- **[Doxygen](https://www.doxygen.nl/index.html)** - Engine API documentation generator.
 
 ### Building
 
 Get started by cloning this repository with the `--recursive` flag to include submodules:
 
 ```bash
-git clone --recursive https://github.com/radicazz/animus.git
-cd animus
+git clone --recursive https://github.com/radicazz/helipad.git
+cd helipad
 ```
 
 > If you already cloned the repository without `--recursive`, you can still initialize and update the submodules manually with `git submodule update --init --recursive`.
@@ -64,7 +64,7 @@ If everything went well, you will find the final executable, shared libraries an
 If you have [Doxygen](https://www.doxygen.nl/index.html) installed, you can generate the API documentation by either of the following methods:
 
 - Automatically during the build process:
-  - `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DANIMUS_ENABLE_DOCS=ON`
+  - `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DENGINE_ENABLE_DOCS=ON`
 - Or manually from the root directory:
   - `doxygen Doxyfile`
 
