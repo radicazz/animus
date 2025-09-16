@@ -18,7 +18,7 @@ A light-weight, modular and easy-to-use top-down 2D game engine built to explore
 
 ## Getting Started
 
-Third-party libraries are stored in the `/external/` directory and managed as git submodules.
+Third-party libraries are stored in the [`external/`](external/) directory and managed as git submodules.
 
 ### Requirements
 
@@ -30,6 +30,11 @@ Before you can build and run the examples, make sure you have the following tool
   - [MSVC](https://visualstudio.microsoft.com/) (Windows)
 - **[CMake](https://cmake.org/)** - Cross-platform build system.
 - **[Git](https://git-scm.com/downloads)** - Version control system for managing submodules.
+
+And optionally:
+
+- **[Ccache](https://ccache.dev/)** - A compiler cache to speed up recompilation.
+- **[Doxygen](https://www.doxygen.nl/index.html)** - Documentation generator.
 
 ### Building
 
@@ -56,15 +61,12 @@ If everything went well, you will find the final executable, shared libraries an
 
 ## Documentation
 
-This project is configured to generate documentation from the source code using [Doxygen](https://www.doxygen.nl/index.html).
+If you have [Doxygen](https://www.doxygen.nl/index.html) installed, you can generate the API documentation by either of the following methods:
 
-Once it is installed, you can generate the documentation in two ways:
-
-1. Enable the `PROJECT_ENABLE_DOCS` option when configuring the project with CMake:
-    - `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DPROJECT_ENABLE_DOCS=ON`
-    - `cmake --build build`
-2. or run Doxygen directly from the root directory:
-    - `doxygen Doxyfile`
+- Automatically during the build process:
+  - `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DANIMUS_ENABLE_DOCS=ON`
+- Or manually from the root directory:
+  - `doxygen Doxyfile`
 
 Either way, the generated documentation will be available in the `build/docs/html` directory.
 

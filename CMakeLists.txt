@@ -16,7 +16,18 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
 endif()
 
+find_program(CCACHE_PROGRAM ccache)
+
+if(CCACHE_PROGRAM)
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    message(STATUS "Ccache found: ${CCACHE_PROGRAM}")
+else()
+    message(STATUS "Ccache not found")
+endif()
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -44,31 +55,28 @@ set_target_properties(
 
 # On Windows, set the executable to be a GUI application.
 if(WIN32)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
+    set_target_properties(
+        ${PROJECT_NAME} PROPERTIES
         WIN32_EXECUTABLE TRUE
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
     )
 endif()
 
-file(GLOB_RECURSE PROJECT_SOURCE_FILES CONFIGURE_DEPENDS "src/*.cxx" "src/*.hxx")
+file(GLOB_RECURSE ANIMUS_SOURCE_FILES CONFIGURE_DEPENDS "src/*.cxx" "src/*.hxx")
+target_sources(${PROJECT_NAME} PRIVATE ${ANIMUS_SOURCE_FILES})
+source_group(TREE "${CMAKE_SOURCE_DIR}/src" FILES ${ANIMUS_SOURCE_FILES})
 
-# Add the sources to the executable.
-target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_FILES})
-
-# Organize source files in IDE
-source_group(TREE "${CMAKE_SOURCE_DIR}/src" FILES ${PROJECT_SOURCE_FILES})
-
-# Enhanced compiler-specific warnings and optimizations
-target_compile_options(${PROJECT_NAME} PRIVATE
+target_compile_options(
+    ${PROJECT_NAME} PRIVATE
 
     # MSVC
     $<$<CXX_COMPILER_ID:MSVC>:
-    /W4 # High warning level
-    /permissive- # Disable non-conforming code
-    /utf-8 # Source and execution character sets are UTF-8
-    /Zc:__cplusplus # Enable updated __cplusplus macro
-    $<$<CONFIG:Debug>:/RTC1> # Runtime checks in debug
-    $<$<CONFIG:Release>:/O2> # Optimize for speed in release
+    /W4 # High warning level.
+    /permissive- # Disable non-conforming code.
+    /utf-8 # Source and execution character sets are UTF-8.
+    /Zc:__cplusplus # Enable updated __cplusplus macro.
+    $<$<CONFIG:Debug>:/RTC1> # Runtime checks in debug.
+    $<$<CONFIG:Release>:/O2> # Optimize for speed in release.
     >
 
     # GCC
@@ -92,8 +100,8 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     >
 )
 
-# Debug/Release specific settings
-target_compile_definitions(${PROJECT_NAME} PRIVATE
+target_compile_definitions(
+    ${PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:
     INC_DEBUG_BUILD=1
     DEBUG
@@ -104,12 +112,11 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     INC_RELEASE_BUILD=1
     >
 
-    # Platform-specific definitions
+    # Platform-specific definitions.
     $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN NOMINMAX>
     $<$<PLATFORM_ID:Linux>:_GNU_SOURCE>
 )
 
-# Link libraries with proper visibility
 target_link_libraries(
     ${PROJECT_NAME} PRIVATE
     SDL3::SDL3
@@ -117,44 +124,44 @@ target_link_libraries(
     SDL3_ttf::SDL3_ttf
 )
 
-# Include directories - prefer target-based approach when possible
 target_include_directories(
     ${PROJECT_NAME} PRIVATE
     "${CMAKE_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/external/glm"
     "${CMAKE_SOURCE_DIR}/external/entt/single_include"
-    "${CMAKE_BINARY_DIR}/generated" # For generated headers like version.hxx
+    "${CMAKE_BINARY_DIR}/generated" # For generated headers. (version.hxx)
 )
 
-# DLL copying with better platform handling
 if(WIN32)
-    set(PROJECT_DEPENDENCY_DLLS
+    set(ANIMUS_DEPENDENCY_DLLS
         $<TARGET_FILE:SDL3::SDL3-shared>
         $<TARGET_FILE:SDL3_image::SDL3_image-shared>
         $<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared>
     )
 
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${PROJECT_DEPENDENCY_DLLS}
+        ${ANIMUS_DEPENDENCY_DLLS}
         $<TARGET_FILE_DIR:${PROJECT_NAME}>
         COMMENT "Copying DLLs to output directory"
     )
 endif()
 
-# Runtime library paths for Unix systems
 if(UNIX)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
+    set_target_properties(
+        ${PROJECT_NAME} PROPERTIES
         BUILD_RPATH "$ORIGIN"
         INSTALL_RPATH "$ORIGIN"
     )
 endif()
 
-# Cross-platform asset copying with better handling
+# Cross-platform asset copying.
 set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
 set(ASSETS_DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets")
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     "${ASSETS_SOURCE_DIR}"
     "${ASSETS_DEST_DIR}"
@@ -162,39 +169,32 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     VERBATIM
 )
 
-# Ensure assets directory exists
-add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${ASSETS_DEST_DIR}"
-    COMMENT "Creating assets directory"
-    VERBATIM
-)
-
-# Enhanced install rules with proper component support
-install(TARGETS ${PROJECT_NAME}
+install(
+    TARGETS ${PROJECT_NAME}
     RUNTIME
     DESTINATION bin
     COMPONENT Runtime
 )
 
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/assets"
+install(
+    DIRECTORY "${CMAKE_SOURCE_DIR}/assets"
     DESTINATION bin
     COMPONENT Assets
     PATTERN "*.tmp" EXCLUDE
     PATTERN ".git*" EXCLUDE
 )
 
-# Install runtime dependencies on Windows
 if(WIN32)
-    install(FILES ${PROJECT_DEPENDENCY_DLLS}
+    install(
+        FILES ${ANIMUS_DEPENDENCY_DLLS}
         DESTINATION bin
         COMPONENT Runtime
     )
 endif()
 
-option(PROJECT_ENABLE_DOCS "Enable documentation generation" OFF)
+option(ANIMUS_ENABLE_DOCS "Enable documentation generation" OFF)
 
-# Documentation support
-if(PROJECT_ENABLE_DOCS)
+if(ANIMUS_ENABLE_DOCS)
     find_package(Doxygen REQUIRED)
 
     if(DOXYGEN_FOUND)
@@ -204,10 +204,8 @@ if(PROJECT_ENABLE_DOCS)
             @ONLY
         )
 
-        # Create docs directory
         file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/docs")
 
-        # Copy CSS and layout files to build directory for Doxygen
         configure_file(
             "${CMAKE_SOURCE_DIR}/docs/style/simple-dark.css"
             "${CMAKE_BINARY_DIR}/simple-dark.css"
@@ -220,8 +218,8 @@ if(PROJECT_ENABLE_DOCS)
             COPYONLY
         )
 
-        # Add custom target for generating documentation automatically
-        add_custom_target(docs ALL
+        add_custom_target(
+            docs ALL
             COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Generating simple dark documentation with Doxygen"
@@ -238,7 +236,8 @@ endif()
 message(STATUS "=== ${PROJECT_NAME} Build Configuration ===")
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
-message(STATUS "C++ Standard: C++${CMAKE_CXX_STANDARD}")
 message(STATUS "Install Prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Documentation: ${PROJECT_ENABLE_DOCS}")
+message(STATUS "Using Ccache: ${CCACHE_PROGRAM}")
+message(STATUS "===== Custom Options =====")
+message(STATUS "Generate Documentation: ${ANIMUS_ENABLE_DOCS}")
 message(STATUS "======================================")
