@@ -13,7 +13,7 @@ namespace engine {
 
     game_engine::game_engine(const game_info& info, std::string_view title, const glm::ivec2& size)
         : m_game(info),
-          m_window(title, size),
+          m_window(title, size, game_window_type::resizable),
           m_renderer(m_window.get_sdl_window()),
           m_resources(m_renderer),
           m_input(),

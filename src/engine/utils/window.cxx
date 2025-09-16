@@ -6,18 +6,37 @@
 #include <stdexcept>
 
 namespace engine {
-    game_window::game_window(std::string_view title, const glm::ivec2& size) : m_window(nullptr) {
+    game_window::game_window(std::string_view title, const glm::ivec2& size, game_window_type type)
+        : m_window(nullptr) {
         if (SDL_Init(SDL_INIT_VIDEO) == false) {
             throw std::runtime_error("Failed to initialize SDL.");
         }
 
-        game_log<log_level::info>("SDL initialized: {}.{}", SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
+        game_log<log_level::info>("SDL initialized successfully: v{}.{}.{}", SDL_MAJOR_VERSION,
+                                  SDL_MINOR_VERSION, SDL_MICRO_VERSION);
 
-        // TODO: Add window flags to public API?
-        constexpr SDL_WindowFlags window_flags = {};
+        SDL_WindowFlags window_flags;
+        switch (type) {
+            case game_window_type::resizable:
+                window_flags = SDL_WINDOW_RESIZABLE;
+                break;
+            case game_window_type::non_resizable:
+                window_flags = 0;
+                break;
+            case game_window_type::borderless:
+                window_flags = SDL_WINDOW_BORDERLESS;
+                break;
+            case game_window_type::fullscreen:
+                window_flags = SDL_WINDOW_FULLSCREEN;
+                break;
+            default:
+                window_flags = SDL_WINDOW_RESIZABLE;
+                break;
+        }
 
         if (m_window = SDL_CreateWindow(title.data(), size.x, size.y, window_flags);
             m_window == nullptr) {
+            SDL_Quit();
             throw std::runtime_error("Failed to create window.");
         }
 
@@ -25,7 +44,7 @@ namespace engine {
     }
 
     game_window::~game_window() {
-        if (m_window) {
+        if (m_window != nullptr) {
             SDL_DestroyWindow(m_window);
             game_log<log_level::info>("Window destroyed.");
         }
@@ -54,22 +73,37 @@ namespace engine {
     }
 
     void game_window::set_title(std::string_view new_title) {
-        SDL_SetWindowTitle(m_window, new_title.data());
+        if (SDL_SetWindowTitle(m_window, new_title.data()) == false) {
+            game_log<log_level::warning>("Failed to set window title: {}", new_title);
+            return;
+        }
+
+        game_log<log_level::info>("Window title set: {}", new_title);
     }
 
     glm::ivec2 game_window::get_logical_size() const {
-        glm::ivec2 size;
-        SDL_GetWindowSize(m_window, &size.x, &size.y);
+        glm::ivec2 size = {0, 0};
+
+        if (SDL_GetWindowSize(m_window, &size.x, &size.y) == false) {
+            game_log<log_level::warning>("Failed to get window size.");
+        }
+
         return size;
     }
 
     void game_window::set_logical_size(const glm::ivec2& size) {
-        SDL_SetWindowSize(m_window, size.x, size.y);
+        if (SDL_SetWindowSize(m_window, size.x, size.y) == false) {
+            game_log<log_level::warning>("Failed to set window size: {}x{}", size.x, size.y);
+        }
     }
 
     glm::ivec2 game_window::get_pixel_size() const {
-        glm::ivec2 size;
-        SDL_GetWindowSizeInPixels(m_window, &size.x, &size.y);
+        glm::ivec2 size = {0, 0};
+
+        if (SDL_GetWindowSizeInPixels(m_window, &size.x, &size.y) == false) {
+            game_log<log_level::warning>("Failed to get window pixel size.");
+        }
+
         return size;
     }
 
@@ -88,7 +122,12 @@ namespace engine {
                 continue;
             }
 
-            SDL_SetWindowIcon(m_window, surface);
+            if (SDL_SetWindowIcon(m_window, surface) == false) {
+                SDL_DestroySurface(surface);
+                game_log<log_level::warning>("Failed to set window icon from path: {}", path);
+                break;
+            }
+
             SDL_DestroySurface(surface);
 
             game_log<log_level::info>("Window icon set: {}", path);

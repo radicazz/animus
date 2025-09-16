@@ -1,3 +1,8 @@
+/**
+ * @file window.hxx
+ * @brief Window management utilities using SDL3.
+ */
+
 #pragma once
 
 #include <string>
@@ -5,9 +10,14 @@
 #include <glm/glm.hpp>
 
 namespace engine {
+    /**
+     * @brief Types of supported game windows.
+     */
+    enum class game_window_type { resizable, non_resizable, borderless, fullscreen };
+
     class game_window {
     public:
-        explicit game_window(std::string_view title, const glm::ivec2& size);
+        explicit game_window(std::string_view title, const glm::ivec2& size, game_window_type type);
         ~game_window();
 
         // Resource management - disable copy, enable move
@@ -26,6 +36,10 @@ namespace engine {
 
         [[nodiscard]] glm::ivec2 get_pixel_size() const;
 
+        /**
+         * @brief Set a custom window icon from a file path.
+         * @note Do not include a file extension; the engine will try multiple common formats.
+         */
         void set_icon(std::string_view icon_path);
 
     private:
