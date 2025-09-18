@@ -1,4 +1,9 @@
-# /external/
+#
+# Files to ignore for this project
+#
+
+# Custom directory for user-specific files
+user/
 
 # Compiled object files
 *.o

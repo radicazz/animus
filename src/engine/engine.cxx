@@ -27,6 +27,9 @@ namespace engine {
           m_tick_interval(-1.f),
           m_fraction_to_next_tick(-1.f),
           m_frame_interval(-1.f) {
+        // Set a default icon, can be overridden later.
+        m_window.set_icon("assets/icons/default");
+
         set_tick_rate(32.f);
 
         // TODO: Figure out what to do with these?
