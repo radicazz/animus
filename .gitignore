@@ -6,6 +6,25 @@ private/
 local/
 
 #
+# Auto-generated Python ignores
+#
+
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+
+#
 # Auto-generated CMake/C++ ignores
 #
 
