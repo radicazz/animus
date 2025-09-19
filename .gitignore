@@ -2,8 +2,12 @@
 # Files to ignore for this project
 #
 
-# Custom directory for user-specific files
-user/
+private/
+local/
+
+#
+# Auto-generated CMake/C++ ignores
+#
 
 # Compiled object files
 *.o
