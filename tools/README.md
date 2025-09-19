@@ -4,19 +4,16 @@ This directory contains various optional scripts and utilities to assist you dur
 
 ## Requirements
 
-The requirements for them are as follows:
+You will need the following to run the tools:
 
-- Python development environemt (3.12+)
-- Package manager for dependencies
+- Python installation (3.12+)
+- Package manager for managing dependencies
 
-> We recommend [uv](https://github.com/astral-sh/uv), a fast package manager for Python.
+We recommend [uv](https://github.com/astral-sh/uv), a fast package manager for Python.
 
 ## Installation
 
-Follow the correct steps below, depending on whether or not you have Python installed already.
-
-> If you are not sure, simply open up a terminal window and run `python`.
->> You will experience an error if you do not have Python installed.
+If you already have Python installed, follow these instructions:
 
 <details>
 <summary>Python is installed</summary>
@@ -35,6 +32,10 @@ Follow the correct steps below, depending on whether or not you have Python inst
    ```
 
 </details>
+
+---
+
+If you do not have Python installed, follow these instructions:
 
 <details>
 <summary>Python is NOT installed</summary>
