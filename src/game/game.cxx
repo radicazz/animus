@@ -17,8 +17,8 @@ void game_on_create(engine::game_engine* engine) {
     entities.set_velocity_angular_max(state.player, 360.f);
 
     // Create player label as resource-managed text
-    auto* player_label = resources.text_dynamic_get_or_create("player_label", "player",
-                                                              "assets/fonts/Segoe UI.ttf", 64.0f);
+    auto* player_label = resources.text_dynamic_get_or_create(
+        "player_label", "player", "assets/fonts/roboto_regular.ttf", 64.0f);
     player_label->set_origin_centered();
     state.player_label = entities.create_text_dynamic("player_label");
     entities.set_transform_position(state.player_label, {200, 230});
@@ -37,7 +37,7 @@ void game_on_create(engine::game_engine* engine) {
     state.free_camera_speed = 300.f;
 
     resources.text_static_get_or_create("camera_mode_text", "Camera Mode: Follow",
-                                        "assets/fonts/Segoe UI.ttf", 18.0f);
+                                        "assets/fonts/roboto_regular.ttf", 18.0f);
 }
 
 void game_on_tick(engine::game_engine* engine, const float tick_interval) {
