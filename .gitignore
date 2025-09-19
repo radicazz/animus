@@ -9,6 +9,8 @@ local/
 # Auto-generated Python ignores
 #
 
+*.lock
+
 # Byte-compiled files
 __pycache__/
 *.py[cod]
