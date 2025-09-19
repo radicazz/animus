@@ -24,9 +24,9 @@ namespace engine {
           m_entities(),
           m_camera({0.f, 0.f}, 1.f),
           m_viewport({1.f, 1.f}),  // Full window coverage in normalized coords
-          m_tick_interval(-1.f),
+          m_tick_interval_seconds(-1.f),
           m_fraction_to_next_tick(-1.f),
-          m_frame_interval(-1.f) {
+          m_frame_interval_seconds(-1.f) {
         // Set a default icon, can be overridden later.
         m_window.set_icon("assets/icons/default");
 
@@ -48,28 +48,24 @@ namespace engine {
     }
 
     void game_engine::run() {
-        Uint64 last_frame_start_time = SDL_GetPerformanceCounter();
-        const Uint64 performance_frequency = SDL_GetPerformanceFrequency();
-
-        float time_since_last_tick = 0.f;
+        std::uint64_t frame_performance_count = performance_counter_value_current();
+        float senconds_since_last_tick = 0.f;
 
         while (m_is_running == true) {
-            const Uint64 frame_start_time = SDL_GetPerformanceCounter();
-            m_frame_interval = (frame_start_time - last_frame_start_time) /
-                               static_cast<float>(performance_frequency);
-            time_since_last_tick += m_frame_interval;
-            last_frame_start_time = frame_start_time;
+            m_frame_interval_seconds = performance_counter_seconds_since(frame_performance_count);
+            frame_performance_count = performance_counter_value_current();
+            senconds_since_last_tick += m_frame_interval_seconds;
 
             process_events();
 
-            while (time_since_last_tick >= m_tick_interval) [[likely]] {
-                try_invoke_callback(m_game.on_tick, this, m_tick_interval);
-                time_since_last_tick -= m_tick_interval;
+            while (senconds_since_last_tick >= m_tick_interval_seconds) [[likely]] {
+                try_invoke_callback(m_game.on_tick, this, m_tick_interval_seconds);
+                senconds_since_last_tick -= m_tick_interval_seconds;
             }
 
-            m_fraction_to_next_tick = time_since_last_tick / m_tick_interval;
+            m_fraction_to_next_tick = senconds_since_last_tick / m_tick_interval_seconds;
 
-            try_invoke_callback(m_game.on_frame, this, m_frame_interval);
+            try_invoke_callback(m_game.on_frame, this, m_frame_interval_seconds);
 
             m_renderer.draw_begin();
             try_invoke_callback(m_game.on_draw, this, m_fraction_to_next_tick);

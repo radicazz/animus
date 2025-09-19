@@ -18,6 +18,8 @@
 #include "utils/input.hxx"
 #include "ecs/entities.hxx"
 
+#include "utils/timing.hxx"
+
 namespace engine {
     class game_engine;
 
@@ -173,9 +175,6 @@ namespace engine {
             requires std::is_class_v<T>
         [[nodiscard]] T& get_state();
 
-        static constexpr float tick_rate_to_interval(float tick_rate_seconds);
-        static constexpr float tick_interval_to_rate(float tick_interval_seconds);
-
         [[nodiscard]] float get_tick_rate();
         void set_tick_rate(float tick_rate_seconds);
 
@@ -211,7 +210,7 @@ namespace engine {
         /**
          * @brief The amount of time between each fixed update (tick).
          */
-        float m_tick_interval;
+        float m_tick_interval_seconds;
 
         /**
          * @brief Fraction of time elapsed towards the next fixed update (tick).
@@ -221,7 +220,7 @@ namespace engine {
         /**
          * @brief The time spent between the last two frames in seconds.
          */
-        float m_frame_interval;
+        float m_frame_interval_seconds;
     };
 
     inline game_window& game_engine::get_window() {
@@ -258,28 +257,20 @@ namespace engine {
         return *static_cast<T*>(m_game.state);
     }
 
-    constexpr float game_engine::tick_rate_to_interval(const float ticks_per_second) {
-        return 1.0f / ticks_per_second;
-    }
-
-    constexpr float game_engine::tick_interval_to_rate(const float tick_interval_seconds) {
-        return 1.0f / tick_interval_seconds;
-    }
-
     inline float game_engine::get_tick_rate() {
-        return tick_interval_to_rate(m_tick_interval);
+        return ticks_interval_to_rate(m_tick_interval_seconds);
     }
 
     inline void game_engine::set_tick_rate(const float ticks_per_second) {
-        m_tick_interval = tick_rate_to_interval(ticks_per_second);
+        m_tick_interval_seconds = ticks_rate_to_interval(ticks_per_second);
     }
 
     inline float game_engine::get_tick_interval() const {
-        return m_tick_interval;
+        return m_tick_interval_seconds;
     }
 
     inline float game_engine::get_frame_interval() const {
-        return m_frame_interval;
+        return m_frame_interval_seconds;
     }
 
     inline float game_engine::get_fraction_to_next_tick() const {
