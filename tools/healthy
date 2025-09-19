@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Healthy - Health check tool for Helipad
+# Usage: tools/healthy [command] [options]
+
+cd "$(dirname "$0")/healthy-cli"
+if [ $# -eq 0 ]; then
+    exec uv run healthy check
+else
+    exec uv run healthy "$@"
+fi

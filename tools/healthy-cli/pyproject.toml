@@ -1,0 +1,21 @@
+[project]
+name = "healthy"
+version = "1.0.0"
+description = "Check the health of the game engine."
+readme = "README.md"
+
+requires-python = ">=3.13"
+dependencies = ["rich>=14.1.0", "typer>=0.17.4"]
+
+[project.scripts]
+healthy = "main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.uv]
+package = true

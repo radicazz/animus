@@ -35,6 +35,19 @@ And optionally:
 
 - **[Ccache](https://ccache.dev/)** - A compiler cache to speed up recompilation.
 - **[Doxygen](https://www.doxygen.nl/index.html)** - Engine API documentation generator.
+- **[Python](https://www.python.org/)** - Required for some project utilities.
+
+---
+
+Before building, you can run `healthy-cli` found in [`tools/`](tools/) to verify that your environment is set up correctly:
+
+```bash
+# Linux/macOS
+tools/healthy
+
+# Windows
+tools\healthy.cmd
+```
 
 ### Building
 
