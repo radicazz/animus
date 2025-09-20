@@ -24,6 +24,7 @@ namespace engine {
           m_entities(),
           m_camera({0.f, 0.f}, 1.f),
           m_viewport({1.f, 1.f}),  // Full window coverage in normalized coords
+          m_scenes(this),
           m_tick_interval_seconds(-1.f),
           m_fraction_to_next_tick(-1.f),
           m_frame_interval_seconds(-1.f) {

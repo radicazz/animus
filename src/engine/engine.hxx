@@ -16,6 +16,7 @@
 #include "utils/window.hxx"
 #include "utils/resources.hxx"
 #include "utils/input.hxx"
+#include "utils/scenes.hxx"
 #include "ecs/entities.hxx"
 
 #include "utils/timing.hxx"
@@ -153,6 +154,7 @@ namespace engine {
         [[nodiscard]] game_resources& get_resources();
         [[nodiscard]] game_input& get_input();
         [[nodiscard]] game_entities& get_entities();
+        [[nodiscard]] game_scenes& get_scenes();
 
         /**
          * @brief Get a pointer to your game's data.
@@ -206,6 +208,7 @@ namespace engine {
         game_entities m_entities;
         game_camera m_camera;
         game_viewport m_viewport;
+        game_scenes m_scenes;
 
         /**
          * @brief The amount of time between each fixed update (tick).
@@ -249,6 +252,10 @@ namespace engine {
 
     inline game_entities& game_engine::get_entities() {
         return m_entities;
+    }
+
+    inline game_scenes& game_engine::get_scenes() {
+        return m_scenes;
     }
 
     template <class T>
