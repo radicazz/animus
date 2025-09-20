@@ -11,7 +11,6 @@
 #include <stdexcept>
 
 namespace engine {
-
     game_scenes::game_scenes(game_engine* engine) : m_engine(engine) {
         if (!engine) {
             throw std::invalid_argument("game_engine pointer cannot be null");
@@ -102,20 +101,29 @@ namespace engine {
         scene_info->state = scene_state::loading;
         scene_info->scene_state = scene_state;
 
-        // Initialize scene systems
-        scene_info->entities = std::make_unique<game_entities>();
-        scene_info->resources = std::make_unique<game_resources>(m_engine->get_renderer());
+        try {
+            // Initialize scene systems
+            scene_info->entities = std::make_unique<game_entities>();
+            scene_info->resources = std::make_unique<game_resources>(m_engine->get_renderer());
 
-        // Create default camera and viewport
-        create_default_camera_viewport(scene_info.get());
+            // Create default camera and viewport
+            create_default_camera_viewport(scene_info.get());
 
-        // Call scene load callback
-        if (scene_info->scene->on_load) {
-            scene_info->scene->on_load(scene_info.get());
+            // Call scene load callback
+            if (scene_info->scene->on_load) {
+                scene_info->scene->on_load(scene_info.get());
+            }
+
+            // Scene is now loaded but not active yet
+            scene_info->state = scene_state::paused;
+            log_info("Scene '{}' loaded successfully", id_str);
+        } catch (const std::exception& e) {
+            log_error("Failed to load scene '{}': {}", id_str, e.what());
+            // Clean up partially loaded resources
+            cleanup_scene_resources(scene_info.get());
+            scene_info->state = scene_state::unloaded;
+            throw;
         }
-
-        scene_info->state = scene_state::unloaded;  // Scene is loaded but not active yet
-        log_info("Scene '{}' loaded successfully", id_str);
     }
 
     void game_scenes::activate_scene(std::string_view scene_id, scene_transition transition) {
@@ -139,12 +147,12 @@ namespace engine {
 
         // Deactivate current scene if one is active
         if (has_active_scene()) {
-            deactivate_current_scene();
+            deactivate_current_scene_with_transition(transition);
         }
 
         log_info("Activating scene '{}'", id_str);
 
-        // Call transition out callback for previous scene and transition in for new scene
+        // Call transition in callback for new scene
         if (scene_info->scene->on_transition_in) {
             scene_info->scene->on_transition_in(scene_info.get(), transition);
         }
@@ -158,6 +166,54 @@ namespace engine {
         m_active_scene_id = id_str;
 
         log_info("Scene '{}' activated successfully", id_str);
+    }
+
+    void game_scenes::deactivate_current_scene_with_transition(scene_transition transition) {
+        if (!has_active_scene()) {
+            log_warning("No active scene to deactivate");
+            return;
+        }
+
+        auto it = m_scenes.find(m_active_scene_id);
+        if (it == m_scenes.end()) {
+            log_error("Active scene '{}' not found in scene registry", m_active_scene_id);
+            m_active_scene_id.clear();
+            return;
+        }
+
+        auto& scene_info = it->second;
+
+        // Validate scene is in active state
+        if (scene_info->state != scene_state::active) {
+            log_error("Scene '{}' is not in active state (current: {}), cannot deactivate",
+                      m_active_scene_id, static_cast<int>(scene_info->state));
+            return;
+        }
+
+        log_info("Deactivating scene '{}' with transition", m_active_scene_id);
+
+        try {
+            // Call scene transition out callback
+            if (scene_info->scene->on_transition_out) {
+                scene_info->scene->on_transition_out(scene_info.get(), transition);
+            }
+
+            // Call scene deactivate callback
+            if (scene_info->scene->on_deactivate) {
+                scene_info->scene->on_deactivate(scene_info.get());
+            }
+
+            scene_info->state = scene_state::paused;
+            m_active_scene_id.clear();
+
+            log_info("Scene deactivated successfully");
+        } catch (const std::exception& e) {
+            log_error("Exception during scene deactivation: {}", e.what());
+            // Force state transition to prevent inconsistent state
+            scene_info->state = scene_state::paused;
+            m_active_scene_id.clear();
+            throw;
+        }
     }
 
     void game_scenes::deactivate_current_scene() {
@@ -175,17 +231,32 @@ namespace engine {
 
         auto& scene_info = it->second;
 
-        log_info("Deactivating scene '{}'", m_active_scene_id);
-
-        // Call scene deactivate callback
-        if (scene_info->scene->on_deactivate) {
-            scene_info->scene->on_deactivate(scene_info.get());
+        // Validate scene is in active state
+        if (scene_info->state != scene_state::active) {
+            log_error("Scene '{}' is not in active state (current: {}), cannot deactivate",
+                      m_active_scene_id, static_cast<int>(scene_info->state));
+            return;
         }
 
-        scene_info->state = scene_state::paused;
-        m_active_scene_id.clear();
+        log_info("Deactivating scene '{}'", m_active_scene_id);
 
-        log_info("Scene deactivated successfully");
+        try {
+            // Call scene deactivate callback
+            if (scene_info->scene->on_deactivate) {
+                scene_info->scene->on_deactivate(scene_info.get());
+            }
+
+            scene_info->state = scene_state::paused;
+            m_active_scene_id.clear();
+
+            log_info("Scene deactivated successfully");
+        } catch (const std::exception& e) {
+            log_error("Exception during scene deactivation: {}", e.what());
+            // Force state transition to prevent inconsistent state
+            scene_info->state = scene_state::paused;
+            m_active_scene_id.clear();
+            throw;
+        }
     }
 
     void game_scenes::unload_scene(std::string_view scene_id) {
@@ -212,16 +283,31 @@ namespace engine {
         log_info("Unloading scene '{}'", id_str);
         scene_info->state = scene_state::unloading;
 
-        // Call scene unload callback
-        if (scene_info->scene->on_unload) {
-            scene_info->scene->on_unload(scene_info.get());
+        try {
+            // Call scene unload callback
+            if (scene_info->scene->on_unload) {
+                scene_info->scene->on_unload(scene_info.get());
+            }
+
+            // Clean up scene resources
+            cleanup_scene_resources(scene_info.get());
+
+            scene_info->state = scene_state::unloaded;
+            log_info("Scene '{}' unloaded successfully", id_str);
+        } catch (const std::exception& e) {
+            log_error("Exception during scene unloading: {}", e.what());
+            // Force unloaded state even on failure to prevent resource leaks
+            scene_info->state = scene_state::unloaded;
+
+            // Clean up resources anyway to prevent leaks
+            try {
+                cleanup_scene_resources(scene_info.get());
+            } catch (const std::exception& cleanup_e) {
+                log_error("Exception during emergency scene cleanup: {}", cleanup_e.what());
+            }
+
+            throw;
         }
-
-        // Clean up scene resources
-        cleanup_scene_resources(scene_info.get());
-
-        scene_info->state = scene_state::unloaded;
-        log_info("Scene '{}' unloaded successfully", id_str);
     }
 
     void game_scenes::switch_to_scene(std::string_view scene_id, void* scene_state,
@@ -329,5 +415,4 @@ namespace engine {
         // Clear scene state reference
         scene_info->scene_state = nullptr;
     }
-
 }  // namespace engine

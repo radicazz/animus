@@ -162,6 +162,7 @@ namespace engine {
     private:
         void create_default_camera_viewport(game_scene_info* scene_info);
         void cleanup_scene_resources(game_scene_info* scene_info);
+        void deactivate_current_scene_with_transition(scene_transition transition);
 
     private:
         game_engine* m_engine;
