@@ -9,6 +9,9 @@ A comprehensive style guide for consistent and maintainable code across the this
   - [Naming Conventions](#naming-conventions)
   - [Code Organization](#code-organization)
   - [Type Design](#type-design)
+    - [Struct vs Class Rule](#struct-vs-class-rule)
+    - [Class Structure Organization](#class-structure-organization)
+    - [Constructor Guidelines](#constructor-guidelines)
   - [Function Design](#function-design)
   - [Modern C++ Features](#modern-c-features)
   - [Memory Management](#memory-management)
@@ -229,6 +232,89 @@ private:
 };
 ```
 
+#### Class Structure Organization
+
+**Public API comes first and follows a specific order:**
+
+1. **Constructors** (default, parameterized, copy, move)
+2. **Destructor**
+3. **Operator overloads** (assignment, comparison, etc.)
+4. **Methods** (grouped logically)
+
+Then **public variables** (if any) with their own `public:` section.
+
+**Protected members** come next (same organization as public).
+
+**Private implementation** comes last with separate sections:
+
+1. **Private methods** (if any) with their own `private:` specifier
+2. **Private variables** with their own `private:` specifier
+
+```cpp
+// ✅ Good - Proper class organization
+class game_engine {
+public:
+    // Constructors
+    game_engine() = delete;
+    explicit game_engine(const game_info& info, std::string_view title, const glm::ivec2& size);
+    game_engine(const game_engine&) = delete;
+    game_engine(game_engine&&) = delete;
+    
+    // Destructor
+    ~game_engine();
+    
+    // Operator overloads
+    game_engine& operator=(const game_engine&) = delete;
+    game_engine& operator=(game_engine&&) = delete;
+    
+    // Methods - grouped logically
+    void run();
+    void set_tick_rate(float tick_rate_seconds);
+    
+    // Accessors
+    [[nodiscard]] game_window& get_window();
+    [[nodiscard]] game_renderer& get_renderer();
+    [[nodiscard]] float get_tick_rate();
+
+public:
+    // Public variables (if any - rare in classes)
+    // Usually prefer private with accessors
+
+protected:
+    // Protected methods (if any)
+    void process_events();
+    
+protected:
+    // Protected variables (if any)
+    bool m_is_running;
+
+private:
+    // Private methods (if any)
+    void initialize_systems();
+    void cleanup_resources();
+
+private:
+    // Private variables
+    game_info m_game;
+    game_window m_window;
+    game_renderer m_renderer;
+    float m_tick_interval_seconds;
+};
+
+// ✅ Good - Struct with simple public-only layout
+struct game_scene_info {
+    // All members public, no access specifiers needed
+    std::string scene_id;
+    scene_state state = scene_state::unloaded;
+    void* scene_state = nullptr;
+    
+    // Methods can be mixed with data in structs
+    template <class T>
+        requires std::is_class_v<T>
+    [[nodiscard]] T& get_state();
+};
+```
+
 #### Constructor Guidelines
 
 Use appropriate constructor patterns:
@@ -270,6 +356,36 @@ public:
 // ✅ Good - Const references for parameters
 void render_sprite(const sprite& spr, const glm::vec2& position);
 ```
+
+**Const Parameters in Declarations vs Definitions:**
+
+For by-value parameters, **omit `const` in declarations** but **include `const` in definitions** when the parameter won't be modified:
+
+```cpp
+// ✅ Good - Header declaration (no const for by-value parameters)
+void set_position(float x, float y);
+void set_color(game_color color);
+int calculate_distance(glm::vec2 point1, glm::vec2 point2);
+
+// ✅ Good - Implementation (const for by-value parameters that won't change)
+void sprite::set_position(const float x, const float y) {
+    m_position = {x, y};  // x and y are not modified
+}
+
+void entity::set_color(const game_color color) {
+    m_color = color;  // color is not modified
+}
+
+int math::calculate_distance(const glm::vec2 point1, const glm::vec2 point2) {
+    return glm::distance(point1, point2);  // points are not modified
+}
+
+// ✅ Good - References and pointers are const in both declaration and definition
+void render_sprite(const sprite& spr, const glm::vec2& position);
+void process_entity(const game_entity* entity);
+```
+
+**Rationale:** `const` on by-value parameters is an implementation detail that doesn't affect the caller and clutters the interface. It belongs in the implementation where it helps prevent accidental modification.
 
 #### Return Value Guidelines
 
@@ -335,6 +451,102 @@ void debug_log([[maybe_unused]] std::string_view message) {
 }
 ```
 
+#### Type Casting
+
+**Always use C++ style casts** instead of C-style casts for type safety and clarity:
+
+```cpp
+// ✅ Good - C++ style casts
+auto value = static_cast<float>(integer_value);
+auto texture = reinterpret_cast<SDL_Texture*>(void_pointer);
+auto derived = dynamic_cast<derived_class*>(base_pointer);
+const auto& readonly = const_cast<const game_object&>(mutable_object);
+
+// ❌ Bad - C-style casts
+auto value = (float)integer_value;
+auto texture = (SDL_Texture*)void_pointer;
+auto derived = (derived_class*)base_pointer;
+```
+
+**Cast Selection Guidelines:**
+
+- `static_cast<T>()` - Most common, for safe conversions
+- `reinterpret_cast<T>()` - Low-level pointer/reference conversions
+- `dynamic_cast<T>()` - Polymorphic type conversions with runtime checking
+- `const_cast<T>()` - Adding/removing const (use sparingly)
+
+#### Auto Usage Guidelines
+
+Use `auto` judiciously in specific scenarios only. **Do not use auto for regular function return values.**
+
+**✅ Acceptable auto usage:**
+
+```cpp
+// 1. When assigned value has explicit cast (type is clear)
+auto radius = static_cast<float>(diameter / 2);
+auto count = static_cast<std::size_t>(entities.size());
+
+// 2. Obnoxiously long types
+auto texture = std::make_unique<SDL_Texture, decltype(&SDL_DestroyTexture)>(
+    SDL_CreateTexture(renderer, format, access, width, height), 
+    &SDL_DestroyTexture
+);
+
+auto iterator = std::unordered_map<std::string, std::unique_ptr<game_resource>>::const_iterator{};
+
+// 3. Structured bindings
+auto [position, rotation, scale] = get_transform_components();
+auto [width, height] = window.get_size();
+
+// 4. Range-based for loops
+for (const auto& entity : entities) {
+    // Process entity
+}
+
+for (auto& [name, resource] : resource_map) {
+    // Process name and resource
+}
+```
+
+**❌ Avoid auto for:**
+
+```cpp
+// ❌ Bad - Regular function returns (type unclear)
+auto window = get_window();              // Use: game_window& window = get_window();
+auto result = calculate_distance(a, b);  // Use: float result = calculate_distance(a, b);
+auto entities = get_entities();          // Use: game_entities& entities = get_entities();
+
+// ❌ Bad - Simple assignments without casts
+auto count = 42;          // Use: int count = 42;
+auto name = "player";     // Use: const char* name = "player"; or std::string_view
+auto position = {0, 0};   // Use: glm::vec2 position = {0, 0};
+```
+
+#### Trailing Return Types
+
+Use trailing return types (`auto function() -> return_type`) **only** to resolve namespace ambiguity:
+
+```cpp
+// ✅ Good - Resolving namespace ambiguity
+auto some::long::namespace_name::create_entity() -> entity_type {
+    return entity_type{};
+}
+
+auto graphics::renderer::create_texture() -> texture_handle {
+    return texture_handle{};  
+}
+
+// ✅ Good - Regular function (no trailing return needed)
+game_entity create_player() {
+    return game_entity{};
+}
+
+// ❌ Bad - Unnecessary trailing return
+auto get_position() -> glm::vec2 {  // Just use: glm::vec2 get_position()
+    return glm::vec2{0, 0};
+}
+```
+
 #### Template Constraints
 
 Use concepts and requires clauses for template constraints:
@@ -368,6 +580,68 @@ std::shared_ptr<font_resource> default_font;
 // ✅ Good - Raw pointers for non-owning references
 void render(const sprite* spr);  // Non-owning, can be null
 void render(const sprite& spr);  // Non-owning, never null
+```
+
+#### References vs Pointers
+
+**Prioritize references over raw pointers** when `nullptr` is never a possibility:
+
+```cpp
+// ✅ Good - Reference when null is impossible
+game_entity& get_player();                    // Always returns valid entity
+void update_entity(game_entity& entity);      // Entity must exist
+const texture& get_default_texture();         // Always has default
+
+// ✅ Good - Pointer when null is possible  
+game_entity* find_entity_by_name(std::string_view name);  // May not exist
+sprite* get_sprite_if_loaded(texture_id id);             // May not be loaded
+const font* try_get_font(std::string_view name);         // May fail
+
+// ❌ Bad - Pointer when null is impossible
+game_entity* get_player();        // Use reference - player always exists
+void update(game_entity* entity);  // Use reference - entity must be valid
+```
+
+#### Memory Allocation
+
+**Never use `new`/`delete` outside of constructors and destructors:**
+
+```cpp
+// ✅ Good - new/delete only in special member functions
+class resource_manager {
+public:
+    resource_manager() : m_buffer(new char[buffer_size]) {}  // OK in constructor
+    ~resource_manager() { delete[] m_buffer; }               // OK in destructor
+    
+private:
+    char* m_buffer;
+};
+
+// ✅ Good - Use smart pointers or containers instead
+class game_world {
+    std::vector<game_entity> entities;           // Automatic memory management
+    std::unique_ptr<physics_world> physics;      // Smart pointer
+    std::array<texture, max_textures> textures;  // Stack allocation
+};
+
+// ❌ Bad - raw new/delete in regular functions
+void some_function() {
+    auto* entity = new game_entity{};  // Bad: use std::make_unique or container
+    // ... work with entity
+    delete entity;                     // Bad: error-prone manual cleanup
+}
+
+// ✅ Good - Alternative approaches
+void some_function() {
+    // Stack allocation for temporary objects
+    game_entity entity{};
+    
+    // Or smart pointer for dynamic allocation
+    auto entity_ptr = std::make_unique<game_entity>();
+    
+    // Or add to container
+    entities.emplace_back();
+}
 ```
 
 ### Memory Management
@@ -435,6 +709,55 @@ public:
 
 // ✅ Good - Expected for operations that can fail
 [[nodiscard]] std::expected<sprite, load_error> load_sprite(std::string_view path);
+```
+
+#### Noexcept Specification
+
+Use `noexcept` in two specific scenarios:
+
+1. **When confident no exception will be thrown** - Functions that are inherently exception-safe
+2. **When termination is preferred over exception handling** - Critical operations where failure should terminate
+
+```cpp
+// ✅ Good - Confident no exception will be thrown
+class vector2 {
+public:
+    float x() const noexcept { return x_; }
+    float y() const noexcept { return y_; }
+    
+    // Simple operations that cannot fail
+    vector2 operator+(const vector2& other) const noexcept {
+        return {x_ + other.x_, y_ + other.y_};
+    }
+    
+    // Move operations (should never throw)
+    vector2(vector2&& other) noexcept : x_(other.x_), y_(other.y_) {}
+    vector2& operator=(vector2&& other) noexcept {
+        x_ = other.x_;
+        y_ = other.y_;
+        return *this;
+    }
+};
+
+// ✅ Good - Termination preferred over exception handling
+class critical_system {
+public:
+    // Critical cleanup - better to terminate than handle exceptions
+    ~critical_system() noexcept {
+        cleanup_resources(); // If this fails, we want to terminate
+    }
+    
+    // Emergency shutdown - failure means undefined state
+    void emergency_shutdown() noexcept {
+        // Better to terminate than continue in bad state
+        force_cleanup();
+    }
+};
+
+// ❌ Avoid - Don't use noexcept if function might need to throw
+void load_config(std::string_view path) noexcept {  // Bad: file operations can fail
+    // What if file doesn't exist? Can't throw, must terminate
+}
 ```
 
 ### Documentation
