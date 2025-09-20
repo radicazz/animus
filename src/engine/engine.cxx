@@ -1,89 +1,79 @@
 #include "engine.hxx"
 
-#include "logger.hxx"
-
-#include <SDL3_ttf/SDL_ttf.h>
 #include <stdexcept>
 
-namespace engine {
-    template <class... Args>
-    void try_invoke_callback(void (*func)(Args...), Args... args) {
-        if (func != nullptr) {
-            func(args...);
-        }
-    }
+#include <SDL3/SDL_main.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
+#include "logger.hxx"
+#include "safety.hxx"
+
+namespace engine {
     game_engine::game_engine(const game_info& info, std::string_view title, const glm::ivec2& size)
         : m_wrapper(),
           m_is_running(true),
           m_game(info),
-          m_window(title, size, game_window_type::resizable),
-          m_renderer(m_window.get_sdl_window()),
-          m_resources(m_renderer),
-          m_input(),
-          m_entities(),
-          m_camera({0.f, 0.f}, 1.f),
-          m_viewport({1.f, 1.f}),  // Full window coverage in normalized coords
-          m_scenes(this),
+          m_window(std::make_unique<game_window>(title, size, game_window_type::resizable)),
+          m_renderer(std::make_unique<game_renderer>(m_window->get_sdl_window())),
+          m_input(std::make_unique<game_input>()),
+          m_scenes(std::make_unique<game_scenes>(this)),
           m_tick_interval_seconds(-1.f),
           m_fraction_to_next_tick(-1.f),
           m_frame_interval_seconds(-1.f) {
         // Set a default icon, can be overridden later.
-        m_window.set_icon("assets/icons/default");
+        m_window->set_icon("assets/icons/default");
 
+        // Set the default tick rate.
         set_tick_rate(32.f);
 
-        // TODO: Figure out what to do with these?
-        m_renderer.set_camera(&m_camera);
-        m_renderer.set_viewport(&m_viewport);
-
-        try_invoke_callback(m_game.on_create, this);
-
-        if (m_game.state == nullptr) {
-            log_warning("Game state is null. Did you forget to set it in game_info?");
-        }
+        // Let the game know it has been created.
+        safe_invoke(m_game.on_create, this);
     }
 
     game_engine::~game_engine() {
-        try_invoke_callback(m_game.on_destroy, this);
+        // Runs before everything is torn down.
+        safe_invoke(m_game.on_destroy, this);
     }
 
     void game_engine::run() {
         std::uint64_t frame_performance_count = performance_counter_value_current();
-        float senconds_since_last_tick = 0.f;
+        float seconds_since_last_tick = 0.f;
 
         while (m_is_running == true) {
             m_frame_interval_seconds = performance_counter_seconds_since(frame_performance_count);
             frame_performance_count = performance_counter_value_current();
-            senconds_since_last_tick += m_frame_interval_seconds;
+            seconds_since_last_tick += m_frame_interval_seconds;
 
-            process_events();
+            {
+                m_input->update();
 
-            while (senconds_since_last_tick >= m_tick_interval_seconds) [[likely]] {
-                try_invoke_callback(m_game.on_tick, this, m_tick_interval_seconds);
-                senconds_since_last_tick -= m_tick_interval_seconds;
+                SDL_Event event;
+                while (SDL_PollEvent(&event) == true) {
+                    if (event.type == SDL_EVENT_QUIT) {
+                        m_is_running = false;
+                    }
+
+                    m_input->process_sdl_event(event);
+                }
             }
 
-            m_fraction_to_next_tick = senconds_since_last_tick / m_tick_interval_seconds;
+            m_scenes->on_input();
 
-            try_invoke_callback(m_game.on_frame, this, m_frame_interval_seconds);
-
-            m_renderer.draw_begin();
-            try_invoke_callback(m_game.on_draw, this, m_fraction_to_next_tick);
-            m_renderer.draw_end();
-        }
-    }
-
-    void game_engine::process_events() {
-        m_input.update();
-
-        SDL_Event event;
-        while (SDL_PollEvent(&event) == true) {
-            if (event.type == SDL_EVENT_QUIT) {
-                m_is_running = false;
+            while (seconds_since_last_tick >= m_tick_interval_seconds) [[likely]] {
+                safe_invoke(m_game.on_tick, this, m_tick_interval_seconds);
+                m_scenes->on_tick(m_tick_interval_seconds);
+                seconds_since_last_tick -= m_tick_interval_seconds;
             }
 
-            m_input.process_sdl_event(event);
+            m_fraction_to_next_tick = seconds_since_last_tick / m_tick_interval_seconds;
+
+            safe_invoke(m_game.on_frame, this, m_frame_interval_seconds);
+            m_scenes->on_frame(m_frame_interval_seconds);
+
+            m_renderer->draw_begin();
+            m_scenes->on_draw(m_fraction_to_next_tick);
+            safe_invoke(m_game.on_draw, this, m_fraction_to_next_tick);
+            m_renderer->draw_end();
         }
     }
 
@@ -92,7 +82,7 @@ namespace engine {
         log_info("Project '{}' (v{} {}) starting up...", project_name, version::full, build_type);
 
         if (SDL_Init(SDL_INIT_VIDEO) == false) {
-            throw std::runtime_error("Failed to initialize SDL.");
+            throw error_message("Failed to initialize SDL. {}", SDL_GetError());
         }
 
         log_info("SDL initialized successfully: v{}.{}.{}", SDL_MAJOR_VERSION, SDL_MINOR_VERSION,
@@ -100,7 +90,7 @@ namespace engine {
 
         if (TTF_Init() == false) {
             SDL_Quit();
-            throw std::runtime_error("Failed to initialize SDL_ttf.");
+            throw error_message("Failed to initialize SDL_ttf.");
         }
 
         log_info("TTF initialized successfully: v{}.{}.{}", SDL_TTF_MAJOR_VERSION,
@@ -115,3 +105,22 @@ namespace engine {
         log_info("SDL shut down.");
     }
 }  // namespace engine
+
+/**
+ * @brief The main entry point of the application.
+ *
+ * Define this somewhere in your code to start your game. Not sure if this is the best way to
+ * handle this, but it works for now.
+ */
+extern void game_start();
+
+int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
+    try {
+        game_start();
+    } catch (const std::exception& e) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", e.what(), nullptr);
+        return 1;
+    }
+
+    return 0;
+}

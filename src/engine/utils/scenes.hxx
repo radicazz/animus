@@ -24,7 +24,7 @@ namespace engine {
     // Forward declarations
     class game_engine;
     class game_scenes;
-    struct game_scene;
+    struct game_scene_callbacks;
     struct game_scene_info;
     class game_input;
 
@@ -33,7 +33,7 @@ namespace engine {
      *
      * Represents the current lifecycle state of a scene within the engine.
      */
-    enum class scene_state {
+    enum class game_scene_lifetime {
         unloaded,  ///< Scene is not loaded in memory
         loading,   ///< Scene is currently being loaded
         active,    ///< Scene is currently active and running
@@ -46,12 +46,35 @@ namespace engine {
      *
      * Defines different visual transition effects that can be applied when switching scenes.
      */
-    enum class scene_transition {
+    enum class game_scene_transition {
         immediate,  ///< Instant scene switch with no visual effect
         fade_in,    ///< Fade in from black
         fade_out,   ///< Fade out to black
         crossfade,  ///< Crossfade between scenes
         custom      ///< Custom transition defined by the game
+    };
+
+    /**
+     * @brief Scene callback function definitions.
+     *
+     * This structure contains function pointers for all scene lifecycle and frame callbacks.
+     * Games implement these callbacks to define scene-specific behavior.
+     */
+    struct game_scene_callbacks {
+        void (*on_load)(game_scene_info* scene) = nullptr;
+        void (*on_unload)(game_scene_info* scene) = nullptr;
+        void (*on_activate)(game_scene_info* scene) = nullptr;
+        void (*on_deactivate)(game_scene_info* scene) = nullptr;
+
+        void (*on_input)(game_scene_info* scene) = nullptr;
+        void (*on_tick)(game_scene_info* scene, float tick_interval) = nullptr;
+        void (*on_frame)(game_scene_info* scene, float frame_interval) = nullptr;
+        void (*on_draw)(game_scene_info* scene, float fraction_to_next_tick) = nullptr;
+
+        void (*on_transition_in)(game_scene_info* scene,
+                                 game_scene_transition transition) = nullptr;
+        void (*on_transition_out)(game_scene_info* scene,
+                                  game_scene_transition transition) = nullptr;
     };
 
     /**
@@ -64,13 +87,12 @@ namespace engine {
     struct game_scene_info {
         // Scene identification
         std::string scene_id;
-        scene_state state = scene_state::unloaded;
+        game_scene_lifetime state = game_scene_lifetime::unloaded;
 
-        // Scene-specific state (similar to current game_info::state)
         void* scene_state = nullptr;
 
         // Back-references for scene callbacks
-        game_scene* scene = nullptr;
+        game_scene_callbacks scene = {};
         game_engine* engine = nullptr;
 
         // Scene-specific systems
@@ -95,27 +117,11 @@ namespace engine {
         [[nodiscard]] T& get_state();
     };
 
-    /**
-     * @brief Scene callback function definitions.
-     *
-     * This structure contains function pointers for all scene lifecycle and frame callbacks.
-     * Games implement these callbacks to define scene-specific behavior.
-     */
-    struct game_scene {
-        void (*on_load)(game_scene_info* scene) = nullptr;
-        void (*on_unload)(game_scene_info* scene) = nullptr;
-        void (*on_activate)(game_scene_info* scene) = nullptr;
-        void (*on_deactivate)(game_scene_info* scene) = nullptr;
-
-        void (*on_tick)(game_scene_info* scene, float tick_interval) = nullptr;
-        void (*on_frame)(game_scene_info* scene, float frame_interval) = nullptr;
-        void (*on_draw)(game_scene_info* scene, float fraction_to_next_tick) = nullptr;
-
-        void (*on_input)(game_scene_info* scene, const game_input& input) = nullptr;
-
-        void (*on_transition_in)(game_scene_info* scene, scene_transition transition) = nullptr;
-        void (*on_transition_out)(game_scene_info* scene, scene_transition transition) = nullptr;
-    };
+    template <class T>
+        requires std::is_class_v<T>
+    T& game_scene_info::get_state() {
+        return *static_cast<T*>(scene_state);
+    }
 
     /**
      * @brief Scene management system for the game engine.
@@ -123,6 +129,8 @@ namespace engine {
      * This class manages the registration, loading, activation, and cleanup of game scenes.
      * It provides a complete scene system with per-scene resources, entities, cameras,
      * and viewports while maintaining integration with the existing engine architecture.
+     *
+     * @note Most of this code needs to be rewritten and improved, but it works for now.
      */
     class game_scenes {
     public:
@@ -135,21 +143,21 @@ namespace engine {
         game_scenes(game_scenes&&) = delete;
         game_scenes& operator=(game_scenes&&) = delete;
 
-        void register_scene(std::string_view scene_id, const game_scene& scene);
+        void register_scene(std::string_view scene_id, const game_scene_callbacks& scene);
         void unregister_scene(std::string_view scene_id);
 
         [[nodiscard]] bool has_scene(std::string_view scene_id) const;
         [[nodiscard]] bool has_active_scene() const;
-        [[nodiscard]] const std::string& get_active_scene_id() const;
+        [[nodiscard]] std::string_view get_active_scene_id() const;
 
         void load_scene(std::string_view scene_id, void* scene_state = nullptr);
         void activate_scene(std::string_view scene_id,
-                            scene_transition transition = scene_transition::immediate);
+                            game_scene_transition transition = game_scene_transition::immediate);
         void deactivate_current_scene();
         void unload_scene(std::string_view scene_id);
 
         void switch_to_scene(std::string_view scene_id, void* scene_state = nullptr,
-                             scene_transition transition = scene_transition::immediate);
+                             game_scene_transition transition = game_scene_transition::immediate);
 
         [[nodiscard]] game_scene_info* get_active_scene();
         [[nodiscard]] const game_scene_info* get_active_scene() const;
@@ -157,12 +165,29 @@ namespace engine {
         [[nodiscard]] game_camera& get_camera(std::string_view name = "main");
         [[nodiscard]] game_viewport& get_viewport(std::string_view name = "main");
 
+        void add_camera(std::string_view name, const glm::vec2& position = {0.0f, 0.0f},
+                        float zoom = 1.0f);
+        void remove_camera(std::string_view name);
+        [[nodiscard]] bool has_camera(std::string_view name) const;
+
+        void add_viewport(std::string_view name, const glm::vec2& position = {0.0f, 0.0f},
+                          const glm::vec2& size = {1.0f, 1.0f});
+        void remove_viewport(std::string_view name);
+        [[nodiscard]] bool has_viewport(std::string_view name) const;
+
         void for_each_scene(void (*callback)(const std::string&, const game_scene_info&)) const;
+
+        void on_tick(float tick_interval);
+        void on_frame(float frame_interval);
+        void on_draw(float fraction_to_next_tick);
+        void on_input();
 
     private:
         void create_default_camera_viewport(game_scene_info* scene_info);
         void cleanup_scene_resources(game_scene_info* scene_info);
-        void deactivate_current_scene_with_transition(scene_transition transition);
+        void deactivate_current_scene_with_transition(game_scene_transition transition);
+        void update_renderer_for_active_scene();
+        void reset_renderer_to_global();
 
     private:
         game_engine* m_engine;
@@ -170,10 +195,16 @@ namespace engine {
         std::string m_active_scene_id;
     };
 
-    template <class T>
-        requires std::is_class_v<T>
-    inline T& game_scene_info::get_state() {
-        return *static_cast<T*>(scene_state);
+    inline bool game_scenes::has_scene(std::string_view scene_id) const {
+        return m_scenes.contains(std::string(scene_id));
+    }
+
+    inline bool game_scenes::has_active_scene() const {
+        return !m_active_scene_id.empty();
+    }
+
+    inline std::string_view game_scenes::get_active_scene_id() const {
+        return m_active_scene_id;
     }
 
 }  // namespace engine

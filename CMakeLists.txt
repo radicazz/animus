@@ -82,6 +82,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ENGINE_IS_DEBUG "true")
 endif()
 
+option(ENGINE_PARANOID "Enable paranoid build checks (will throw std::runtime_error on failure)" OFF)
+util_to_cpp_bool(ENGINE_PARANOID)
+
 set(ENGINE_TEMPLATE_NAME "config")
 configure_file(
     "${CMAKE_SOURCE_DIR}/src/engine/${ENGINE_TEMPLATE_NAME}.hxx.in"
@@ -269,6 +272,7 @@ message(STATUS "Using Ccache: ${CCACHE_PROGRAM}")
 message(STATUS "===== Documentation =====")
 message(STATUS "Generate Documentation: ${ENGINE_BUILD_DOCS}")
 message(STATUS "===== Logging Settings =====")
+message(STATUS "Paranoid Build: ${ENGINE_PARANOID}")
 message(STATUS "Info Logging: ${ENGINE_LOG_INFO}")
 message(STATUS "Warning Logging: ${ENGINE_LOG_WARNING}")
 message(STATUS "Error Logging: ${ENGINE_LOG_ERROR}")

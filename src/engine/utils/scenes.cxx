@@ -5,6 +5,7 @@
 
 #include "scenes.hxx"
 
+#include "../safety.hxx"
 #include "../engine.hxx"
 #include "../logger.hxx"
 
@@ -12,23 +13,22 @@
 
 namespace engine {
     game_scenes::game_scenes(game_engine* engine) : m_engine(engine) {
-        if (!engine) {
-            throw std::invalid_argument("game_engine pointer cannot be null");
-        }
+        ensure(m_engine != nullptr, "game_engine pointer cannot be null");
     }
 
     game_scenes::~game_scenes() {
-        // Clean up all loaded scenes
         for (auto& [scene_id, scene_info] : m_scenes) {
-            if (scene_info->state != scene_state::unloaded) {
+            if (scene_info->state != game_scene_lifetime::unloaded) {
+                log_info("Destroyed scene '{}' during cleanup", scene_id);
                 cleanup_scene_resources(scene_info.get());
             }
         }
+
         m_scenes.clear();
     }
 
-    void game_scenes::register_scene(std::string_view scene_id, const game_scene& scene) {
-        std::string id_str{scene_id};
+    void game_scenes::register_scene(std::string_view scene_id, const game_scene_callbacks& scene) {
+        auto id_str = std::string{scene_id};
 
         if (has_scene(id_str)) {
             log_warning("Scene '{}' is already registered. Overriding existing registration.",
@@ -37,17 +37,18 @@ namespace engine {
 
         auto scene_info = std::make_unique<game_scene_info>();
         scene_info->scene_id = id_str;
-        scene_info->state = scene_state::unloaded;
+        scene_info->state = game_scene_lifetime::unloaded;
         scene_info->scene_state = nullptr;
-        scene_info->scene = const_cast<game_scene*>(&scene);
+        scene_info->scene = scene;
         scene_info->engine = m_engine;
 
         m_scenes[id_str] = std::move(scene_info);
+
         log_info("Registered scene '{}'", id_str);
     }
 
     void game_scenes::unregister_scene(std::string_view scene_id) {
-        std::string id_str{scene_id};
+        auto id_str = std::string{scene_id};
 
         auto it = m_scenes.find(id_str);
         if (it == m_scenes.end()) {
@@ -61,86 +62,65 @@ namespace engine {
         }
 
         // Clean up resources if the scene is loaded
-        if (it->second->state != scene_state::unloaded) {
+        if (it->second->state != game_scene_lifetime::unloaded) {
             cleanup_scene_resources(it->second.get());
         }
 
         m_scenes.erase(it);
+
         log_info("Unregistered scene '{}'", id_str);
     }
 
-    bool game_scenes::has_scene(std::string_view scene_id) const {
-        return m_scenes.find(std::string{scene_id}) != m_scenes.end();
-    }
-
-    bool game_scenes::has_active_scene() const {
-        return !m_active_scene_id.empty();
-    }
-
-    const std::string& game_scenes::get_active_scene_id() const {
-        return m_active_scene_id;
-    }
-
     void game_scenes::load_scene(std::string_view scene_id, void* scene_state) {
-        std::string id_str{scene_id};
+        auto id_str = std::string{scene_id};
 
         auto it = m_scenes.find(id_str);
         if (it == m_scenes.end()) {
-            throw std::runtime_error("Scene '" + id_str + "' is not registered");
+            throw error_message("Scene {} is not registered", id_str);
         }
 
         auto& scene_info = it->second;
 
-        if (scene_info->state != scene_state::unloaded) {
+        if (scene_info->state != game_scene_lifetime::unloaded) {
             log_warning("Scene '{}' is already loaded (state: {})", id_str,
                         static_cast<int>(scene_info->state));
             return;
         }
 
         log_info("Loading scene '{}'", id_str);
-        scene_info->state = scene_state::loading;
+
+        scene_info->state = game_scene_lifetime::loading;
         scene_info->scene_state = scene_state;
 
-        try {
-            // Initialize scene systems
-            scene_info->entities = std::make_unique<game_entities>();
-            scene_info->resources = std::make_unique<game_resources>(m_engine->get_renderer());
+        // Initialize scene systems
+        scene_info->entities = std::make_unique<game_entities>();
+        scene_info->resources = std::make_unique<game_resources>(m_engine->get_renderer());
 
-            // Create default camera and viewport
-            create_default_camera_viewport(scene_info.get());
+        // Create default camera and viewport
+        create_default_camera_viewport(scene_info.get());
 
-            // Call scene load callback
-            if (scene_info->scene->on_load) {
-                scene_info->scene->on_load(scene_info.get());
-            }
+        safe_invoke(scene_info->scene.on_load, scene_info.get());
 
-            // Scene is now loaded but not active yet
-            scene_info->state = scene_state::paused;
-            log_info("Scene '{}' loaded successfully", id_str);
-        } catch (const std::exception& e) {
-            log_error("Failed to load scene '{}': {}", id_str, e.what());
-            // Clean up partially loaded resources
-            cleanup_scene_resources(scene_info.get());
-            scene_info->state = scene_state::unloaded;
-            throw;
-        }
+        // Scene is now loaded but not active yet
+        scene_info->state = game_scene_lifetime::paused;
+        log_info("Scene '{}' loaded successfully", id_str);
     }
 
-    void game_scenes::activate_scene(std::string_view scene_id, scene_transition transition) {
+    void game_scenes::activate_scene(std::string_view scene_id, game_scene_transition transition) {
         std::string id_str{scene_id};
 
         auto it = m_scenes.find(id_str);
         if (it == m_scenes.end()) {
-            throw std::runtime_error("Scene '" + id_str + "' is not registered");
+            throw error_message("Scene '{}' is not registered", id_str);
         }
 
         auto& scene_info = it->second;
 
-        if (scene_info->state == scene_state::unloaded) {
-            throw std::runtime_error("Scene '" + id_str + "' must be loaded before activation");
+        if (scene_info->state == game_scene_lifetime::unloaded) {
+            throw error_message("Scene '{}' must be loaded before activation", id_str);
         }
 
-        if (scene_info->state == scene_state::active) {
+        if (scene_info->state == game_scene_lifetime::active) {
             log_warning("Scene '{}' is already active", id_str);
             return;
         }
@@ -152,23 +132,19 @@ namespace engine {
 
         log_info("Activating scene '{}'", id_str);
 
-        // Call transition in callback for new scene
-        if (scene_info->scene->on_transition_in) {
-            scene_info->scene->on_transition_in(scene_info.get(), transition);
-        }
+        safe_invoke(scene_info->scene.on_transition_in, scene_info.get(), transition);
+        safe_invoke(scene_info->scene.on_activate, scene_info.get());
 
-        // Call scene activate callback
-        if (scene_info->scene->on_activate) {
-            scene_info->scene->on_activate(scene_info.get());
-        }
-
-        scene_info->state = scene_state::active;
+        scene_info->state = game_scene_lifetime::active;
         m_active_scene_id = id_str;
+
+        // Update renderer to use scene's camera and viewport
+        update_renderer_for_active_scene();
 
         log_info("Scene '{}' activated successfully", id_str);
     }
 
-    void game_scenes::deactivate_current_scene_with_transition(scene_transition transition) {
+    void game_scenes::deactivate_current_scene_with_transition(game_scene_transition transition) {
         if (!has_active_scene()) {
             log_warning("No active scene to deactivate");
             return;
@@ -184,7 +160,7 @@ namespace engine {
         auto& scene_info = it->second;
 
         // Validate scene is in active state
-        if (scene_info->state != scene_state::active) {
+        if (scene_info->state != game_scene_lifetime::active) {
             log_error("Scene '{}' is not in active state (current: {}), cannot deactivate",
                       m_active_scene_id, static_cast<int>(scene_info->state));
             return;
@@ -192,28 +168,17 @@ namespace engine {
 
         log_info("Deactivating scene '{}' with transition", m_active_scene_id);
 
-        try {
-            // Call scene transition out callback
-            if (scene_info->scene->on_transition_out) {
-                scene_info->scene->on_transition_out(scene_info.get(), transition);
-            }
+        // Call scene transition out callback
+        safe_invoke(scene_info->scene.on_transition_out, scene_info.get(), transition);
+        safe_invoke(scene_info->scene.on_deactivate, scene_info.get());
 
-            // Call scene deactivate callback
-            if (scene_info->scene->on_deactivate) {
-                scene_info->scene->on_deactivate(scene_info.get());
-            }
+        scene_info->state = game_scene_lifetime::paused;
+        m_active_scene_id.clear();
 
-            scene_info->state = scene_state::paused;
-            m_active_scene_id.clear();
+        // Reset renderer to use global camera and viewport
+        reset_renderer_to_global();
 
-            log_info("Scene deactivated successfully");
-        } catch (const std::exception& e) {
-            log_error("Exception during scene deactivation: {}", e.what());
-            // Force state transition to prevent inconsistent state
-            scene_info->state = scene_state::paused;
-            m_active_scene_id.clear();
-            throw;
-        }
+        log_info("Scene deactivated successfully");
     }
 
     void game_scenes::deactivate_current_scene() {
@@ -232,7 +197,7 @@ namespace engine {
         auto& scene_info = it->second;
 
         // Validate scene is in active state
-        if (scene_info->state != scene_state::active) {
+        if (scene_info->state != game_scene_lifetime::active) {
             log_error("Scene '{}' is not in active state (current: {}), cannot deactivate",
                       m_active_scene_id, static_cast<int>(scene_info->state));
             return;
@@ -240,27 +205,16 @@ namespace engine {
 
         log_info("Deactivating scene '{}'", m_active_scene_id);
 
-        try {
-            // Call scene deactivate callback
-            if (scene_info->scene->on_deactivate) {
-                scene_info->scene->on_deactivate(scene_info.get());
-            }
+        safe_invoke(scene_info->scene.on_deactivate, scene_info.get());
 
-            scene_info->state = scene_state::paused;
-            m_active_scene_id.clear();
+        scene_info->state = game_scene_lifetime::paused;
+        m_active_scene_id.clear();
 
-            log_info("Scene deactivated successfully");
-        } catch (const std::exception& e) {
-            log_error("Exception during scene deactivation: {}", e.what());
-            // Force state transition to prevent inconsistent state
-            scene_info->state = scene_state::paused;
-            m_active_scene_id.clear();
-            throw;
-        }
+        log_info("Scene deactivated successfully");
     }
 
     void game_scenes::unload_scene(std::string_view scene_id) {
-        std::string id_str{scene_id};
+        auto id_str = std::string{scene_id};
 
         auto it = m_scenes.find(id_str);
         if (it == m_scenes.end()) {
@@ -270,7 +224,7 @@ namespace engine {
 
         auto& scene_info = it->second;
 
-        if (scene_info->state == scene_state::unloaded) {
+        if (scene_info->state == game_scene_lifetime::unloaded) {
             log_warning("Scene '{}' is already unloaded", id_str);
             return;
         }
@@ -281,37 +235,18 @@ namespace engine {
         }
 
         log_info("Unloading scene '{}'", id_str);
-        scene_info->state = scene_state::unloading;
+        scene_info->state = game_scene_lifetime::unloading;
 
-        try {
-            // Call scene unload callback
-            if (scene_info->scene->on_unload) {
-                scene_info->scene->on_unload(scene_info.get());
-            }
+        safe_invoke(scene_info->scene.on_unload, scene_info.get());
 
-            // Clean up scene resources
-            cleanup_scene_resources(scene_info.get());
+        cleanup_scene_resources(scene_info.get());
+        scene_info->state = game_scene_lifetime::unloaded;
 
-            scene_info->state = scene_state::unloaded;
-            log_info("Scene '{}' unloaded successfully", id_str);
-        } catch (const std::exception& e) {
-            log_error("Exception during scene unloading: {}", e.what());
-            // Force unloaded state even on failure to prevent resource leaks
-            scene_info->state = scene_state::unloaded;
-
-            // Clean up resources anyway to prevent leaks
-            try {
-                cleanup_scene_resources(scene_info.get());
-            } catch (const std::exception& cleanup_e) {
-                log_error("Exception during emergency scene cleanup: {}", cleanup_e.what());
-            }
-
-            throw;
-        }
+        log_info("Scene '{}' unloaded successfully", id_str);
     }
 
     void game_scenes::switch_to_scene(std::string_view scene_id, void* scene_state,
-                                      scene_transition transition) {
+                                      game_scene_transition transition) {
         load_scene(scene_id, scene_state);
         activate_scene(scene_id, transition);
     }
@@ -351,7 +286,7 @@ namespace engine {
             throw std::runtime_error("No active scene available for camera access");
         }
 
-        std::string name_str{name};
+        auto name_str = std::string{name};
         auto it = active_scene->cameras.find(name_str);
         if (it == active_scene->cameras.end()) {
             throw std::runtime_error("Camera '" + name_str + "' not found in active scene");
@@ -375,15 +310,158 @@ namespace engine {
         return *it->second;
     }
 
+    void game_scenes::add_camera(std::string_view name, const glm::vec2& position,
+                                 const float zoom) {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            throw std::runtime_error("No active scene available for camera management");
+        }
+
+        std::string name_str{name};
+
+        if (active_scene->cameras.find(name_str) != active_scene->cameras.end()) {
+            log_warning("Camera '{}' already exists in active scene. Overriding existing camera.",
+                        name_str);
+        }
+
+        active_scene->cameras[name_str] = std::make_unique<game_camera>(position, zoom);
+        log_info("Added camera '{}' to active scene '{}'", name_str, active_scene->scene_id);
+    }
+
+    void game_scenes::remove_camera(std::string_view name) {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            throw std::runtime_error("No active scene available for camera management");
+        }
+
+        std::string name_str{name};
+
+        // Prevent removal of default camera
+        if (name_str == game_scene_info::default_camera_name) {
+            throw std::runtime_error("Cannot remove default '" + name_str + "' camera from scene");
+        }
+
+        auto it = active_scene->cameras.find(name_str);
+        if (it == active_scene->cameras.end()) {
+            log_warning("Attempted to remove non-existent camera '{}' from active scene", name_str);
+            return;
+        }
+
+        active_scene->cameras.erase(it);
+        log_info("Removed camera '{}' from active scene '{}'", name_str, active_scene->scene_id);
+    }
+
+    bool game_scenes::has_camera(std::string_view name) const {
+        const auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            return false;
+        }
+
+        return active_scene->cameras.find(std::string{name}) != active_scene->cameras.end();
+    }
+
+    void game_scenes::add_viewport(std::string_view name, const glm::vec2& position,
+                                   const glm::vec2& size) {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            throw std::runtime_error("No active scene available for viewport management");
+        }
+
+        std::string name_str{name};
+
+        if (active_scene->viewports.find(name_str) != active_scene->viewports.end()) {
+            log_warning(
+                "Viewport '{}' already exists in active scene. Overriding existing viewport.",
+                name_str);
+        }
+
+        auto viewport = std::make_unique<game_viewport>(size);
+        viewport->set_normalized_position(position);
+        active_scene->viewports[name_str] = std::move(viewport);
+
+        log_info("Added viewport '{}' to active scene '{}'", name_str, active_scene->scene_id);
+    }
+
+    void game_scenes::remove_viewport(std::string_view name) {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            throw std::runtime_error("No active scene available for viewport management");
+        }
+
+        std::string name_str{name};
+
+        // Prevent removal of default viewport
+        if (name_str == game_scene_info::default_viewport_name) {
+            throw std::runtime_error("Cannot remove default '" + name_str +
+                                     "' viewport from scene");
+        }
+
+        auto it = active_scene->viewports.find(name_str);
+        if (it == active_scene->viewports.end()) {
+            log_warning("Attempted to remove non-existent viewport '{}' from active scene",
+                        name_str);
+            return;
+        }
+
+        active_scene->viewports.erase(it);
+        log_info("Removed viewport '{}' from active scene '{}'", name_str, active_scene->scene_id);
+    }
+
+    bool game_scenes::has_viewport(std::string_view name) const {
+        const auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            return false;
+        }
+
+        return active_scene->viewports.find(std::string{name}) != active_scene->viewports.end();
+    }
+
     void game_scenes::for_each_scene(void (*callback)(const std::string&,
                                                       const game_scene_info&)) const {
         if (!callback) {
+            log_error("Null callback provided to for_each_scene");
             return;
         }
 
         for (const auto& [scene_id, scene_info] : m_scenes) {
             callback(scene_id, *scene_info);
         }
+    }
+
+    void game_scenes::on_tick(const float tick_interval) {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            return;
+        }
+
+        safe_invoke(active_scene->scene.on_tick, active_scene, tick_interval);
+    }
+
+    void game_scenes::on_frame(const float frame_interval) {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            return;
+        }
+
+        safe_invoke(active_scene->scene.on_frame, active_scene, frame_interval);
+    }
+
+    void game_scenes::on_draw(const float fraction_to_next_tick) {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            return;
+        }
+
+        safe_invoke(active_scene->scene.on_draw, active_scene, fraction_to_next_tick);
+    }
+
+    void game_scenes::on_input() {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            return;
+        }
+
+        safe_invoke(active_scene->scene.on_input, active_scene);
     }
 
     void game_scenes::create_default_camera_viewport(game_scene_info* scene_info) {
@@ -394,7 +472,7 @@ namespace engine {
 
         // Create default main viewport
         std::string main_viewport{game_scene_info::default_viewport_name};
-        scene_info->viewports[main_viewport] = std::make_unique<game_viewport>();
+        scene_info->viewports[main_viewport] = std::make_unique<game_viewport>(glm::vec2{1.f, 1.f});
     }
 
     void game_scenes::cleanup_scene_resources(game_scene_info* scene_info) {
@@ -414,5 +492,34 @@ namespace engine {
 
         // Clear scene state reference
         scene_info->scene_state = nullptr;
+    }
+
+    void game_scenes::update_renderer_for_active_scene() {
+        auto* active_scene = get_active_scene();
+        if (!active_scene) {
+            return;
+        }
+
+        auto& renderer = m_engine->get_renderer();
+
+        // Set the scene's default camera as active on the renderer
+        auto camera_it = active_scene->cameras.find(game_scene_info::default_camera_name.data());
+        if (camera_it != active_scene->cameras.end()) {
+            renderer.set_camera(camera_it->second.get());
+        }
+
+        // Set the scene's default viewport as active on the renderer
+        auto viewport_it =
+            active_scene->viewports.find(game_scene_info::default_viewport_name.data());
+        if (viewport_it != active_scene->viewports.end()) {
+            renderer.set_viewport(viewport_it->second.get());
+        }
+    }
+
+    void game_scenes::reset_renderer_to_global() {
+        auto& renderer = m_engine->get_renderer();
+
+        renderer.set_camera(nullptr);
+        renderer.set_viewport(nullptr);
     }
 }  // namespace engine

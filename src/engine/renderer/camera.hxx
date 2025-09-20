@@ -71,7 +71,10 @@ namespace engine {
     }
 
     inline void game_camera::zoom_by(float factor) {
-        set_zoom(m_zoom_level * factor);
+        // Treat factor as an additive delta to the zoom level. This is more
+        // intuitive for callers that pass small positive/negative values like
+        // 0.2f / -0.2f to zoom in/out.
+        set_zoom(m_zoom_level + factor);
     }
 
     inline void game_camera::set_follow_offset(const glm::vec2& offset) {
