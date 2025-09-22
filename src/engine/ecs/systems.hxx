@@ -21,7 +21,7 @@ namespace engine {
      */
     class system_renderer {
     public:
-        static void update(entt::registry& registry, game_renderer& renderer,
+        static void update(entt::registry& registry, game_renderer* renderer,
                            game_resources& resources, float fraction_to_next_tick);
     };
 

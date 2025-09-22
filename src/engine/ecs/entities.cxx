@@ -11,7 +11,7 @@ namespace engine {
         system_lifetime::update(m_registry, tick_interval);
     }
 
-    void game_entities::system_renderer_update(game_renderer& renderer, game_resources& resources,
+    void game_entities::system_renderer_update(game_renderer* renderer, game_resources& resources,
                                                const float fraction_to_next_tick) {
         system_renderer::update(m_registry, renderer, resources, fraction_to_next_tick);
     }

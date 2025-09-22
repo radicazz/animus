@@ -35,7 +35,7 @@ namespace engine {
         // System updates
         void system_physics_update(float tick_interval);
         void system_lifetime_update(float tick_interval);
-        void system_renderer_update(game_renderer& renderer, game_resources& resources,
+        void system_renderer_update(game_renderer* renderer, game_resources& resources,
                                     float fraction_to_next_tick);
 
         [[nodiscard]] entt::entity create();

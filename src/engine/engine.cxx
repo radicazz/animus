@@ -9,10 +9,12 @@
 #include "safety.hxx"
 
 namespace engine {
-    game_engine::game_engine(const game_info& info, std::string_view title, const glm::ivec2& size)
+    game_engine::game_engine(std::string_view title, const glm::ivec2& size,
+                             const game_engine_callbacks& callbacks, void* game_state)
         : m_wrapper(),
           m_is_running(true),
-          m_game(info),
+          m_game_state(game_state),
+          m_game_callbacks(callbacks),
           m_window(std::make_unique<game_window>(title, size, game_window_type::resizable)),
           m_renderer(std::make_unique<game_renderer>(m_window->get_sdl_window())),
           m_input(std::make_unique<game_input>()),
@@ -27,12 +29,11 @@ namespace engine {
         set_tick_rate(32.f);
 
         // Let the game know it has been created.
-        safe_invoke(m_game.on_create, this);
+        safe_invoke(m_game_callbacks.on_engine_start, this);
     }
 
     game_engine::~game_engine() {
-        // Runs before everything is torn down.
-        safe_invoke(m_game.on_destroy, this);
+        safe_invoke(m_game_callbacks.on_engine_end, this);
     }
 
     void game_engine::run() {
@@ -60,19 +61,19 @@ namespace engine {
             m_scenes->on_input();
 
             while (seconds_since_last_tick >= m_tick_interval_seconds) [[likely]] {
-                safe_invoke(m_game.on_tick, this, m_tick_interval_seconds);
+                safe_invoke(m_game_callbacks.on_engine_tick, this, m_tick_interval_seconds);
                 m_scenes->on_tick(m_tick_interval_seconds);
                 seconds_since_last_tick -= m_tick_interval_seconds;
             }
 
             m_fraction_to_next_tick = seconds_since_last_tick / m_tick_interval_seconds;
 
-            safe_invoke(m_game.on_frame, this, m_frame_interval_seconds);
+            safe_invoke(m_game_callbacks.on_engine_frame, this, m_frame_interval_seconds);
             m_scenes->on_frame(m_frame_interval_seconds);
 
             m_renderer->draw_begin();
             m_scenes->on_draw(m_fraction_to_next_tick);
-            safe_invoke(m_game.on_draw, this, m_fraction_to_next_tick);
+            safe_invoke(m_game_callbacks.on_engine_draw, this, m_fraction_to_next_tick);
             m_renderer->draw_end();
         }
     }
@@ -106,17 +107,9 @@ namespace engine {
     }
 }  // namespace engine
 
-/**
- * @brief The main entry point of the application.
- *
- * Define this somewhere in your code to start your game. Not sure if this is the best way to
- * handle this, but it works for now.
- */
-extern void game_start();
-
 int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     try {
-        game_start();
+        game_entry_point();
     } catch (const std::exception& e) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", e.what(), nullptr);
         return 1;

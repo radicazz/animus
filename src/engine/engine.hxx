@@ -18,60 +18,48 @@
 #include "ecs/entities.hxx"
 #include "utils/timing.hxx"
 
+/**
+ * @brief The main entry point of the application.
+ *        Define this somewhere in your code to start your game.
+ * @note You must implement this function in your game code to compile your game.
+ */
+extern void game_entry_point();
+
 namespace engine {
     class game_engine;
 
     /**
-     * @brief State pointer and callback functions for the game engine.
-     * @note All callbacks are optional and can be set to `nullptr` if not needed.
+     * @brief Global callback functions to hook into the game engine lifecycle.
      */
-    struct game_info {
-        /**
-         * @brief User-defined state data for the game.
-         */
-        void* state = nullptr;
-
+    struct game_engine_callbacks {
         /**
          * @brief Called in the engine's constructor after components are initialized.
          */
-        void (*on_create)(game_engine*) = nullptr;
+        void (*on_engine_start)(game_engine* engine) = nullptr;
 
         /**
          * @brief Called in the engine's destructor before components are destroyed.
          */
-        void (*on_destroy)(game_engine*) = nullptr;
+        void (*on_engine_end)(game_engine* engine) = nullptr;
 
         /**
          * @brief Called every fixed update (tick) at a fixed interval.
-         * @param tick_interval The fixed time interval between ticks in seconds.
-         * @note The default tick rate is 32 ticks per second. Use `game_engine::set_tick_rate` to
-         * set a custom tick rate.
          */
-        void (*on_tick)(game_engine*, float tick_interval) = nullptr;
+        void (*on_engine_tick)(game_engine* engine, float tick_interval) = nullptr;
 
         /**
          * @brief Called every frame before rendering.
-         * @param frame_interval The time spent between the last two frames in seconds.
-         * @note This function is called at a variable rate depending on the performance of the
-         * game.
          */
-        void (*on_frame)(game_engine*, float frame_interval) = nullptr;
+        void (*on_engine_frame)(game_engine* engine, float frame_interval) = nullptr;
 
         /**
          * @brief Called every frame during rendering.
-         * @param fraction_to_next_tick A value between 0.0 and 1.0 representing the progress
-         *        of the current frame towards the next tick.
-         * @note This function is called after `on_frame` and is where all rendering should be done.
          */
-        void (*on_draw)(game_engine*, float fraction_to_next_tick) = nullptr;
+        void (*on_engine_draw)(game_engine* engine, float fraction_to_next_tick) = nullptr;
     };
 
     /**
      * @brief The primary game engine class.
-     *
-     * This class manages the main game loop, window, rendering, input, resources, and entities.
-     * It provides access to all core engine functionality and serves as the primary interface
-     * between your game and the engine.
      */
     class game_engine {
     public:
@@ -79,11 +67,13 @@ namespace engine {
 
         /**
          * @brief Construct a new game engine object.
-         * @param info Your game state and its callbacks.
-         * @param title The initial title of the game window.
+         * @param title The title of the game window.
          * @param size The initial size of the game window.
+         * @param callbacks Your game state and its callbacks.
+         * @param game_state Pointer to your game's state data.
          */
-        game_engine(const game_info& info, std::string_view title, const glm::ivec2& size);
+        game_engine(std::string_view title, const glm::ivec2& size,
+                    const game_engine_callbacks& callbacks, void* game_state);
         ~game_engine();
 
         game_engine(const game_engine&) = delete;
@@ -97,26 +87,26 @@ namespace engine {
          */
         void run();
 
-        [[nodiscard]] game_window& get_window();
-        [[nodiscard]] game_renderer& get_renderer();
-        [[nodiscard]] game_input& get_input();
-        [[nodiscard]] game_scenes& get_scenes();
+        [[nodiscard]] game_window* get_window() noexcept;
+        [[nodiscard]] game_renderer* get_renderer() noexcept;
+        [[nodiscard]] game_input* get_input() noexcept;
+        [[nodiscard]] game_scenes* get_scenes() noexcept;
 
         /**
          * @brief Get a pointer to your game's data.
          * @tparam T The type of your game's state data. Must be a class type.
-         * @return Reference to your game's state data as type T.
+         * @return Pointer to your game's state data as type T.
          */
         template <class T>
             requires std::is_class_v<T>
-        [[nodiscard]] T& get_state();
+        [[nodiscard]] T* get_state() noexcept;
 
-        [[nodiscard]] float get_tick_rate();
+        [[nodiscard]] float get_tick_rate() noexcept;
         void set_tick_rate(float tick_rate_seconds);
 
-        [[nodiscard]] float get_tick_interval() const;
-        [[nodiscard]] float get_fraction_to_next_tick() const;
-        [[nodiscard]] float get_frame_interval() const;
+        [[nodiscard]] float get_tick_interval() const noexcept;
+        [[nodiscard]] float get_fraction_to_next_tick() const noexcept;
+        [[nodiscard]] float get_frame_interval() const noexcept;
 
     private:
         /**
@@ -139,7 +129,8 @@ namespace engine {
          */
         bool m_is_running;
 
-        game_info m_game;
+        void* m_game_state;
+        game_engine_callbacks m_game_callbacks;
 
         std::unique_ptr<game_window> m_window;
         std::unique_ptr<game_renderer> m_renderer;
@@ -162,29 +153,29 @@ namespace engine {
         float m_frame_interval_seconds;
     };
 
-    inline [[nodiscard]] game_window& game_engine::get_window() {
-        return *m_window;
+    inline game_window* game_engine::get_window() noexcept {
+        return m_window.get();
     }
 
-    inline [[nodiscard]] game_renderer& game_engine::get_renderer() {
-        return *m_renderer;
+    inline game_renderer* game_engine::get_renderer() noexcept {
+        return m_renderer.get();
     }
 
-    inline [[nodiscard]] game_input& game_engine::get_input() {
-        return *m_input;
+    inline game_input* game_engine::get_input() noexcept {
+        return m_input.get();
     }
 
-    inline [[nodiscard]] game_scenes& game_engine::get_scenes() {
-        return *m_scenes;
+    inline game_scenes* game_engine::get_scenes() noexcept {
+        return m_scenes.get();
     }
 
     template <class T>
         requires std::is_class_v<T>
-    [[nodiscard]] T& game_engine::get_state() {
-        return *static_cast<T*>(m_game.state);
+    T* game_engine::get_state() noexcept {
+        return static_cast<T*>(m_game_state);
     }
 
-    inline [[nodiscard]] float game_engine::get_tick_rate() {
+    inline float game_engine::get_tick_rate() noexcept {
         return ticks_rate_to_interval(m_tick_interval_seconds);
     }
 
@@ -192,15 +183,15 @@ namespace engine {
         m_tick_interval_seconds = ticks_rate_to_interval(tick_rate_seconds);
     }
 
-    inline [[nodiscard]] float game_engine::get_tick_interval() const {
+    inline float game_engine::get_tick_interval() const noexcept {
         return m_tick_interval_seconds;
     }
 
-    inline [[nodiscard]] float game_engine::get_fraction_to_next_tick() const {
+    inline float game_engine::get_fraction_to_next_tick() const noexcept {
         return m_fraction_to_next_tick;
     }
 
-    inline [[nodiscard]] float game_engine::get_frame_interval() const {
+    inline float game_engine::get_frame_interval() const noexcept {
         return m_frame_interval_seconds;
     }
 }  // namespace engine

@@ -73,7 +73,7 @@ namespace engine {
         }
     }
 
-    void system_renderer::update(entt::registry& registry, game_renderer& renderer,
+    void system_renderer::update(entt::registry& registry, game_renderer* renderer,
                                  game_resources& resources, const float fraction_to_next_tick) {
         // TODO: Optimize all of this rubbish. Also, make the layering work.
 
@@ -111,7 +111,7 @@ namespace engine {
                 sprite->set_rotation(render_rotation);
                 sprite->set_scale(transform.scale);
 
-                renderer.sprite_draw_world(sprite, render_position);
+                renderer->sprite_draw_world(sprite, render_position);
             }
         }
 
@@ -136,7 +136,7 @@ namespace engine {
                 text->set_scale(transform.scale);
                 text->set_rotation(transform.rotation);
 
-                renderer.text_draw_world(text, render_position);
+                renderer->text_draw_world(text, render_position);
             }
         }
     }

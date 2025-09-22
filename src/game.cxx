@@ -63,24 +63,24 @@ void scene_on_tick(engine::game_scene_info* scene, const float tick_interval) {
 void scene_on_frame(engine::game_scene_info* scene, const float frame_interval) {
     auto& state = scene->get_state<demo_scene_state>();
     auto& entities = *scene->entities;
-    auto& input = scene->engine->get_input();
+    engine::game_input* input = scene->engine->get_input();
     auto& camera = *scene->cameras[engine::game_scene_info::default_camera_name.data()];
     auto& viewport = *scene->viewports[engine::game_scene_info::default_viewport_name.data()];
 
-    if (input.is_key_pressed(engine::game_input_key::c)) {
+    if (input->is_key_pressed(engine::game_input_key::c)) {
         state.is_free_camera = !state.is_free_camera;
     }
 
-    if (input.is_key_pressed(engine::game_input_key::o)) {
+    if (input->is_key_pressed(engine::game_input_key::o)) {
         camera.zoom_by(-0.2f);
     }
 
-    if (input.is_key_pressed(engine::game_input_key::p)) {
+    if (input->is_key_pressed(engine::game_input_key::p)) {
         camera.zoom_by(0.2f);
     }
 
     constexpr float player_acceleration = 250.f;
-    const glm::vec2 movement_input = input.get_movement_wasd();
+    const glm::vec2 movement_input = input->get_movement_wasd();
 
     if (movement_input.x != 0.0f) {
         entities.add_impulse_right(state.player,
@@ -98,14 +98,14 @@ void scene_on_frame(engine::game_scene_info* scene, const float frame_interval) 
 
         camera.follow_target(target_position);
     } else {
-        camera.move_position(input.get_movement_arrows() * state.free_camera_speed *
+        camera.move_position(input->get_movement_arrows() * state.free_camera_speed *
                              frame_interval);
     }
 
-    if (input.is_key_pressed(engine::game_input_key::mouse_left) == true) {
+    if (input->is_key_pressed(engine::game_input_key::mouse_left) == true) {
         // Convert mouse position to world space.
         const glm::vec2 mouse_click_position =
-            viewport.screen_to_world(camera, input.get_mouse_position());
+            viewport.screen_to_world(camera, input->get_mouse_position());
 
         // Move the asteroid to where we clicked.
         entities.set_transform_position(state.asteroid, mouse_click_position);
@@ -124,45 +124,49 @@ void scene_on_draw(engine::game_scene_info* scene, float fraction_to_next_tick) 
     if (auto* camera_text = scene->resources->text_static_get("camera_mode_text")) {
         camera_text->set_text("Camera Mode: {}", state.is_free_camera ? "Free" : "Follow");
         camera_text->set_origin_centered();
-        const glm::vec2 output_size = scene->engine->get_renderer().get_output_size();
-        scene->engine->get_renderer().text_draw_screen(camera_text, {output_size.x * 0.5f, 20.f});
+        const glm::vec2 output_size = scene->engine->get_renderer()->get_output_size();
+        scene->engine->get_renderer()->text_draw_screen(camera_text, {output_size.x * 0.5f, 20.f});
     }
 
     scene->entities->system_renderer_update(scene->engine->get_renderer(), *scene->resources,
                                             fraction_to_next_tick);
 }
 
-void game_on_engine_create(engine::game_engine* engine) {
-    auto& scenes = engine->get_scenes();
+void game_on_engine_start(engine::game_engine* engine) {
+    engine::game_scenes* scenes = engine->get_scenes();
 
-    scenes.register_scene("main_scene", {.on_load = nullptr,
-                                         .on_unload = nullptr,
-                                         .on_activate = scene_on_activate,
-                                         .on_deactivate = nullptr,
-                                         .on_input = nullptr,
-                                         .on_tick = scene_on_tick,
-                                         .on_frame = scene_on_frame,
-                                         .on_draw = scene_on_draw,
-                                         .on_transition_in = nullptr,
-                                         .on_transition_out = nullptr});
+    scenes->register_scene("main_scene", {.on_load = nullptr,
+                                          .on_unload = nullptr,
+                                          .on_activate = scene_on_activate,
+                                          .on_deactivate = nullptr,
+                                          .on_input = nullptr,
+                                          .on_tick = scene_on_tick,
+                                          .on_frame = scene_on_frame,
+                                          .on_draw = scene_on_draw,
+                                          .on_transition_in = nullptr,
+                                          .on_transition_out = nullptr});
 
-    scenes.switch_to_scene("main_scene", &engine->get_state<demo_engine_state>().main_scene,
-                           engine::game_scene_transition::immediate);
+    scenes->switch_to_scene("main_scene", &engine->get_state<demo_engine_state>()->main_scene,
+                            engine::game_scene_transition::immediate);
 }
 
-void game_start() {
+void game_on_engine_end(engine::game_engine* engine) {
+    engine->get_scenes()->unload_scene("main_scene");
+}
+
+void game_entry_point() {
     auto engine_state = std::make_unique<demo_engine_state>();
 
     // Callbacks that the engine exposes to the game developer.
-    engine::game_info info = {.state = engine_state.get(),
-                              .on_create = game_on_engine_create,
-                              .on_destroy = nullptr,
-                              .on_tick = nullptr,
-                              .on_frame = nullptr,
-                              .on_draw = nullptr};
+    engine::game_engine_callbacks engine_callbacks = {.on_engine_start = game_on_engine_start,
+                                                      .on_engine_end = game_on_engine_end,
+                                                      .on_engine_tick = nullptr,
+                                                      .on_engine_frame = nullptr,
+                                                      .on_engine_draw = nullptr};
 
     // Create the game and its resources.
-    engine::game_engine game(info, engine::project_name, {900, 600});
+    engine::game_engine game(engine::project_name, {900, 600}, engine_callbacks,
+                             engine_state.get());
 
     // Run the game loop. (blocks until the game exits)
     game.run();

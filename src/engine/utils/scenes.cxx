@@ -94,7 +94,10 @@ namespace engine {
 
         // Initialize scene systems
         scene_info->entities = std::make_unique<game_entities>();
-        scene_info->resources = std::make_unique<game_resources>(m_engine->get_renderer());
+        // The engine accessor returns a pointer; ensure it's valid and pass a reference
+        game_renderer* renderer = m_engine->get_renderer();
+        ensure(renderer != nullptr, "Renderer pointer is null when creating scene resources");
+        scene_info->resources = std::make_unique<game_resources>(*renderer);
 
         // Create default camera and viewport
         create_default_camera_viewport(scene_info.get());
@@ -500,26 +503,34 @@ namespace engine {
             return;
         }
 
-        auto& renderer = m_engine->get_renderer();
+        game_renderer* renderer = m_engine->get_renderer();
+        if (!renderer) {
+            log_error("Cannot update renderer for active scene: renderer is null");
+            return;
+        }
 
         // Set the scene's default camera as active on the renderer
         auto camera_it = active_scene->cameras.find(game_scene_info::default_camera_name.data());
         if (camera_it != active_scene->cameras.end()) {
-            renderer.set_camera(camera_it->second.get());
+            renderer->set_camera(camera_it->second.get());
         }
 
         // Set the scene's default viewport as active on the renderer
         auto viewport_it =
             active_scene->viewports.find(game_scene_info::default_viewport_name.data());
         if (viewport_it != active_scene->viewports.end()) {
-            renderer.set_viewport(viewport_it->second.get());
+            renderer->set_viewport(viewport_it->second.get());
         }
     }
 
     void game_scenes::reset_renderer_to_global() {
-        auto& renderer = m_engine->get_renderer();
+        game_renderer* renderer = m_engine->get_renderer();
+        if (!renderer) {
+            log_error("Cannot reset renderer to global: renderer is null");
+            return;
+        }
 
-        renderer.set_camera(nullptr);
-        renderer.set_viewport(nullptr);
+        renderer->set_camera(nullptr);
+        renderer->set_viewport(nullptr);
     }
 }  // namespace engine
