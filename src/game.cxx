@@ -142,12 +142,9 @@ void game_on_engine_start(engine::game_engine* engine) {
                                           .on_input = nullptr,
                                           .on_tick = scene_on_tick,
                                           .on_frame = scene_on_frame,
-                                          .on_draw = scene_on_draw,
-                                          .on_transition_in = nullptr,
-                                          .on_transition_out = nullptr});
+                                          .on_draw = scene_on_draw});
 
-    scenes->switch_to_scene("main_scene", &engine->get_state<demo_engine_state>()->main_scene,
-                            engine::game_scene_transition::immediate);
+    scenes->switch_to_scene("main_scene", &engine->get_state<demo_engine_state>()->main_scene);
 }
 
 void game_on_engine_end(engine::game_engine* engine) {

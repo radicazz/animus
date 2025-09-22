@@ -42,19 +42,6 @@ namespace engine {
     };
 
     /**
-     * @brief Scene transition types for scene switching.
-     *
-     * Defines different visual transition effects that can be applied when switching scenes.
-     */
-    enum class game_scene_transition {
-        immediate,  ///< Instant scene switch with no visual effect
-        fade_in,    ///< Fade in from black
-        fade_out,   ///< Fade out to black
-        crossfade,  ///< Crossfade between scenes
-        custom      ///< Custom transition defined by the game
-    };
-
-    /**
      * @brief Scene callback function definitions.
      *
      * This structure contains function pointers for all scene lifecycle and frame callbacks.
@@ -70,11 +57,6 @@ namespace engine {
         void (*on_tick)(game_scene_info* scene, float tick_interval) = nullptr;
         void (*on_frame)(game_scene_info* scene, float frame_interval) = nullptr;
         void (*on_draw)(game_scene_info* scene, float fraction_to_next_tick) = nullptr;
-
-        void (*on_transition_in)(game_scene_info* scene,
-                                 game_scene_transition transition) = nullptr;
-        void (*on_transition_out)(game_scene_info* scene,
-                                  game_scene_transition transition) = nullptr;
     };
 
     /**
@@ -150,14 +132,13 @@ namespace engine {
         [[nodiscard]] bool has_active_scene() const;
         [[nodiscard]] std::string_view get_active_scene_id() const;
 
-        void load_scene(std::string_view scene_id, void* scene_state = nullptr);
-        void activate_scene(std::string_view scene_id,
-                            game_scene_transition transition = game_scene_transition::immediate);
-        void deactivate_current_scene();
+        void load_scene(std::string_view scene_id, void* scene_state);
         void unload_scene(std::string_view scene_id);
 
-        void switch_to_scene(std::string_view scene_id, void* scene_state = nullptr,
-                             game_scene_transition transition = game_scene_transition::immediate);
+        void activate_scene(std::string_view scene_id);
+        void deactivate_current_scene();
+
+        void switch_to_scene(std::string_view scene_id, void* scene_state);
 
         [[nodiscard]] game_scene_info* get_active_scene();
         [[nodiscard]] const game_scene_info* get_active_scene() const;
@@ -185,7 +166,6 @@ namespace engine {
     private:
         void create_default_camera_viewport(game_scene_info* scene_info);
         void cleanup_scene_resources(game_scene_info* scene_info);
-        void deactivate_current_scene_with_transition(game_scene_transition transition);
         void update_renderer_for_active_scene();
         void reset_renderer_to_global();
 
