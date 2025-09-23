@@ -20,6 +20,7 @@ namespace engine {
      */
     class game_viewport {
     public:
+        game_viewport() = delete;
         game_viewport(std::string_view name, const glm::vec2& position_normalized,
                       const glm::vec2& size_normalized);
         ~game_viewport() = default;
@@ -54,6 +55,9 @@ namespace engine {
                         const glm::vec2& size) const;
 
         void clamp_camera_to_bounds(game_camera& camera) const;
+
+    public:
+        static constexpr std::string_view default_name = "main";
 
     private:
         static [[nodiscard]] glm::vec2 clamp_normalized(const glm::vec2& vec);

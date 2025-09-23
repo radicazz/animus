@@ -64,8 +64,8 @@ void scene_on_frame(engine::game_scene_info* scene, const float frame_interval) 
     auto& state = scene->get_state<demo_scene_state>();
     auto& entities = *scene->entities;
     engine::game_input* input = scene->engine->get_input();
-    auto& camera = *scene->cameras[engine::game_scene_info::default_camera_name.data()];
-    auto& viewport = *scene->viewports[engine::game_scene_info::default_viewport_name.data()];
+    auto& camera = *scene->cameras[engine::game_camera::default_name.data()];
+    auto& viewport = *scene->viewports[engine::game_viewport::default_name.data()];
 
     if (input->is_key_pressed(engine::game_input_key::c)) {
         state.is_free_camera = !state.is_free_camera;

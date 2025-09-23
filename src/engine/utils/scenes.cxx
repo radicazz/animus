@@ -293,16 +293,15 @@ namespace engine {
     }
 
     void game_scenes::remove_camera(std::string_view name) {
-        auto* active_scene = get_active_scene();
-        if (!active_scene) {
-            throw std::runtime_error("No active scene available for camera management");
-        }
+        game_scene_info* active_scene = get_active_scene();
+        ensure(active_scene != nullptr, "No active scene available for camera management");
 
         std::string name_str{name};
 
         // Prevent removal of default camera
-        if (name_str == game_scene_info::default_camera_name) {
-            throw std::runtime_error("Cannot remove default '" + name_str + "' camera from scene");
+        if (name_str.compare(game_camera::default_name) == 0) {
+            log_warning("Attempted to remove default camera '{}' from active scene", name_str);
+            return;
         }
 
         auto it = active_scene->cameras.find(name_str);
@@ -312,6 +311,7 @@ namespace engine {
         }
 
         active_scene->cameras.erase(it);
+
         log_info("Removed camera '{}' from active scene '{}'", name_str, active_scene->scene_id);
     }
 
@@ -354,9 +354,9 @@ namespace engine {
         std::string name_str{name};
 
         // Prevent removal of default viewport
-        if (name_str == game_scene_info::default_viewport_name) {
-            throw std::runtime_error("Cannot remove default '" + name_str +
-                                     "' viewport from scene");
+        if (name_str.compare(game_viewport::default_name) == 0) {
+            log_warning("Attempted to remove default viewport '{}' from active scene", name_str);
+            return;
         }
 
         auto it = active_scene->viewports.find(name_str);
@@ -429,12 +429,12 @@ namespace engine {
 
     void game_scenes::create_default_camera_viewport(game_scene_info* scene_info) {
         // Create default main camera with default position (0,0) and zoom (1.0)
-        std::string main_camera{game_scene_info::default_camera_name};
+        std::string main_camera{game_camera::default_name};
         scene_info->cameras[main_camera] =
             std::make_unique<game_camera>(main_camera, glm::vec2{0.0f, 0.0f}, 1.0f);
 
         // Create default main viewport
-        std::string main_viewport{game_scene_info::default_viewport_name};
+        std::string main_viewport{game_viewport::default_name};
         scene_info->viewports[main_viewport] = std::make_unique<game_viewport>(
             main_viewport, glm::vec2{0.f, 0.f}, glm::vec2{1.f, 1.f});
     }
@@ -471,14 +471,13 @@ namespace engine {
         }
 
         // Set the scene's default camera as active on the renderer
-        auto camera_it = active_scene->cameras.find(game_scene_info::default_camera_name.data());
+        auto camera_it = active_scene->cameras.find(game_camera::default_name.data());
         if (camera_it != active_scene->cameras.end()) {
             renderer->set_camera(camera_it->second.get());
         }
 
         // Set the scene's default viewport as active on the renderer
-        auto viewport_it =
-            active_scene->viewports.find(game_scene_info::default_viewport_name.data());
+        auto viewport_it = active_scene->viewports.find(game_viewport::default_name.data());
         if (viewport_it != active_scene->viewports.end()) {
             renderer->set_viewport(viewport_it->second.get());
         }

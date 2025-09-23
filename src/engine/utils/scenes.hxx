@@ -85,10 +85,6 @@ namespace engine {
         std::unordered_map<std::string, std::unique_ptr<game_camera>> cameras;
         std::unordered_map<std::string, std::unique_ptr<game_viewport>> viewports;
 
-        // Default camera/viewport names
-        static constexpr std::string_view default_camera_name = "main";
-        static constexpr std::string_view default_viewport_name = "main";
-
         /**
          * @brief Get the scene-specific state as the specified type.
          * @tparam T The type to cast the scene state to. Must be a class type.

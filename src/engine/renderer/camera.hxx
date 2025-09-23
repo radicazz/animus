@@ -12,6 +12,7 @@
 namespace engine {
     class game_camera {
     public:
+        game_camera() = delete;
         game_camera(std::string_view name, glm::vec2 position, float zoom);
         ~game_camera() = default;
 
@@ -42,6 +43,9 @@ namespace engine {
 
         // Called by a viewport to respect camera bounds, given visible half extents in world units.
         void clamp_to_physical_bounds(const glm::vec2& half_visible_world);
+
+    public:
+        static constexpr std::string_view default_name = "main";
 
     private:
         std::string m_name;
