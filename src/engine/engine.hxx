@@ -35,27 +35,27 @@ namespace engine {
         /**
          * @brief Called in the engine's constructor after components are initialized.
          */
-        void (*on_engine_start)(game_engine* engine) = nullptr;
+        void (*on_start)(game_engine* engine) = nullptr;
 
         /**
          * @brief Called in the engine's destructor before components are destroyed.
          */
-        void (*on_engine_end)(game_engine* engine) = nullptr;
+        void (*on_end)(game_engine* engine) = nullptr;
 
         /**
          * @brief Called every fixed update (tick) at a fixed interval.
          */
-        void (*on_engine_tick)(game_engine* engine, float tick_interval) = nullptr;
+        void (*on_tick)(game_engine* engine, float tick_interval) = nullptr;
 
         /**
          * @brief Called every frame before rendering.
          */
-        void (*on_engine_frame)(game_engine* engine, float frame_interval) = nullptr;
+        void (*on_frame)(game_engine* engine, float frame_interval) = nullptr;
 
         /**
          * @brief Called every frame during rendering.
          */
-        void (*on_engine_draw)(game_engine* engine, float fraction_to_next_tick) = nullptr;
+        void (*on_draw)(game_engine* engine, float fraction_to_next_tick) = nullptr;
     };
 
     /**
@@ -87,19 +87,20 @@ namespace engine {
          */
         void run();
 
-        [[nodiscard]] game_window* get_window() noexcept;
-        [[nodiscard]] game_renderer* get_renderer() noexcept;
-        [[nodiscard]] game_input* get_input() noexcept;
-        [[nodiscard]] game_scenes* get_scenes() noexcept;
-
         /**
-         * @brief Get a pointer to your game's data.
+         * @brief Access your game's state.
          * @tparam T The type of your game's state data. Must be a class type.
-         * @return Pointer to your game's state data as type T.
+         * @return Pointer to your game's state, casted to type T.
+         * @note Only returns nullptr if no state was provided at engine creation.
          */
         template <class T>
             requires std::is_class_v<T>
         [[nodiscard]] T* get_state() noexcept;
+
+        [[nodiscard]] game_window* get_window() noexcept;
+        [[nodiscard]] game_renderer* get_renderer() noexcept;
+        [[nodiscard]] game_input* get_input() noexcept;
+        [[nodiscard]] game_scenes* get_scenes() noexcept;
 
         [[nodiscard]] float get_tick_rate() noexcept;
         void set_tick_rate(float tick_rate_seconds);
@@ -111,17 +112,14 @@ namespace engine {
     private:
         /**
          * @brief Internal wrapper to initialize and shutdown SDL and related subsystems.
-         *
-         * The game_engine class initalizes all of its subsystems (window, renderer, input, etc)
-         * before it enters its own constructor due to the design of initializer lists in C++.
-         *
-         * By making this the first member and initializing it first, it gives us a chance to
-         * run some code before the rest of the engine is initialized.
          */
         struct engine_wrapper {
             engine_wrapper();
             ~engine_wrapper();
-        } m_wrapper;
+        };
+
+    private:
+        engine_wrapper m_wrapper;
 
         /**
          * @brief Whether to keep the game loop running or not.
@@ -129,29 +127,24 @@ namespace engine {
          */
         bool m_is_running;
 
-        void* m_game_state;
-        game_engine_callbacks m_game_callbacks;
+        void* m_state;
+        game_engine_callbacks m_callbacks;
 
         std::unique_ptr<game_window> m_window;
         std::unique_ptr<game_renderer> m_renderer;
         std::unique_ptr<game_input> m_input;
         std::unique_ptr<game_scenes> m_scenes;
 
-        /**
-         * @brief The amount of time between each fixed update (tick).
-         */
-        float m_tick_interval_seconds;
-
-        /**
-         * @brief Fraction of time elapsed towards the next fixed update (tick).
-         */
-        float m_fraction_to_next_tick;
-
-        /**
-         * @brief The time spent between the last two frames in seconds.
-         */
-        float m_frame_interval_seconds;
+        float m_tick_interval_seconds;  ///< The amount of time (seconds) between each fixed update.
+        float m_fraction_to_next_tick;  ///< Time elapsed towards next tick (0.0 to 1.0).
+        float m_frame_interval_seconds;  /// The time spent between the last two frames in seconds.
     };
+
+    template <class T>
+        requires std::is_class_v<T>
+    T* game_engine::get_state() noexcept {
+        return static_cast<T*>(m_state);
+    }
 
     inline game_window* game_engine::get_window() noexcept {
         return m_window.get();
@@ -167,12 +160,6 @@ namespace engine {
 
     inline game_scenes* game_engine::get_scenes() noexcept {
         return m_scenes.get();
-    }
-
-    template <class T>
-        requires std::is_class_v<T>
-    T* game_engine::get_state() noexcept {
-        return static_cast<T*>(m_game_state);
     }
 
     inline float game_engine::get_tick_rate() noexcept {

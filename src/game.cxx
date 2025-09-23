@@ -155,11 +155,11 @@ void game_entry_point() {
     auto engine_state = std::make_unique<demo_engine_state>();
 
     // Callbacks that the engine exposes to the game developer.
-    engine::game_engine_callbacks engine_callbacks = {.on_engine_start = game_on_engine_start,
-                                                      .on_engine_end = game_on_engine_end,
-                                                      .on_engine_tick = nullptr,
-                                                      .on_engine_frame = nullptr,
-                                                      .on_engine_draw = nullptr};
+    engine::game_engine_callbacks engine_callbacks = {.on_start = game_on_engine_start,
+                                                      .on_end = game_on_engine_end,
+                                                      .on_tick = nullptr,
+                                                      .on_frame = nullptr,
+                                                      .on_draw = nullptr};
 
     // Create the game and its resources.
     engine::game_engine game(engine::project_name, {900, 600}, engine_callbacks,
