@@ -1,11 +1,15 @@
 #include "camera.hxx"
-#include <glm/gtc/matrix_transform.hpp>
-#include <algorithm>
 
 namespace engine {
-    game_camera::game_camera(glm::vec2 world_position, float zoom_level)
-        : m_world_position(world_position) {
-        m_zoom_level = glm::clamp(zoom_level, min_zoom, max_zoom);
+    game_camera::game_camera(std::string_view name, glm::vec2 world_position, float zoom_level)
+        : m_name(name),
+          m_position(world_position),
+          m_zoom(zoom_level),
+          m_has_physical_bounds(false),
+          m_physical_bounds_min(0.0f),
+          m_physical_bounds_max(0.0f),
+          m_follow_offset(0.0f) {
+        m_zoom = glm::clamp(zoom_level, min_zoom, max_zoom);
     }
 
     void game_camera::set_physical_bounds(const glm::vec2& min_bounds,
@@ -19,14 +23,6 @@ namespace engine {
         m_has_physical_bounds = false;
         m_physical_bounds_min = glm::vec2{0.0f};
         m_physical_bounds_max = glm::vec2{0.0f};
-    }
-
-    glm::vec2 game_camera::get_physical_bounds_min() const {
-        return m_physical_bounds_min;
-    }
-
-    glm::vec2 game_camera::get_physical_bounds_max() const {
-        return m_physical_bounds_max;
     }
 
     void game_camera::follow_target(const glm::vec2& target_position, float lerp_speed) {
@@ -52,11 +48,11 @@ namespace engine {
         const float max_y = m_physical_bounds_max.y - half_visible_world.y;
 
         if (min_x <= max_x) {
-            m_world_position.x = glm::clamp(m_world_position.x, min_x, max_x);
+            m_position.x = glm::clamp(m_position.x, min_x, max_x);
         }
+
         if (min_y <= max_y) {
-            m_world_position.y = glm::clamp(m_world_position.y, min_y, max_y);
+            m_position.y = glm::clamp(m_position.y, min_y, max_y);
         }
     }
-
 }  // namespace engine

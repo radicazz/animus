@@ -72,11 +72,11 @@ void scene_on_frame(engine::game_scene_info* scene, const float frame_interval) 
     }
 
     if (input->is_key_pressed(engine::game_input_key::o)) {
-        camera.zoom_by(-0.2f);
+        camera.zoom_additive(-0.2f);
     }
 
     if (input->is_key_pressed(engine::game_input_key::p)) {
-        camera.zoom_by(0.2f);
+        camera.zoom_additive(0.2f);
     }
 
     constexpr float player_acceleration = 250.f;

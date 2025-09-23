@@ -288,7 +288,7 @@ namespace engine {
                         name_str);
         }
 
-        active_scene->cameras[name_str] = std::make_unique<game_camera>(position, zoom);
+        active_scene->cameras[name_str] = std::make_unique<game_camera>(name, position, zoom);
         log_info("Added camera '{}' to active scene '{}'", name_str, active_scene->scene_id);
     }
 
@@ -431,8 +431,8 @@ namespace engine {
     void game_scenes::create_default_camera_viewport(game_scene_info* scene_info) {
         // Create default main camera with default position (0,0) and zoom (1.0)
         std::string main_camera{game_scene_info::default_camera_name};
-        scene_info->cameras[main_camera] =
-            std::make_unique<game_camera>(glm::vec2{0.0f, 0.0f}, 1.0f);
+        scene_info->cameras[main_camera] = std::make_unique<game_camera>(
+            game_scene_info::default_camera_name, glm::vec2{0.0f, 0.0f}, 1.0f);
 
         // Create default main viewport
         std::string main_viewport{game_scene_info::default_viewport_name};
