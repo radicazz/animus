@@ -20,7 +20,7 @@ namespace engine {
      */
     class game_resources {
     public:
-        explicit game_resources(game_renderer& renderer);
+        explicit game_resources(game_renderer* renderer);
         ~game_resources();
 
         game_resources(const game_resources&) = delete;
@@ -67,6 +67,6 @@ namespace engine {
         std::unordered_map<std::string, game_text_static::uptr> m_static_texts;
         std::unordered_map<std::string, game_text_dynamic::uptr> m_dynamic_texts;
 
-        const game_renderer& m_renderer;
+        game_renderer* m_renderer;
     };
 }  // namespace engine

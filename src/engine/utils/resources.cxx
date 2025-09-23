@@ -1,16 +1,25 @@
 #include "resources.hxx"
 
-#include "../logger.hxx"
-#include "../renderer/renderer.hxx"
+#include <stdexcept>
+#include <format>
 
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3_image/SDL_image.h>
 
-#include <stdexcept>
-#include <format>
+#include "../logger.hxx"
+#include "../safety.hxx"
+
+#include "../renderer/renderer.hxx"
 
 namespace engine {
-    game_resources::game_resources(game_renderer& renderer) : m_renderer(renderer) {
+    game_resources::game_resources(game_renderer* renderer)
+        : m_textures(),
+          m_sprites(),
+          m_fonts(),
+          m_static_texts(),
+          m_dynamic_texts(),
+          m_renderer(renderer) {
+        ensure(m_renderer != nullptr, "game_renderer pointer cannot be null");
     }
 
     game_resources::~game_resources() {
@@ -27,7 +36,6 @@ namespace engine {
           m_static_texts(std::move(other.m_static_texts)),
           m_dynamic_texts(std::move(other.m_dynamic_texts)),
           m_renderer(other.m_renderer) {
-        // Note: Can't move m_renderer as it's a reference
     }
 
     game_resources& game_resources::operator=(game_resources&& other) noexcept {
@@ -43,6 +51,7 @@ namespace engine {
             m_fonts = std::move(other.m_fonts);
             m_static_texts = std::move(other.m_static_texts);
             m_dynamic_texts = std::move(other.m_dynamic_texts);
+            m_renderer = other.m_renderer;
         }
 
         return *this;
@@ -101,7 +110,7 @@ namespace engine {
             return m_textures.at(file_path.data());
         }
 
-        SDL_Texture* texture = IMG_LoadTexture(m_renderer.get_sdl_renderer(), file_path.data());
+        SDL_Texture* texture = IMG_LoadTexture(m_renderer->get_sdl_renderer(), file_path.data());
         if (texture == nullptr) {
             throw std::runtime_error(std::format("Failed to load the texture at: {}", file_path));
         }
@@ -175,7 +184,7 @@ namespace engine {
 
         TTF_Font* font = font_get_or_create(font_path, font_size);
         TTF_Text* sdl_text =
-            TTF_CreateText(m_renderer.get_sdl_text_engine(), font, text.data(), text.length());
+            TTF_CreateText(m_renderer->get_sdl_text_engine(), font, text.data(), text.length());
         if (sdl_text == nullptr) {
             throw std::runtime_error(std::format("Failed to create static text: {}", key));
         }
@@ -197,14 +206,14 @@ namespace engine {
         }
 
         TTF_Font* font = font_get_or_create(font_path, font_size);
-        TTF_Text* sdl_text = TTF_CreateText(m_renderer.get_sdl_text_engine(), font,
+        TTF_Text* sdl_text = TTF_CreateText(m_renderer->get_sdl_text_engine(), font,
                                             initial_text.data(), initial_text.length());
         if (sdl_text == nullptr) {
             throw std::runtime_error(std::format("Failed to create dynamic text base: {}", key));
         }
 
         auto text_obj = std::make_unique<game_text_dynamic>(std::string(initial_text), sdl_text,
-                                                            m_renderer.get_sdl_renderer(), font);
+                                                            m_renderer->get_sdl_renderer(), font);
         game_text_dynamic* ptr = text_obj.get();
         m_dynamic_texts[std::string(key)] = std::move(text_obj);
 

@@ -72,8 +72,8 @@ namespace engine {
          * @param callbacks Your game state and its callbacks.
          * @param game_state Pointer to your game's state data.
          */
-        game_engine(std::string_view title, const glm::ivec2& size,
-                    const game_engine_callbacks& callbacks, void* game_state);
+        game_engine(std::string_view title, const glm::ivec2& size, void* game_state,
+                    const game_engine_callbacks& callbacks);
         ~game_engine();
 
         game_engine(const game_engine&) = delete;
@@ -82,10 +82,16 @@ namespace engine {
         game_engine& operator=(game_engine&&) = delete;
 
         /**
-         * @brief Start running the game loop.
-         * @note This function will block until the game quits.
+         * @brief Start the game loop.
+         * @note Will block the main thread until the game exits.
          */
-        void run();
+        void start_running();
+
+        /**
+         * @brief Stop the game loop.
+         * @note Will gracefully exit the game loop on the next iteration.
+         */
+        void stop_running() noexcept;
 
         /**
          * @brief Access your game's state.

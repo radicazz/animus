@@ -1,17 +1,12 @@
 /**
  * @file scenes.hxx
  * @brief Scene management system for the game engine.
- *
- * This file defines the scene management system that enables modular, flexible scene switching
- * with per-scene resources, entities, cameras, and viewports while maintaining compatibility
- * with the existing engine architecture.
  */
 
 #pragma once
 
 #include <unordered_map>
 #include <string>
-#include <string_view>
 #include <memory>
 #include <type_traits>
 
@@ -21,94 +16,120 @@
 #include "../renderer/viewport.hxx"
 
 namespace engine {
-    // Forward declarations
-    class game_engine;
-    class game_scenes;
-    struct game_scene_callbacks;
-    struct game_scene_info;
-    class game_input;
+    class game_scene;
 
     /**
-     * @brief Scene state management enumeration.
-     *
-     * Represents the current lifecycle state of a scene within the engine.
-     */
-    enum class game_scene_lifetime {
-        unloaded,  ///< Scene is not loaded in memory
-        loading,   ///< Scene is currently being loaded
-        active,    ///< Scene is currently active and running
-        paused,    ///< Scene is loaded but paused
-        unloading  ///< Scene is currently being unloaded
-    };
-
-    /**
-     * @brief Scene callback function definitions.
-     *
-     * This structure contains function pointers for all scene lifecycle and frame callbacks.
-     * Games implement these callbacks to define scene-specific behavior.
+     * @brief Callbacks for hooking into the game scene lifecycle.
      */
     struct game_scene_callbacks {
-        void (*on_load)(game_scene_info* scene) = nullptr;
-        void (*on_unload)(game_scene_info* scene) = nullptr;
-        void (*on_activate)(game_scene_info* scene) = nullptr;
-        void (*on_deactivate)(game_scene_info* scene) = nullptr;
-
-        void (*on_input)(game_scene_info* scene) = nullptr;
-        void (*on_tick)(game_scene_info* scene, float tick_interval) = nullptr;
-        void (*on_frame)(game_scene_info* scene, float frame_interval) = nullptr;
-        void (*on_draw)(game_scene_info* scene, float fraction_to_next_tick) = nullptr;
+        void (*on_load)(game_scene* scene) = nullptr;
+        void (*on_unload)(game_scene* scene) = nullptr;
+        void (*on_activate)(game_scene* scene) = nullptr;
+        void (*on_deactivate)(game_scene* scene) = nullptr;
+        void (*on_input)(game_scene* scene) = nullptr;
+        void (*on_tick)(game_scene* scene, float tick_interval) = nullptr;
+        void (*on_frame)(game_scene* scene, float frame_interval) = nullptr;
+        void (*on_draw)(game_scene* scene, float fraction_to_next_tick) = nullptr;
     };
 
+    class game_engine;
+
     /**
-     * @brief Contains scene-specific data and systems.
+     * @brief Represents a single scene with its own state managed by the engine.
      *
-     * This structure holds all the data associated with a specific scene, including its state,
-     * resources, entities, cameras, and viewports. It serves as the primary interface for
-     * scene callbacks to access scene-specific functionality.
+     * @todo Refactor cameras and viewports to use std::vector:
+     *      - Both of the classes already store their names as fields.
+     *      - No unnecessary string allocations for keys in std::unorderdered_map.
      */
-    struct game_scene_info {
-        // Scene identification
-        std::string scene_id;
-        game_scene_lifetime state = game_scene_lifetime::unloaded;
+    class game_scene {
+    public:
+        game_scene() = delete;
+        game_scene(std::string_view name, void* state, const game_scene_callbacks& callbacks,
+                   game_engine* engine);
+        ~game_scene() = default;
 
-        void* scene_state = nullptr;
+        game_scene(const game_scene&) = default;
+        game_scene& operator=(const game_scene&) = default;
+        game_scene(game_scene&&) = default;
+        game_scene& operator=(game_scene&&) = default;
 
-        // Back-references for scene callbacks
-        game_scene_callbacks scene = {};
-        game_engine* engine = nullptr;
-
-        // Scene-specific systems
-        std::unique_ptr<game_entities> entities;
-        std::unique_ptr<game_resources> resources;
-
-        // Multi-camera/viewport support
-        std::unordered_map<std::string, std::unique_ptr<game_camera>> cameras;
-        std::unordered_map<std::string, std::unique_ptr<game_viewport>> viewports;
+        [[nodiscard]] std::string_view get_name() const;
 
         /**
          * @brief Get the scene-specific state as the specified type.
          * @tparam T The type to cast the scene state to. Must be a class type.
-         * @return Reference to the scene state as type T.
+         * @return Pointer to the scene state as type T.
          */
         template <class T>
             requires std::is_class_v<T>
-        [[nodiscard]] T& get_state();
+        [[nodiscard]] T* get_state() noexcept;
+
+        [[nodiscard]] game_scene_callbacks& get_callbacks();
+        [[nodiscard]] game_engine* get_engine();
+
+        [[nodiscard]] game_entities* get_entities();
+        [[nodiscard]] game_resources* get_resources();
+        [[nodiscard]] game_camera* get_camera(std::string_view name);
+        [[nodiscard]] game_viewport* get_viewport(std::string_view name);
+
+    private:
+        std::string m_name;
+
+        void* m_state;
+        game_scene_callbacks m_callbacks;
+        game_engine* m_engine;
+
+        std::unique_ptr<game_entities> m_entities;
+        std::unique_ptr<game_resources> m_resources;
+        std::unordered_map<std::string, std::unique_ptr<game_camera>> m_cameras;
+        std::unordered_map<std::string, std::unique_ptr<game_viewport>> m_viewports;
     };
+
+    inline std::string_view game_scene::get_name() const {
+        return m_name;
+    }
 
     template <class T>
         requires std::is_class_v<T>
-    T& game_scene_info::get_state() {
-        return *static_cast<T*>(scene_state);
+    T* game_scene::get_state() noexcept {
+        return static_cast<T*>(m_state);
+    }
+
+    inline game_scene_callbacks& game_scene::get_callbacks() {
+        return m_callbacks;
+    }
+
+    inline game_engine* game_scene::get_engine() {
+        return m_engine;
+    }
+
+    inline game_entities* game_scene::get_entities() {
+        return m_entities.get();
+    }
+
+    inline game_resources* game_scene::get_resources() {
+        return m_resources.get();
+    }
+
+    inline game_camera* game_scene::get_camera(std::string_view name) {
+        auto it = m_cameras.find(std::string{name});
+        if (it != m_cameras.end()) {
+            return it->second.get();
+        }
+
+        return nullptr;
+    }
+
+    inline game_viewport* game_scene::get_viewport(std::string_view name) {
+        auto it = m_viewports.find(std::string{name});
+        if (it != m_viewports.end()) {
+            return it->second.get();
+        }
+        return nullptr;
     }
 
     /**
      * @brief Scene management system for the game engine.
-     *
-     * This class manages the registration, loading, activation, and cleanup of game scenes.
-     * It provides a complete scene system with per-scene resources, entities, cameras,
-     * and viewports while maintaining integration with the existing engine architecture.
-     *
-     * @note Most of this code needs to be rewritten and improved, but it works for now.
      */
     class game_scenes {
     public:
@@ -121,66 +142,56 @@ namespace engine {
         game_scenes(game_scenes&&) = delete;
         game_scenes& operator=(game_scenes&&) = delete;
 
-        void register_scene(std::string_view scene_id, const game_scene_callbacks& scene);
-        void unregister_scene(std::string_view scene_id);
+        void load_scene(std::string_view name, void* state, const game_scene_callbacks& callbacks);
+        void unload_scene(std::string_view name);
+        [[nodiscard]] bool is_scene_loaded(std::string_view name) const;
 
-        [[nodiscard]] bool has_scene(std::string_view scene_id) const;
-        [[nodiscard]] bool has_active_scene() const;
-        [[nodiscard]] std::string_view get_active_scene_id() const;
-
-        void load_scene(std::string_view scene_id, void* scene_state);
-        void unload_scene(std::string_view scene_id);
-
-        void activate_scene(std::string_view scene_id);
+        void activate_scene(std::string_view name);
         void deactivate_current_scene();
 
-        void switch_to_scene(std::string_view scene_id, void* scene_state);
+        [[nodiscard]] bool is_scene_active() const;
+        [[nodiscard]] std::string_view get_active_scene_name() const;
+        [[nodiscard]] game_scene* get_active_scene();
 
-        [[nodiscard]] game_scene_info* get_active_scene();
-        [[nodiscard]] const game_scene_info* get_active_scene() const;
+        void for_each_scene(void (*callback)(std::string_view name, const game_scene& scene)) const;
 
-        [[nodiscard]] game_camera& get_camera(std::string_view name = "main");
-        [[nodiscard]] game_viewport& get_viewport(std::string_view name = "main");
-
-        void add_camera(std::string_view name, const glm::vec2& position = {0.0f, 0.0f},
-                        float zoom = 1.0f);
-        void remove_camera(std::string_view name);
-        [[nodiscard]] bool has_camera(std::string_view name) const;
-
-        void add_viewport(std::string_view name, const glm::vec2& position = {0.0f, 0.0f},
-                          const glm::vec2& size = {1.0f, 1.0f});
-        void remove_viewport(std::string_view name);
-        [[nodiscard]] bool has_viewport(std::string_view name) const;
-
-        void for_each_scene(void (*callback)(const std::string&, const game_scene_info&)) const;
-
-        void on_tick(float tick_interval);
-        void on_frame(float frame_interval);
-        void on_draw(float fraction_to_next_tick);
-        void on_input();
+        void on_engine_tick(float tick_interval);
+        void on_engine_frame(float frame_interval);
+        void on_engine_draw(float fraction_to_next_tick);
+        void on_engine_input();
 
     private:
-        void create_default_camera_viewport(game_scene_info* scene_info);
-        void cleanup_scene_resources(game_scene_info* scene_info);
         void update_renderer_for_active_scene();
         void reset_renderer_to_global();
 
     private:
         game_engine* m_engine;
-        std::unordered_map<std::string, std::unique_ptr<game_scene_info>> m_scenes;
-        std::string m_active_scene_id;
+        std::unordered_map<std::string, std::unique_ptr<game_scene>> m_scenes;
+        std::string m_active_scene_name;
     };
 
-    inline bool game_scenes::has_scene(std::string_view scene_id) const {
-        return m_scenes.contains(std::string(scene_id));
+    inline bool game_scenes::is_scene_loaded(std::string_view name) const {
+        return m_scenes.contains(std::string(name));
     }
 
-    inline bool game_scenes::has_active_scene() const {
-        return !m_active_scene_id.empty();
+    inline bool game_scenes::is_scene_active() const {
+        return m_active_scene_name.empty() != true;
     }
 
-    inline std::string_view game_scenes::get_active_scene_id() const {
-        return m_active_scene_id;
+    inline std::string_view game_scenes::get_active_scene_name() const {
+        return m_active_scene_name;
     }
 
+    inline game_scene* game_scenes::get_active_scene() {
+        if (is_scene_active() == false) {
+            return nullptr;
+        }
+
+        auto it = m_scenes.find(std::string(m_active_scene_name));
+        if (it != m_scenes.end()) {
+            return it->second.get();
+        }
+
+        return nullptr;
+    }
 }  // namespace engine

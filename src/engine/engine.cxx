@@ -9,10 +9,10 @@
 #include "safety.hxx"
 
 namespace engine {
-    game_engine::game_engine(std::string_view title, const glm::ivec2& size,
-                             const game_engine_callbacks& callbacks, void* game_state)
+    game_engine::game_engine(std::string_view title, const glm::ivec2& size, void* game_state,
+                             const game_engine_callbacks& callbacks)
         : m_wrapper(),
-          m_is_running(true),
+          m_is_running(false),
           m_state(game_state),
           m_callbacks(callbacks),
           m_window(std::make_unique<game_window>(title, size, game_window_type::resizable)),
@@ -36,7 +36,17 @@ namespace engine {
         safe_invoke(m_callbacks.on_end, this);
     }
 
-    void game_engine::run() {
+    void game_engine::start_running() {
+        if (m_is_running == true) {
+            // TODO: Better way to handle this?
+            log_error("Game engine is already running on this object.");
+            return;
+        }
+
+        m_is_running = true;
+
+        log_info("Starting game loop...");
+
         std::uint64_t frame_performance_count = performance_counter_value_current();
         float seconds_since_last_tick = 0.f;
 
@@ -56,26 +66,32 @@ namespace engine {
 
                     m_input->process_sdl_event(event);
                 }
+
+                m_scenes->on_engine_input();
             }
 
-            m_scenes->on_input();
-
             while (seconds_since_last_tick >= m_tick_interval_seconds) [[likely]] {
+                m_scenes->on_engine_tick(m_tick_interval_seconds);
                 safe_invoke(m_callbacks.on_tick, this, m_tick_interval_seconds);
-                m_scenes->on_tick(m_tick_interval_seconds);
                 seconds_since_last_tick -= m_tick_interval_seconds;
             }
 
             m_fraction_to_next_tick = seconds_since_last_tick / m_tick_interval_seconds;
 
+            m_scenes->on_engine_frame(m_frame_interval_seconds);
             safe_invoke(m_callbacks.on_frame, this, m_frame_interval_seconds);
-            m_scenes->on_frame(m_frame_interval_seconds);
 
             m_renderer->draw_begin();
-            m_scenes->on_draw(m_fraction_to_next_tick);
+            m_scenes->on_engine_draw(m_fraction_to_next_tick);
             safe_invoke(m_callbacks.on_draw, this, m_fraction_to_next_tick);
             m_renderer->draw_end();
         }
+
+        log_info("Ending game loop...");
+    }
+
+    void game_engine::stop_running() noexcept {
+        m_is_running = false;
     }
 
     game_engine::engine_wrapper::engine_wrapper() {
