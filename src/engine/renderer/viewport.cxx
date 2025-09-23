@@ -1,31 +1,34 @@
 #include "viewport.hxx"
+
+#include <SDL3/SDL.h>
+
 #include "camera.hxx"
 #include "renderer.hxx"
 
 #include "../logger.hxx"
 
-#include <SDL3/SDL.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <algorithm>
-
 namespace engine {
-    game_viewport::game_viewport(const glm::vec2& normalized_size)
-        : m_cached_position_pixels(), m_cached_size_pixels() {
-        if (normalized_size.x > 1.f || normalized_size.x < 0.f) {
-            log_warning("Viewport size x component out of range [0.f, 1.f]: {}", normalized_size.x);
+    game_viewport::game_viewport(std::string_view name, const glm::vec2& position_normalized,
+                                 const glm::vec2& size_normalized)
+        : m_name(name),
+          m_position(position_normalized),
+          m_size(size_normalized),
+          m_cached_position_pixels(),
+          m_cached_size_pixels() {
+        if (m_size.x > 1.f || m_size.x < 0.f) {
+            log_warning("Viewport size x component out of range [0.f, 1.f]: {}", m_size.x);
         }
 
-        if (normalized_size.y > 1.f || normalized_size.y < 0.f) {
-            log_warning("Viewport size y component out of range [0.f, 1.f]: {}", normalized_size.y);
+        if (m_size.y > 1.f || m_size.y < 0.f) {
+            log_warning("Viewport size y component out of range [0.f, 1.f]: {}", m_size.y);
         }
 
-        set_normalized_rect({0.f, 0.f}, normalized_size);
+        set_rect(m_position, m_size);
     }
 
-    void game_viewport::set_normalized_rect(const glm::vec2& new_position,
-                                            const glm::vec2& new_size) {
-        set_normalized_position(new_position);
-        set_normalized_size(new_size);
+    void game_viewport::set_rect(const glm::vec2& new_position, const glm::vec2& new_size) {
+        set_position(new_position);
+        set_size(new_size);
     }
 
     void game_viewport::apply_to_sdl(game_renderer& renderer) const {

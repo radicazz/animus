@@ -261,13 +261,14 @@ namespace engine {
         if (it != m_viewports.end()) {
             return it->second;
         }
-        game_viewport vp{size_norm};
-        vp.set_normalized_position(pos_norm);
+
+        game_viewport vp{name, pos_norm, size_norm};
         auto [insert_it, _] = m_viewports.emplace(std::string(name), vp);
         // Maintain legacy pointer if first viewport or named "main" and none selected yet
         if (m_viewport == nullptr || name == "main") {
             m_viewport = &insert_it->second;
         }
+
         return insert_it->second;
     }
 
@@ -291,8 +292,10 @@ namespace engine {
 
     game_viewport* game_renderer::viewport_main() {
         auto it = m_viewports.find("main");
-        if (it == m_viewports.end())
+        if (it == m_viewports.end()) {
             return nullptr;
+        }
+
         return &it->second;
     }
 

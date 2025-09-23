@@ -339,8 +339,7 @@ namespace engine {
                 name_str);
         }
 
-        auto viewport = std::make_unique<game_viewport>(size);
-        viewport->set_normalized_position(position);
+        auto viewport = std::make_unique<game_viewport>(name, position, size);
         active_scene->viewports[name_str] = std::move(viewport);
 
         log_info("Added viewport '{}' to active scene '{}'", name_str, active_scene->scene_id);
@@ -431,12 +430,13 @@ namespace engine {
     void game_scenes::create_default_camera_viewport(game_scene_info* scene_info) {
         // Create default main camera with default position (0,0) and zoom (1.0)
         std::string main_camera{game_scene_info::default_camera_name};
-        scene_info->cameras[main_camera] = std::make_unique<game_camera>(
-            game_scene_info::default_camera_name, glm::vec2{0.0f, 0.0f}, 1.0f);
+        scene_info->cameras[main_camera] =
+            std::make_unique<game_camera>(main_camera, glm::vec2{0.0f, 0.0f}, 1.0f);
 
         // Create default main viewport
         std::string main_viewport{game_scene_info::default_viewport_name};
-        scene_info->viewports[main_viewport] = std::make_unique<game_viewport>(glm::vec2{1.f, 1.f});
+        scene_info->viewports[main_viewport] = std::make_unique<game_viewport>(
+            main_viewport, glm::vec2{0.f, 0.f}, glm::vec2{1.f, 1.f});
     }
 
     void game_scenes::cleanup_scene_resources(game_scene_info* scene_info) {
