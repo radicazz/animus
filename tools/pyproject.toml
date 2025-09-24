@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling>=1.20"]
+build-backend = "hatchling.build"
+
+[project]
+name = "toolbox"
+version = "0.1.0"
+description = "Utility scripts for the helipad C++ project"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "../LICENSE.txt" }
+dependencies = []
+
+[project.optional-dependencies]
+formatting = ["gersemi>=0.17"]
+
+[project.scripts]
+# CLI entry point: `uv run --extra formatting format_cmake`
+format_cmake = "toolbox.formatting:main"

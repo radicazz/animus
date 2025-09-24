@@ -1,16 +1,19 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(
-  helipad
-  VERSION 0.1.0
-  DESCRIPTION "A top-down 2D game engine."
-  LANGUAGES CXX
-)
+project(helipad VERSION 0.1.0 DESCRIPTION "A top-down 2D game engine." LANGUAGES CXX)
+
+# Make sure this is top-level CMakeLists.txt
+if(NOT "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  message(FATAL_ERROR "This project does not support being included as a subdirectory yet.")
+endif()
 
 # Default to Debug build if none is specified.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+  set_property(
+    CACHE CMAKE_BUILD_TYPE
+    PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo"
+  )
 endif()
 
 # Disable in-source builds.
@@ -81,25 +84,12 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES CONFIGURE_DEPENDS "src/*.cxx")
 target_sources(${ENGINE_NAME} PRIVATE ${ENGINE_SOURCE_FILES})
 
 target_compile_definitions(
-  ${ENGINE_NAME} PUBLIC
-  $<$<CONFIG:Debug>:
-  INC_DEBUG_BUILD=1
-  DEBUG
-  _DEBUG
-  >
-  $<$<CONFIG:Release>:
-  NDEBUG
-  INC_RELEASE_BUILD=1
-  >
+  ${ENGINE_NAME}
+  PUBLIC $<$<CONFIG:Debug>: INC_DEBUG_BUILD=1 DEBUG _DEBUG > $<$<CONFIG:Release>: NDEBUG INC_RELEASE_BUILD=1 >
 )
 
 # Link the SDL libraries.
-target_link_libraries(
-  ${ENGINE_NAME} PUBLIC
-  SDL3::SDL3
-  SDL3_image::SDL3_image
-  SDL3_ttf::SDL3_ttf
-)
+target_link_libraries(${ENGINE_NAME} PUBLIC SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf)
 
 # Include directories for the engine.
 target_include_directories(
@@ -123,36 +113,22 @@ if(ENGINE_BUILD_DOCS)
   find_package(Doxygen REQUIRED)
 
   if(DOXYGEN_FOUND)
-    configure_file(
-      "${CMAKE_SOURCE_DIR}/Doxyfile"
-      "${CMAKE_BINARY_DIR}/Doxyfile"
-      @ONLY
-    )
+    configure_file("${CMAKE_SOURCE_DIR}/Doxyfile" "${CMAKE_BINARY_DIR}/Doxyfile" @ONLY)
 
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/docs")
 
-    configure_file(
-      "${CMAKE_SOURCE_DIR}/docs/style/simple-dark.css"
-      "${CMAKE_BINARY_DIR}/simple-dark.css"
-      COPYONLY
-    )
-
-    configure_file(
-      "${CMAKE_SOURCE_DIR}/docs/layout.xml"
-      "${CMAKE_BINARY_DIR}/layout.xml"
-      COPYONLY
-    )
+    configure_file("${CMAKE_SOURCE_DIR}/docs/style/simple-dark.css" "${CMAKE_BINARY_DIR}/simple-dark.css" COPYONLY)
+    configure_file("${CMAKE_SOURCE_DIR}/docs/layout.xml" "${CMAKE_BINARY_DIR}/layout.xml" COPYONLY)
 
     add_custom_target(
-      docs ALL
+      docs
+      ALL
       COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       COMMENT "Generating simple dark documentation with Doxygen"
       VERBATIM
       DEPENDS "${CMAKE_BINARY_DIR}/simple-dark.css" "${CMAKE_BINARY_DIR}/layout.xml"
     )
-
-    message(STATUS "Documentation generation enabled and will build automatically.")
   else()
     message(WARNING "Doxygen not found! Documentation generation disabled.")
   endif()
