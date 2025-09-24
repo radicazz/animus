@@ -19,7 +19,7 @@ namespace engine {
           m_static_texts(),
           m_dynamic_texts(),
           m_renderer(renderer) {
-        ensure(m_renderer != nullptr, "game_renderer pointer cannot be null");
+        paranoid_ensure(m_renderer != nullptr, "game_renderer pointer cannot be null");
     }
 
     game_resources::~game_resources() {
@@ -112,7 +112,7 @@ namespace engine {
 
         SDL_Texture* texture = IMG_LoadTexture(m_renderer->get_sdl_renderer(), file_path.data());
         if (texture == nullptr) {
-            throw std::runtime_error(std::format("Failed to load the texture at: {}", file_path));
+            throw error_message("Failed to load the texture at: {}", file_path);
         }
 
         m_textures[file_path.data()] = texture;
@@ -145,7 +145,7 @@ namespace engine {
 
         TTF_Font* font = TTF_OpenFont(font_path.data(), font_size);
         if (font == nullptr) {
-            throw std::runtime_error(std::format("Failed to load font: {}", font_path));
+            throw error_message("Failed to load font: {}", font_path);
         }
 
         m_fonts[unique_key] = font;
@@ -186,7 +186,7 @@ namespace engine {
         TTF_Text* sdl_text =
             TTF_CreateText(m_renderer->get_sdl_text_engine(), font, text.data(), text.length());
         if (sdl_text == nullptr) {
-            throw std::runtime_error(std::format("Failed to create static text: {}", key));
+            throw error_message("Failed to create static text: {}", key);
         }
 
         auto text_obj = std::make_unique<game_text_static>(sdl_text);

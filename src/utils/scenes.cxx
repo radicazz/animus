@@ -22,7 +22,7 @@ namespace engine {
           m_resources(std::make_unique<game_resources>(engine->get_renderer())),
           m_cameras(),
           m_viewports() {
-        ensure(name.empty() != true, "Scene name cannot be empty");
+        paranoid_ensure(name.empty() != true, "Scene name cannot be empty");
 
         m_cameras[std::string(game_camera::default_name)] =
             std::make_unique<game_camera>(game_camera::default_name, glm::vec2{0.0f, 0.0f}, 1.0f);
@@ -33,7 +33,7 @@ namespace engine {
 
     game_scenes::game_scenes(game_engine* engine)
         : m_scenes(), m_active_scene_name(), m_engine(engine) {
-        ensure(m_engine != nullptr, "game_engine pointer cannot be null");
+        paranoid_ensure(m_engine != nullptr, "game_engine pointer cannot be null");
     }
 
     game_scenes::~game_scenes() {
@@ -55,7 +55,7 @@ namespace engine {
         game_scene* scene_ptr = new_scene.get();
         m_scenes.emplace(std::string(name), std::move(new_scene));
 
-        safe_invoke(scene_ptr->get_callbacks().on_load, scene_ptr);
+        invoke_void(scene_ptr->get_callbacks().on_load, scene_ptr);
 
         log_info("Scene '{}' loaded successfully", name);
     }
@@ -78,7 +78,7 @@ namespace engine {
         }
 
         deactivate_current_scene();
-        safe_invoke(scene->get_callbacks().on_unload, scene);
+        invoke_void(scene->get_callbacks().on_unload, scene);
 
         m_scenes.erase(std::string(name));
 
@@ -102,7 +102,7 @@ namespace engine {
             deactivate_current_scene();
         }
 
-        safe_invoke(scene->get_callbacks().on_activate, scene);
+        invoke_void(scene->get_callbacks().on_activate, scene);
 
         m_active_scene_name = name;
         update_renderer_for_active_scene();
@@ -124,7 +124,7 @@ namespace engine {
         }
 
         game_scene* scene = it->second.get();
-        safe_invoke(scene->get_callbacks().on_deactivate, scene);
+        invoke_void(scene->get_callbacks().on_deactivate, scene);
         m_active_scene_name.clear();
 
         log_info("Scene deactivated successfully");
@@ -144,25 +144,25 @@ namespace engine {
 
     void game_scenes::on_engine_tick(const float tick_interval) {
         if (game_scene* active_scene = get_active_scene(); active_scene != nullptr) {
-            safe_invoke(active_scene->get_callbacks().on_tick, active_scene, tick_interval);
+            invoke_void(active_scene->get_callbacks().on_tick, active_scene, tick_interval);
         }
     }
 
     void game_scenes::on_engine_frame(const float frame_interval) {
         if (game_scene* active_scene = get_active_scene(); active_scene != nullptr) {
-            safe_invoke(active_scene->get_callbacks().on_frame, active_scene, frame_interval);
+            invoke_void(active_scene->get_callbacks().on_frame, active_scene, frame_interval);
         }
     }
 
     void game_scenes::on_engine_draw(const float fraction_to_next_tick) {
         if (game_scene* active_scene = get_active_scene(); active_scene != nullptr) {
-            safe_invoke(active_scene->get_callbacks().on_draw, active_scene, fraction_to_next_tick);
+            invoke_void(active_scene->get_callbacks().on_draw, active_scene, fraction_to_next_tick);
         }
     }
 
     void game_scenes::on_engine_input() {
         if (game_scene* active_scene = get_active_scene(); active_scene != nullptr) {
-            safe_invoke(active_scene->get_callbacks().on_input, active_scene);
+            invoke_void(active_scene->get_callbacks().on_input, active_scene);
         }
     }
 

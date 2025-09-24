@@ -23,17 +23,17 @@ namespace engine {
           m_fraction_to_next_tick(-1.f),
           m_frame_interval_seconds(-1.f) {
         // Set a default icon, can be overridden later.
-        m_window->set_icon("assets/engine/icons/default");
+        m_window->set_icon("assets/helipad/icons/default");
 
         // Set the default tick rate.
         set_tick_rate(32.f);
 
         // Let the game know it has been created.
-        safe_invoke(m_callbacks.on_start, this);
+        invoke_void(m_callbacks.on_start, this);
     }
 
     game_engine::~game_engine() {
-        safe_invoke(m_callbacks.on_end, this);
+        invoke_void(m_callbacks.on_end, this);
     }
 
     void game_engine::start_running() {
@@ -72,18 +72,18 @@ namespace engine {
 
             while (seconds_since_last_tick >= m_tick_interval_seconds) [[likely]] {
                 m_scenes->on_engine_tick(m_tick_interval_seconds);
-                safe_invoke(m_callbacks.on_tick, this, m_tick_interval_seconds);
+                invoke_void(m_callbacks.on_tick, this, m_tick_interval_seconds);
                 seconds_since_last_tick -= m_tick_interval_seconds;
             }
 
             m_fraction_to_next_tick = seconds_since_last_tick / m_tick_interval_seconds;
 
             m_scenes->on_engine_frame(m_frame_interval_seconds);
-            safe_invoke(m_callbacks.on_frame, this, m_frame_interval_seconds);
+            invoke_void(m_callbacks.on_frame, this, m_frame_interval_seconds);
 
             m_renderer->draw_begin();
             m_scenes->on_engine_draw(m_fraction_to_next_tick);
-            safe_invoke(m_callbacks.on_draw, this, m_fraction_to_next_tick);
+            invoke_void(m_callbacks.on_draw, this, m_fraction_to_next_tick);
             m_renderer->draw_end();
         }
 
@@ -127,7 +127,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     try {
         game_entry_point();
     } catch (const std::exception& e) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", e.what(), nullptr);
+        engine::message_box_error("Fatal Error", e.what());
         return 1;
     }
 
