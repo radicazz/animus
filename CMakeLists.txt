@@ -1,31 +1,31 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(
-    helipad
-    VERSION 0.1.0
-    DESCRIPTION "A top-down 2D game engine."
-    LANGUAGES CXX
+  helipad
+  VERSION 0.1.0
+  DESCRIPTION "A top-down 2D game engine."
+  LANGUAGES CXX
 )
 
 # Default to Debug build if none is specified.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
-    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+  set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
 # Disable in-source builds.
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
-    message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
+  message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
 endif()
 
 find_program(CCACHE_PROGRAM ccache)
 
 if(CCACHE_PROGRAM)
-    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
-    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
-    message(STATUS "Ccache found: ${CCACHE_PROGRAM}")
+  set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+  set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+  message(STATUS "Ccache found: ${CCACHE_PROGRAM}")
 else()
-    message(STATUS "Ccache not found")
+  message(STATUS "Ccache not found")
 endif()
 
 # Add required modules.
@@ -46,11 +46,11 @@ string(TIMESTAMP ENGINE_BUILD_DATE "%Y-%m-%d" UTC)
 string(TIMESTAMP ENGINE_BUILD_TIME "%H:%M:%S" UTC)
 
 function(util_to_cpp_bool VARIABLE_NAME)
-    if(${VARIABLE_NAME})
-        set(${VARIABLE_NAME} "true" PARENT_SCOPE)
-    else()
-        set(${VARIABLE_NAME} "false" PARENT_SCOPE)
-    endif()
+  if(${VARIABLE_NAME})
+    set(${VARIABLE_NAME} "true" PARENT_SCOPE)
+  else()
+    set(${VARIABLE_NAME} "false" PARENT_SCOPE)
+  endif()
 endfunction()
 
 option(ENGINE_LOG_INFO "Compile info logging" ON)
@@ -66,98 +66,96 @@ util_to_cpp_bool(ENGINE_PARANOID)
 set(ENGINE_IS_DEBUG "false")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(ENGINE_IS_DEBUG "true")
+  set(ENGINE_IS_DEBUG "true")
 endif()
 
 # Generate config header from template.
 set(ENGINE_TEMPLATE_NAME "config")
 configure_file(
-    "${CMAKE_SOURCE_DIR}/src/${ENGINE_TEMPLATE_NAME}.hxx.in"
-    "${CMAKE_BINARY_DIR}/generated/${ENGINE_TEMPLATE_NAME}.hxx"
-    @ONLY
+  "${CMAKE_SOURCE_DIR}/src/${ENGINE_TEMPLATE_NAME}.hxx.in"
+  "${CMAKE_BINARY_DIR}/generated/${ENGINE_TEMPLATE_NAME}.hxx"
+  @ONLY
 )
 
 file(GLOB_RECURSE ENGINE_SOURCE_FILES CONFIGURE_DEPENDS "src/*.cxx")
 target_sources(${ENGINE_NAME} PRIVATE ${ENGINE_SOURCE_FILES})
 
 target_compile_definitions(
-    ${ENGINE_NAME} PUBLIC
-    $<$<CONFIG:Debug>:
-    INC_DEBUG_BUILD=1
-    DEBUG
-    _DEBUG
-    >
-    $<$<CONFIG:Release>:
-    NDEBUG
-    INC_RELEASE_BUILD=1
-    >
+  ${ENGINE_NAME} PUBLIC
+  $<$<CONFIG:Debug>:
+  INC_DEBUG_BUILD=1
+  DEBUG
+  _DEBUG
+  >
+  $<$<CONFIG:Release>:
+  NDEBUG
+  INC_RELEASE_BUILD=1
+  >
 )
 
 # Link the SDL libraries.
 target_link_libraries(
-    ${ENGINE_NAME} PUBLIC
-    SDL3::SDL3
-    SDL3_image::SDL3_image
-    SDL3_ttf::SDL3_ttf
+  ${ENGINE_NAME} PUBLIC
+  SDL3::SDL3
+  SDL3_image::SDL3_image
+  SDL3_ttf::SDL3_ttf
 )
 
 # Include directories for the engine.
 target_include_directories(
-    ${ENGINE_NAME}
-    PUBLIC
-    "${CMAKE_SOURCE_DIR}/src"
-    "${CMAKE_BINARY_DIR}/generated"
-    "${CMAKE_SOURCE_DIR}/external/glm"
-    "${CMAKE_SOURCE_DIR}/external/entt/single_include"
+  ${ENGINE_NAME}
+  PUBLIC
+  "${CMAKE_SOURCE_DIR}/src"
+  "${CMAKE_BINARY_DIR}/generated"
+  "${CMAKE_SOURCE_DIR}/external/glm"
+  "${CMAKE_SOURCE_DIR}/external/entt/single_include"
 )
 
 option(ENGINE_BUILD_EXAMPLES "Build example projects" ON)
 
 if(ENGINE_BUILD_EXAMPLES)
-    add_subdirectory("examples")
+  add_subdirectory("examples")
 endif()
-
-
 
 option(ENGINE_BUILD_DOCS "Enable documentation generation" OFF)
 
 if(ENGINE_BUILD_DOCS)
-    find_package(Doxygen REQUIRED)
+  find_package(Doxygen REQUIRED)
 
-    if(DOXYGEN_FOUND)
-        configure_file(
-            "${CMAKE_SOURCE_DIR}/Doxyfile"
-            "${CMAKE_BINARY_DIR}/Doxyfile"
-            @ONLY
-        )
+  if(DOXYGEN_FOUND)
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/Doxyfile"
+      "${CMAKE_BINARY_DIR}/Doxyfile"
+      @ONLY
+    )
 
-        file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/docs")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/docs")
 
-        configure_file(
-            "${CMAKE_SOURCE_DIR}/docs/style/simple-dark.css"
-            "${CMAKE_BINARY_DIR}/simple-dark.css"
-            COPYONLY
-        )
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/docs/style/simple-dark.css"
+      "${CMAKE_BINARY_DIR}/simple-dark.css"
+      COPYONLY
+    )
 
-        configure_file(
-            "${CMAKE_SOURCE_DIR}/docs/layout.xml"
-            "${CMAKE_BINARY_DIR}/layout.xml"
-            COPYONLY
-        )
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/docs/layout.xml"
+      "${CMAKE_BINARY_DIR}/layout.xml"
+      COPYONLY
+    )
 
-        add_custom_target(
-            docs ALL
-            COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMENT "Generating simple dark documentation with Doxygen"
-            VERBATIM
-            DEPENDS "${CMAKE_BINARY_DIR}/simple-dark.css" "${CMAKE_BINARY_DIR}/layout.xml"
-        )
+    add_custom_target(
+      docs ALL
+      COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+      COMMENT "Generating simple dark documentation with Doxygen"
+      VERBATIM
+      DEPENDS "${CMAKE_BINARY_DIR}/simple-dark.css" "${CMAKE_BINARY_DIR}/layout.xml"
+    )
 
-        message(STATUS "Documentation generation enabled and will build automatically.")
-    else()
-        message(WARNING "Doxygen not found! Documentation generation disabled.")
-    endif()
+    message(STATUS "Documentation generation enabled and will build automatically.")
+  else()
+    message(WARNING "Doxygen not found! Documentation generation disabled.")
+  endif()
 endif()
 
 message(STATUS "=== ${ENGINE_NAME} Build Configuration ===")
