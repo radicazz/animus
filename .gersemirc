@@ -1,10 +1,7 @@
 #
-# CMake file formatting config.
+# CMake file formatting config
 #
 
-# TODO: Get more settings from gersemi.
-# gersemi --print-config default
-
-line_length: 120
+line_length: 100
 indent: 2
-list_expansion: favour-inlining
+list_expansion: favour-expansion
