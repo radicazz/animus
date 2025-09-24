@@ -7,11 +7,13 @@ project(
     LANGUAGES CXX
 )
 
+# Default to Debug build if none is specified.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
+# Disable in-source builds.
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
 endif()
@@ -26,36 +28,19 @@ else()
     message(STATUS "Ccache not found")
 endif()
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-
-# Add the SDL submodules.
+# Add required modules.
 add_subdirectory("external/SDL" EXCLUDE_FROM_ALL)
 add_subdirectory("external/SDL_image" EXCLUDE_FROM_ALL)
 add_subdirectory("external/SDL_ttf" EXCLUDE_FROM_ALL)
 
-# Create the executable.
-add_executable(${PROJECT_NAME})
+# To avoid potential name clashes with subdirectories.
+set(ENGINE_NAME ${PROJECT_NAME})
 
-set_target_properties(
-    ${PROJECT_NAME} PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-    OUTPUT_NAME ${PROJECT_NAME}
-)
+# Create the main library target.
+add_library(${ENGINE_NAME} STATIC)
 
-# On Windows, set the executable to be a GUI application.
-if(WIN32)
-    set_target_properties(
-        ${PROJECT_NAME} PROPERTIES
-        WIN32_EXECUTABLE TRUE
-        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-    )
-endif()
+# Set C++ standard & require that other targets using this library also use C++20.
+target_compile_features(${ENGINE_NAME} PRIVATE cxx_std_20)
 
 string(TIMESTAMP ENGINE_BUILD_DATE "%Y-%m-%d" UTC)
 string(TIMESTAMP ENGINE_BUILD_TIME "%H:%M:%S" UTC)
@@ -71,10 +56,12 @@ endfunction()
 option(ENGINE_LOG_INFO "Compile info logging" ON)
 option(ENGINE_LOG_WARNING "Compile warning logging" ON)
 option(ENGINE_LOG_ERROR "Compile error logging" ON)
+option(ENGINE_PARANOID "Enable paranoid build checks" ON)
 
 util_to_cpp_bool(ENGINE_LOG_INFO)
 util_to_cpp_bool(ENGINE_LOG_WARNING)
 util_to_cpp_bool(ENGINE_LOG_ERROR)
+util_to_cpp_bool(ENGINE_PARANOID)
 
 set(ENGINE_IS_DEBUG "false")
 
@@ -82,56 +69,19 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ENGINE_IS_DEBUG "true")
 endif()
 
-option(ENGINE_PARANOID "Enable paranoid build checks (will throw std::runtime_error on failure)" OFF)
-util_to_cpp_bool(ENGINE_PARANOID)
-
+# Generate config header from template.
 set(ENGINE_TEMPLATE_NAME "config")
 configure_file(
-    "${CMAKE_SOURCE_DIR}/src/engine/${ENGINE_TEMPLATE_NAME}.hxx.in"
+    "${CMAKE_SOURCE_DIR}/src/${ENGINE_TEMPLATE_NAME}.hxx.in"
     "${CMAKE_BINARY_DIR}/generated/${ENGINE_TEMPLATE_NAME}.hxx"
     @ONLY
 )
 
 file(GLOB_RECURSE ENGINE_SOURCE_FILES CONFIGURE_DEPENDS "src/*.cxx")
-target_sources(${PROJECT_NAME} PRIVATE ${ENGINE_SOURCE_FILES})
-source_group(TREE "${CMAKE_SOURCE_DIR}/src" FILES ${ENGINE_SOURCE_FILES})
-
-target_compile_options(
-    ${PROJECT_NAME} PRIVATE
-
-    # MSVC
-    $<$<CXX_COMPILER_ID:MSVC>:
-    /W4 # High warning level.
-    /permissive- # Disable non-conforming code.
-    /utf-8 # Source and execution character sets are UTF-8.
-    /Zc:__cplusplus # Enable updated __cplusplus macro.
-    $<$<CONFIG:Debug>:/RTC1> # Runtime checks in debug.
-    $<$<CONFIG:Release>:/O2> # Optimize for speed in release.
-    >
-
-    # GCC
-    $<$<CXX_COMPILER_ID:GNU>:
-    -Wall -Wextra -Wpedantic
-    -Wconversion -Wsign-conversion
-    -Wcast-qual -Wformat=2
-    -Wundef -Werror=return-type
-    $<$<CONFIG:Debug>:-Og -g>
-    $<$<CONFIG:Release>:-O3 -DNDEBUG>
-    >
-
-    # Clang
-    $<$<CXX_COMPILER_ID:Clang>:
-    -Wall -Wextra -Wpedantic
-    -Wconversion -Wsign-conversion
-    -Wcast-qual -Wformat=2
-    -Wundef -Werror=return-type
-    $<$<CONFIG:Debug>:-Og -g>
-    $<$<CONFIG:Release>:-O3 -DNDEBUG>
-    >
-)
+target_sources(${ENGINE_NAME} PRIVATE ${ENGINE_SOURCE_FILES})
 
 target_compile_definitions(
-    ${PROJECT_NAME} PRIVATE
+    ${ENGINE_NAME} PUBLIC
     $<$<CONFIG:Debug>:
     INC_DEBUG_BUILD=1
     DEBUG
@@ -141,87 +91,33 @@ target_compile_definitions(
     NDEBUG
     INC_RELEASE_BUILD=1
     >
-
-    # Platform-specific definitions.
-    $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN NOMINMAX>
-    $<$<PLATFORM_ID:Linux>:_GNU_SOURCE>
 )
 
+# Link the SDL libraries.
 target_link_libraries(
-    ${PROJECT_NAME} PRIVATE
+    ${ENGINE_NAME} PUBLIC
     SDL3::SDL3
     SDL3_image::SDL3_image
     SDL3_ttf::SDL3_ttf
 )
 
+# Include directories for the engine.
 target_include_directories(
-    ${PROJECT_NAME} PRIVATE
+    ${ENGINE_NAME}
+    PUBLIC
     "${CMAKE_SOURCE_DIR}/src"
+    "${CMAKE_BINARY_DIR}/generated"
     "${CMAKE_SOURCE_DIR}/external/glm"
     "${CMAKE_SOURCE_DIR}/external/entt/single_include"
-    "${CMAKE_BINARY_DIR}/generated" # For generated headers (settings.hxx)
 )
 
-if(WIN32)
-    set(ENGINE_WIN32_DLLS
-        $<TARGET_FILE:SDL3::SDL3-shared>
-        $<TARGET_FILE:SDL3_image::SDL3_image-shared>
-        $<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared>
-    )
+option(ENGINE_BUILD_EXAMPLES "Build example projects" ON)
 
-    add_custom_command(
-        TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${ENGINE_WIN32_DLLS}
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>
-        COMMENT "Copying DLLs to output directory"
-    )
+if(ENGINE_BUILD_EXAMPLES)
+    add_subdirectory("examples")
 endif()
 
-if(UNIX)
-    set_target_properties(
-        ${PROJECT_NAME} PROPERTIES
-        BUILD_RPATH "$ORIGIN"
-        INSTALL_RPATH "$ORIGIN"
-    )
-endif()
 
-# Cross-platform asset copying.
-set(ENGINE_ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
-set(ENGINE_ASSETS_DESTINATION_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets")
-
-add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-    "${ENGINE_ASSETS_SOURCE_DIR}"
-    "${ENGINE_ASSETS_DESTINATION_DIR}"
-    COMMENT "Copying game assets to ${ENGINE_ASSETS_DESTINATION_DIR}"
-    VERBATIM
-)
-
-install(
-    TARGETS ${PROJECT_NAME}
-    RUNTIME
-    DESTINATION bin
-    COMPONENT Runtime
-)
-
-install(
-    DIRECTORY "${CMAKE_SOURCE_DIR}/assets"
-    DESTINATION bin
-    COMPONENT Assets
-    PATTERN "*.tmp" EXCLUDE
-    PATTERN ".git*" EXCLUDE
-    PATTERN "*.md" EXCLUDE
-)
-
-if(WIN32)
-    install(
-        FILES ${ENGINE_WIN32_DLLS}
-        DESTINATION bin
-        COMPONENT Runtime
-    )
-endif()
 
 option(ENGINE_BUILD_DOCS "Enable documentation generation" OFF)
 
@@ -264,14 +160,12 @@ if(ENGINE_BUILD_DOCS)
     endif()
 endif()
 
-message(STATUS "=== ${PROJECT_NAME} Build Configuration ===")
-message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "=== ${ENGINE_NAME} Build Configuration ===")
+message(STATUS "Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
-message(STATUS "Install Prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Using Ccache: ${CCACHE_PROGRAM}")
-message(STATUS "===== Documentation =====")
-message(STATUS "Generate Documentation: ${ENGINE_BUILD_DOCS}")
-message(STATUS "===== Logging Settings =====")
+message(STATUS "Documentation: ${ENGINE_BUILD_DOCS}")
+message(STATUS "Examples: ${ENGINE_BUILD_EXAMPLES}")
+message(STATUS "===== Safety Settings =====")
 message(STATUS "Paranoid Build: ${ENGINE_PARANOID}")
 message(STATUS "Info Logging: ${ENGINE_LOG_INFO}")
 message(STATUS "Warning Logging: ${ENGINE_LOG_WARNING}")

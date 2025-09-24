@@ -3,7 +3,7 @@
 #include <string_view>
 
 namespace engine {
-    constexpr std::string_view project_name = "@PROJECT_NAME@";
+    constexpr std::string_view project_name = "@ENGINE_NAME@";
 
     constexpr bool is_paranoid_build = @ENGINE_PARANOID@;
     constexpr bool is_debug_build = @ENGINE_IS_DEBUG@;

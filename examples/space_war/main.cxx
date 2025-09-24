@@ -1,4 +1,4 @@
-#include "engine/engine.hxx"
+#include <engine.hxx>
 
 struct demo_scene_state {
     entt::entity player;
@@ -18,7 +18,7 @@ void scene_on_load(engine::game_scene* scene) {
 
     // Create a sprite from an image file with the scene's resource manager.
     auto* player_sprite =
-        resources->sprite_get_or_create("player_sprite", "assets/sprites/player/default.png");
+        resources->sprite_get_or_create("player_sprite", "assets/space_war/player/default.png");
 
     // Set the sprite's render/rotation origin to the center of the image.
     player_sprite->set_origin({16, 24});
@@ -33,7 +33,7 @@ void scene_on_load(engine::game_scene* scene) {
 
     // Create some dynamic text that follows the player around and scales with the camera zoom.
     auto* player_label = resources->text_dynamic_get_or_create(
-        "player_label", "player", "assets/fonts/roboto_regular.ttf", 64.0f);
+        "player_label", "player", "assets/helipad/fonts/roboto_regular.ttf", 64.0f);
     player_label->set_origin_centered();
 
     state->player_label = entities->create_text_dynamic("player_label");
@@ -41,7 +41,7 @@ void scene_on_load(engine::game_scene* scene) {
     entities->set_transform_scale(state->player_label, {0.25f, 0.25f});
 
     auto* asteroid_sprite =
-        resources->sprite_get_or_create("asteroid_sprite", "assets/sprites/asteroids/ice_1.png");
+        resources->sprite_get_or_create("asteroid_sprite", "assets/space_war/asteroids/ice_1.png");
     asteroid_sprite->set_size({64, 64});
     asteroid_sprite->set_origin(asteroid_sprite->get_size() * 0.5f);
     state->asteroid = entities->sprite_create_interpolated("asteroid_sprite");
@@ -53,7 +53,7 @@ void scene_on_load(engine::game_scene* scene) {
 
     // Some regular UI text.
     resources->text_static_get_or_create("camera_mode_text", "Camera Mode: Follow",
-                                         "assets/fonts/roboto_regular.ttf", 18.0f);
+                                         "assets/helipad/fonts/roboto_regular.ttf", 18.0f);
 }
 
 void scene_on_tick(engine::game_scene* scene, const float tick_interval) {
@@ -188,8 +188,7 @@ void game_entry_point() {
                                                       .on_draw = nullptr};
 
     // Create the game and its resources.
-    engine::game_engine game(engine::project_name, {900, 600}, engine_state.get(),
-                             engine_callbacks);
+    engine::game_engine game("Space Warfare", {1280, 720}, engine_state.get(), engine_callbacks);
 
     // Run the game loop. (blocks until the game exits)
     game.start_running();

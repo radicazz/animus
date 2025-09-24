@@ -23,7 +23,7 @@ namespace engine {
           m_fraction_to_next_tick(-1.f),
           m_frame_interval_seconds(-1.f) {
         // Set a default icon, can be overridden later.
-        m_window->set_icon("assets/icons/default");
+        m_window->set_icon("assets/engine/icons/default");
 
         // Set the default tick rate.
         set_tick_rate(32.f);
