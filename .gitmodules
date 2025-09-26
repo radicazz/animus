@@ -13,7 +13,8 @@
 [submodule "external/glm"]
 	path = external/glm
 	url = https://github.com/g-truc/glm.git
-	branch = master
+	branch = stable
 [submodule "external/entt"]
 	path = external/entt
 	url = https://github.com/skypjack/entt
+	branch = v3.13.x
