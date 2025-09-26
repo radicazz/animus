@@ -13,7 +13,15 @@ dependencies = []
 
 [project.optional-dependencies]
 formatting = ["gersemi>=0.17"]
+documentation = [
+  "mkdocs>=1.6",
+  "mkdocs-material>=9.5",
+  "mkdocs-section-index>=0.3",
+]
 
 [project.scripts]
-# CLI entry point: `uv run --extra formatting format_cmake`
+# CLI entry points: `uv run --extra formatting format_cmake`, `uv run --extra documentation docs_source`, `uv run --extra documentation docs_user`
 format_cmake = "toolbox.formatting:main"
+docs_source = "toolbox.documentation:generate_source_docs"
+docs_user = "toolbox.documentation:generate_user_docs"
+docs_all = "toolbox.documentation:main"

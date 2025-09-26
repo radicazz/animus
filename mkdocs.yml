@@ -1,0 +1,22 @@
+site_name: helipad
+site_description: 2D game engine for modernity
+site_dir: build/docs/mkdocs
+docs_dir: docs/mkdocs
+nav:
+  - Home:
+      - Welcome: home/welcome.md
+      - Overview: home/overview.md
+  - Migration:
+      - Architecture Layers: migration/architecture_layers.md
+      - C++20 Patterns: migration/cpp20_patterns.md
+      - Renderer Modularization Plan: migration/renderer_modularization_plan.md
+      - Resource Management: migration/resource_management.md
+      - SDL3 Platform Plan: migration/platform_layer_plan.md
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+
+plugins:
+  - search

@@ -57,23 +57,23 @@ if(ENGINE_BUILD_DOCS)
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/docs")
 
     configure_file(
-      "${CMAKE_SOURCE_DIR}/docs/style/simple-dark.css"
+      "${CMAKE_SOURCE_DIR}/docs/doxygen/simple-dark.css"
       "${CMAKE_BINARY_DIR}/simple-dark.css"
       COPYONLY
     )
-    configure_file("${CMAKE_SOURCE_DIR}/docs/layout.xml" "${CMAKE_BINARY_DIR}/layout.xml" COPYONLY)
+    configure_file("${CMAKE_SOURCE_DIR}/docs/doxygen/layout.xml" "${CMAKE_BINARY_DIR}/layout.xml" COPYONLY)
 
     add_custom_target(
       docs
       ALL
       COMMAND
-        ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
+      ${DOXYGEN_EXECUTABLE} "${CMAKE_BINARY_DIR}/Doxyfile"
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       COMMENT "Generating simple dark documentation with Doxygen"
       VERBATIM
       DEPENDS
-        "${CMAKE_BINARY_DIR}/simple-dark.css"
-        "${CMAKE_BINARY_DIR}/layout.xml"
+      "${CMAKE_BINARY_DIR}/simple-dark.css"
+      "${CMAKE_BINARY_DIR}/layout.xml"
     )
   else()
     message(WARNING "Doxygen not found! Documentation generation disabled.")

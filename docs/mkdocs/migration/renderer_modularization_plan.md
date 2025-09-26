@@ -1,4 +1,4 @@
-# Renderer Modularization & Extensibility Plan
+﻿# Renderer Modularization & Extensibility Plan
 
 ## Purpose
 
@@ -44,13 +44,13 @@ Helipad's current renderer works for the demo, but it tightly couples resource d
 
 ## Phase Plan
 
-### Phase 0 � Prep & Baseline
+### Phase 0 ï¿½ Prep & Baseline
 
 - Document current renderer, resource manager, and ECS render system behaviour.
 - Add safety tests/smoke tests that validate today's behaviour (single sprite draw, text draw, main viewport clears).
 - **Outcome**: we can detect regressions as we refactor.
 
-### Phase 1 � Resource Hygiene
+### Phase 1 ï¿½ Resource Hygiene
 
 - Make `game_sprite`, `game_text_*` immutable (remove per-frame `set_rotation`/`set_scale` usage).
 - Introduce lightweight `sprite_instance` / `text_instance` structs inside ECS system (holds transform, scale, tint).
@@ -58,7 +58,7 @@ Helipad's current renderer works for the demo, but it tightly couples resource d
 - **Why**: stop data races on shared resources and prepare for instancing.
 - **Acceptance**: system renderer no longer writes to shared resource objects; rendering still works for the demo.
 
-### Phase 2 � Render Queue
+### Phase 2 ï¿½ Render Queue
 
 - Introduce `render_item` struct: `{ pass_id, layer, resource_handle, transform, color, flags }`.
 - Add `render_queue` container with `submit(item)` and `flush()` (sort by `pass_id`, `layer`).
@@ -67,7 +67,7 @@ Helipad's current renderer works for the demo, but it tightly couples resource d
 - **Why**: centralises ordering & enables batching. Sets foundation for multi-view, materials, and UI overlays.
 - **Acceptance**: existing example renders using queue; sort order respects `component_renderable::layer`.
 
-### Phase 3 � View Ownership
+### Phase 3 ï¿½ View Ownership
 
 - Create `render_view` struct: `{ camera_handle, viewport_handle, pass_id, clear_color }`.
 - Move viewport registry out of `game_renderer` into a dedicated `view_registry` owned by scenes (or engine) with stable handles.
@@ -76,7 +76,7 @@ Helipad's current renderer works for the demo, but it tightly couples resource d
 - **Why**: Single source of truth avoids dangling pointers and supports multiple views per frame.
 - **Acceptance**: scene activation sets active view by handle; multiple viewports render sequentially using queue filters.
 
-### Phase 4 � Render Device Abstraction
+### Phase 4 ï¿½ Render Device Abstraction
 
 - Introduce `render_device` interface with SDL-backed implementation. Responsibilities:
   - Manage SDL renderer and text engine lifetime
@@ -87,7 +87,7 @@ Helipad's current renderer works for the demo, but it tightly couples resource d
 - **Why**: isolates backend and simplifies testing; future-proofs for off-screen passes or GPU transitions.
 - **Acceptance**: renderer files no longer call SDL directly except inside device implementation; tests can mock the device.
 
-### Phase 5 � Extensions & Hardening
+### Phase 5 ï¿½ Extensions & Hardening
 
 - Add optional `render_pass` definitions (world, UI) with configurable clear state and target.
 - Support `render_item` flags for screen-space vs world-space, tinted sprites, flip modes.
@@ -123,4 +123,6 @@ Helipad's current renderer works for the demo, but it tightly couples resource d
 - **Editor integration**: Editor can register its own passes without interfering with gameplay rendering.
 
 ---
-*Owner*: renderer team  �  *Last updated*: {{DATE:YYYY-MM-DD}}
+*Owner*: renderer team  ï¿½  *Last updated*: YYYY-MM-DD
+
+

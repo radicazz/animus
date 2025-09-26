@@ -1,10 +1,28 @@
 # helipad/tools
 
-This directory contains various tools and utilities that complement the helipad game engine. These tools are designed to streamline the development process, assist in asset management, and enhance the overall workflow for game developers using the helipad engine.
+Various tools to assist in various aspects of development.
+
+## Commands
+
+```sh
+# Format CMake files in the repository.
+uv run --extra formatting format_cmake
+```
+
+```sh
+# Generate Doxygen documentation under build/docs/doxygen/.
+uv run --extra documentation docs_source
+
+# Build and serve MkDocs documentation.
+uv run --extra documentation docs_user
+
+# The two steps above in one go.
+uv run --extra documentation docs_all
+```
 
 ## Setup
 
-These tools have been written for Python 3.12 and will run on any platform that supports it, as long as you have the dependencies installed. I recommend using [`uv`](<https://pypi.org/project/uv/>) for environment management as it is very fast, lightweight and easy to use.
+These tools have been written for Python 3.12 and will run on any platform that supports it, just remember the dependencies. I recommend using [`uv`](<https://pypi.org/project/uv/>) for environment management as it is very fast, lightweight and easy to use.
 
 ```sh
 # On macOS and Linux.
@@ -32,15 +50,6 @@ The first time you run one of the tools in this directory, `uv` will automatical
 
 ```sh
 uv sync --all-extras
-```
-
-## Tools
-
-Here are the current available tools:
-
-```sh
-# Format all the cmake-related files in the project.
-uv run --extra formatting format_cmake
 ```
 
 ---
